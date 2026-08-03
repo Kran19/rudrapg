@@ -22,6 +22,9 @@
             <input type="text" id="subadmin-search" 
                    class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" 
                    placeholder="🔍 Search Sub Admin name, email, branch...">
+            <button id="export-subadmins-csv" class="border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2">
+                <i class="fa-solid fa-file-csv"></i> Export Directory CSV
+            </button>
         </div>
         <div id="subadmins-table"></div>
     </div>
@@ -47,37 +50,41 @@
                 </button>
             </div>
             
-            <form class="p-6 space-y-4">
+            <form id="create-subadmin-form" class="p-6 space-y-4">
+                @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name</label>
-                    <input type="text" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. Suresh Patel">
+                    <input type="text" name="name" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. Suresh Patel">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
-                    <input type="email" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="suresh@rudrapg.com">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address (Login Username)</label>
+                    <input type="email" name="email" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="suresh@rudrapg.com">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Phone Number</label>
-                    <input type="text" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="+91 98765 12345">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Phone Number</label>
+                        <input type="text" name="phone" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="+91 98765 12345">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Account Password</label>
+                        <input type="password" name="password" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="••••••••">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Assign Controlled Branches</label>
-                    <div class="space-y-2">
-                        <label class="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
-                            <input type="checkbox" checked class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Naroda Branch (PG-NRD-01)
-                        </label>
-                        <label class="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
-                            <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Satellite Branch (PG-SAT-02)
-                        </label>
-                        <label class="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
-                            <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"> Prahlad Nagar Branch (PG-PLN-03)
-                        </label>
+                    <div class="space-y-2 max-h-36 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200">
+                        @foreach($allBranches as $branch)
+                            <label class="flex items-center gap-2.5 text-sm text-slate-700 font-medium">
+                                <input type="checkbox" name="branches[]" value="{{ $branch->id }}" checked class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                {{ $branch->name }} ({{ $branch->code }})
+                            </label>
+                        @endforeach
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" @click="modalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
-                    <button type="button" @click="modalOpen = false; toastr.success('Sub Admin account created!')" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Create Account</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Create Account</button>
                 </div>
             </form>
         </div>
@@ -95,20 +102,21 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 10,
+        placeholder: "No Sub Admin Accounts Found",
         columns: [
-            {title: "ID", field: "id", width: 90},
+            {title: "ID", field: "id", width: 110},
             {title: "Sub Admin Name", field: "name", formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Email", field: "email"},
+            {title: "Email (Login)", field: "email"},
             {title: "Phone", field: "phone"},
             {title: "Assigned Branches", field: "assigned_branches", formatter: function(cell){
-                var branches = cell.getValue();
+                var branches = cell.getValue() || [];
                 var html = "";
                 branches.forEach(function(b){
                     html += '<span class="bg-slate-100 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-md me-1">' + b + '</span>';
                 });
-                return html;
+                return html || '<span class="text-slate-400 text-xs">None</span>';
             }},
             {title: "Status", field: "status", width: 100, formatter: function(cell){
                 return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Active</span>';
@@ -119,6 +127,39 @@
 
     document.getElementById("subadmin-search").addEventListener("keyup", function(){
         table.setFilter("name", "like", this.value);
+    });
+
+    document.getElementById("export-subadmins-csv").addEventListener("click", function(){
+        table.download("csv", "sub_admins_directory.csv");
+    });
+
+    document.getElementById("create-subadmin-form").addEventListener("submit", function(e){
+        e.preventDefault();
+        var formData = new FormData(this);
+
+        fetch("{{ route('super_admin.sub_admins.store') }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                table.addData([data.data], true);
+                toastr.success(data.message);
+                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
+                alpineData.modalOpen = false;
+                this.reset();
+            } else {
+                toastr.error(data.message || "Failed to create Sub Admin.");
+            }
+        })
+        .catch(err => {
+            toastr.error("An error occurred during submission.");
+        });
     });
 </script>
 @endsection

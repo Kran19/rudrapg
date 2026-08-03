@@ -3,24 +3,19 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_card.dart';
-import '../../core/widgets/room_card.dart';
 import '../../core/widgets/section_header.dart';
 import '../../data/dummy/dummy_data.dart';
-import '../branch/branch_details_screen.dart';
-import '../rooms/room_details_screen.dart';
-import '../rooms/room_listing_screen.dart';
 import '../electricity/electricity_screen.dart';
-import '../resident/my_room_screen.dart';
 import '../payments/payments_screen.dart';
+import '../resident/my_room_screen.dart';
+import '../support/support_screen.dart';
 
 class HomeDashboardScreen extends StatelessWidget {
   const HomeDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final branch = DummyData.activeBranch;
     final resident = DummyData.sampleResident;
-    final rooms = DummyData.sampleRooms;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -39,12 +34,12 @@ class HomeDashboardScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.qr_code_2_rounded, size: 18, color: AppColors.secondary),
+                          const Icon(Icons.verified_user_rounded, size: 16, color: AppColors.success),
                           const SizedBox(width: 4),
                           Text(
-                            'BRANCH DETECTED',
+                            'APPROVED RESIDENT',
                             style: AppTypography.caption.copyWith(
-                              color: AppColors.secondary,
+                              color: AppColors.success,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.0,
                             ),
@@ -53,33 +48,31 @@ class HomeDashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        branch.name,
+                        resident.branchName,
                         style: AppTypography.titleLarge,
                       ),
                     ],
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const BranchDetailsScreen()),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.divider),
-                        boxShadow: AppSpacing.softShadow,
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      boxShadow: AppSpacing.softShadow,
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'RS',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
-                      child: const Icon(Icons.info_outline_rounded, color: AppColors.primary),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // Resident Companion Active Stay Card
+              // Resident Hero Welcome Card
               CustomCard(
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.all(AppSpacing.xl),
@@ -96,7 +89,7 @@ class HomeDashboardScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            'ACTIVE RESIDENT',
+                            'ROOM ${resident.roomNumber} • ${resident.bedCode}',
                             style: AppTypography.badge.copyWith(color: AppColors.accent),
                           ),
                         ),
@@ -108,49 +101,36 @@ class HomeDashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Hello, ${resident.fullName} 👋',
+                      'Welcome, ${resident.fullName} 👋',
                       style: AppTypography.displayMedium.copyWith(color: Colors.white),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${resident.branchName} • Room ${resident.roomNumber} (${resident.bedCode})',
+                      '${resident.branchName} • Joining Date: ${resident.joiningDate}',
                       style: AppTypography.bodyMedium.copyWith(color: Colors.white70),
                     ),
                     const SizedBox(height: AppSpacing.lg),
+                    const Divider(color: Colors.white24),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Stay Status Indicators
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.secondary,
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size.fromHeight(44),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(builder: (context) => const MyRoomScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.bed_rounded, size: 18),
-                            label: const Text('My Room'),
-                          ),
+                        _buildStatusColumn(
+                          label: 'Rent Payment',
+                          value: resident.rentStatus,
+                          color: AppColors.success,
                         ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white38),
-                              minimumSize: const Size.fromHeight(44),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(builder: (context) => const ElectricityScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.bolt_rounded, size: 18),
-                            label: const Text('Meter Reading'),
-                          ),
+                        _buildStatusColumn(
+                          label: 'Deposit Status',
+                          value: resident.depositStatus,
+                          color: AppColors.accent,
+                        ),
+                        _buildStatusColumn(
+                          label: 'KYC Status',
+                          value: resident.kycStatus,
+                          color: AppColors.accent,
                         ),
                       ],
                     ),
@@ -159,27 +139,15 @@ class HomeDashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xxl),
 
-              // Quick Actions Grid
-              const SectionHeader(title: 'Quick Actions'),
+              // Quick Actions Grid (4 Items)
+              const SectionHeader(title: 'Resident Services'),
               Row(
                 children: [
                   _buildQuickAction(
                     context,
-                    icon: Icons.meeting_room_rounded,
-                    label: 'View Rooms',
-                    color: AppColors.secondary,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const RoomListingScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  _buildQuickAction(
-                    context,
-                    icon: Icons.payment_rounded,
+                    icon: Icons.account_balance_wallet_rounded,
                     label: 'Pay Rent',
-                    color: AppColors.success,
+                    color: AppColors.secondary,
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (context) => const PaymentsScreen()),
@@ -189,7 +157,19 @@ class HomeDashboardScreen extends StatelessWidget {
                   const SizedBox(width: AppSpacing.md),
                   _buildQuickAction(
                     context,
-                    icon: Icons.electric_meter_rounded,
+                    icon: Icons.bed_rounded,
+                    label: 'My Room',
+                    color: AppColors.accent,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const MyRoomScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  _buildQuickAction(
+                    context,
+                    icon: Icons.bolt_rounded,
                     label: 'Electricity',
                     color: AppColors.warning,
                     onTap: () {
@@ -201,12 +181,12 @@ class HomeDashboardScreen extends StatelessWidget {
                   const SizedBox(width: AppSpacing.md),
                   _buildQuickAction(
                     context,
-                    icon: Icons.location_on_rounded,
-                    label: 'Branch Info',
-                    color: AppColors.accent,
+                    icon: Icons.headset_mic_rounded,
+                    label: 'Support',
+                    color: AppColors.success,
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const BranchDetailsScreen()),
+                        MaterialPageRoute(builder: (context) => const SupportScreen()),
                       );
                     },
                   ),
@@ -214,7 +194,7 @@ class HomeDashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xxl),
 
-              // Outstanding Rent Due Reminder Card
+              // Latest Notice Alert Card
               CustomCard(
                 backgroundColor: AppColors.warning.withValues(alpha: 0.08),
                 border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
@@ -252,39 +232,59 @@ class HomeDashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xxl),
 
-              // Available Rooms Section
-              SectionHeader(
-                title: 'Available Rooms',
-                actionText: 'See All',
-                onActionTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const RoomListingScreen()),
-                  );
-                },
-              ),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: rooms.length,
-                separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.lg),
-                itemBuilder: (context, index) {
-                  final room = rooms[index];
-                  return RoomCard(
-                    room: room,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => RoomDetailsScreen(room: room),
-                        ),
-                      );
-                    },
-                  );
-                },
+              // Assigned Stay Overview Snapshot Card
+              const SectionHeader(title: 'My Stay Overview'),
+              CustomCard(
+                child: Column(
+                  children: [
+                    _buildOverviewRow(
+                      icon: Icons.location_on_outlined,
+                      label: 'Branch Address',
+                      value: '102, Main Highway Road, Naroda',
+                    ),
+                    const Divider(height: 24),
+                    _buildOverviewRow(
+                      icon: Icons.layers_outlined,
+                      label: 'Room Floor & Type',
+                      value: 'Floor 1 • 2 Sharing AC',
+                    ),
+                    const Divider(height: 24),
+                    _buildOverviewRow(
+                      icon: Icons.support_agent_rounded,
+                      label: 'Branch Manager',
+                      value: 'Suresh Patel (+91 98765 43210)',
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStatusColumn({
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(color: Colors.white60),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppTypography.bodySmall.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 
@@ -298,7 +298,7 @@ class HomeDashboardScreen extends StatelessWidget {
     return Expanded(
       child: CustomCard(
         onTap: onTap,
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: 6),
         child: Column(
           children: [
             Container(
@@ -320,6 +320,29 @@ class HomeDashboardScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildOverviewRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppColors.secondary),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: 2),
+              Text(value, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

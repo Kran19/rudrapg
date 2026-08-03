@@ -9,6 +9,7 @@ class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final CustomButtonType type;
+  final bool outlined;
   final IconData? icon;
   final bool isLoading;
   final double? width;
@@ -19,6 +20,7 @@ class CustomButton extends StatelessWidget {
     required this.text,
     required this.onPressed,
     this.type = CustomButtonType.primary,
+    this.outlined = false,
     this.icon,
     this.isLoading = false,
     this.width,
@@ -31,7 +33,9 @@ class CustomButton extends StatelessWidget {
     Color textColor;
     BorderSide borderSide = BorderSide.none;
 
-    switch (type) {
+    final effectiveType = outlined ? CustomButtonType.outlined : type;
+
+    switch (effectiveType) {
       case CustomButtonType.primary:
         bgColor = AppColors.primary;
         textColor = Colors.white;

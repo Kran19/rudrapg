@@ -24,7 +24,7 @@
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
             <h4 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-4">FLOOR {{ $floor }} ROOMS</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-                @foreach(array_filter($rooms, fn($r) => $r['floor'] == $floor) as $room)
+                @foreach(collect($rooms)->where('floor', $floor) as $room)
                     <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50">
                         <div class="flex items-center justify-between mb-2">
                             <span class="font-bold text-sm text-slate-900">Room {{ $room['room_number'] }}</span>

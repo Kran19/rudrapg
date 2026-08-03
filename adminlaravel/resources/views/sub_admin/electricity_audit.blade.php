@@ -18,6 +18,9 @@
             <input type="text" id="elec-search" 
                    class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" 
                    placeholder="🔍 Search resident, room...">
+            <button id="export-elec-csv" class="border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2">
+                <i class="fa-solid fa-file-csv"></i> Export Audit CSV
+            </button>
         </div>
         <div id="electricity-table"></div>
     </div>
@@ -83,9 +86,9 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" @click="auditModalOpen = false; toastr.error('Reading rejected.')" 
+                    <button type="button" @click="rejectReading()" 
                             class="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl">Reject</button>
-                    <button type="button" @click="auditModalOpen = false; toastr.success('Electricity bill approved and added to dues!')" 
+                    <button type="button" @click="approveReading()" 
                             class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">
                         <i class="fa-solid fa-check mr-1"></i> Approve Bill
                     </button>
@@ -106,8 +109,9 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 10,
+        placeholder: "No Electricity Submissions Pending Audit",
         columns: [
-            {title: "Reading ID", field: "id", width: 130},
+            {title: "Reading ID", field: "code", width: 130},
             {title: "Student Name", field: "student", formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
@@ -123,7 +127,7 @@
             }},
             {title: "Submission Date", field: "date"},
             {title: "Status", field: "status", formatter: function(cell){
-                return cell.getValue() === "Approved"
+                return (cell.getValue() === "Approved" || cell.getValue() === "APPROVED")
                     ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Approved</span>'
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending Audit</span>';
             }},
@@ -141,5 +145,53 @@
     document.getElementById("elec-search").addEventListener("keyup", function(){
         table.setFilter("student", "like", this.value);
     });
+
+    document.getElementById("export-elec-csv").addEventListener("click", function(){
+        table.download("csv", "electricity_meter_audit.csv");
+    });
+
+    function approveReading() {
+        var alpineData = Alpine.$data(document.querySelector('[x-data]'));
+        var reading = alpineData.activeReading;
+
+        fetch("/sub-admin/electricity-audit/" + reading.id + "/approve", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            toastr.success(data.message);
+            alpineData.auditModalOpen = false;
+            setTimeout(() => window.location.reload(), 1000);
+        })
+        .catch(err => {
+            toastr.error("Failed to approve electricity reading.");
+        });
+    }
+
+    function rejectReading() {
+        var alpineData = Alpine.$data(document.querySelector('[x-data]'));
+        var reading = alpineData.activeReading;
+
+        fetch("/sub-admin/electricity-audit/" + reading.id + "/reject", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            toastr.error(data.message);
+            alpineData.auditModalOpen = false;
+            setTimeout(() => window.location.reload(), 1000);
+        })
+        .catch(err => {
+            toastr.error("Failed to reject electricity reading.");
+        });
+    }
 </script>
 @endsection

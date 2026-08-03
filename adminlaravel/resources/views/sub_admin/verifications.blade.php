@@ -18,6 +18,9 @@
             <input type="text" id="verify-search" 
                    class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" 
                    placeholder="🔍 Search applicant name, room...">
+            <button id="export-verifications-csv" class="border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2">
+                <i class="fa-solid fa-file-csv"></i> Export Queue CSV
+            </button>
         </div>
         <div id="verifications-table"></div>
     </div>
@@ -145,6 +148,7 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 10,
+        placeholder: "No Booking Verification Requests Pending",
         columns: [
             {title: "Booking ID", field: "id", width: 140, formatter: function(cell){
                 return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs'>" + cell.getValue() + "</code>";
@@ -160,7 +164,7 @@
             {title: "Deposit", field: "deposit"},
             {title: "Date", field: "date"},
             {title: "Status", field: "status", formatter: function(cell){
-                return cell.getValue() === "Approved"
+                return (cell.getValue() === "Approved" || cell.getValue() === "APPROVED")
                     ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Approved</span>'
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending Verification</span>';
             }},
@@ -179,24 +183,47 @@
         table.setFilter("student_name", "like", this.value);
     });
 
+    document.getElementById("export-verifications-csv").addEventListener("click", function(){
+        table.download("csv", "verification_queue.csv");
+    });
+
     function approveBooking() {
+        var alpineData = Alpine.$data(document.querySelector('[x-data]'));
+        var student = alpineData.activeStudent;
+
         Swal.fire({
             title: 'Approve Student Booking?',
-            text: "This will allocate the bed, generate agreement record, and confirm booking.",
+            text: "This will allocate the bed, update database records, and confirm booking.",
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#16A34A',
             confirmButtonText: 'Yes, Approve Booking'
         }).then((result) => {
             if (result.isConfirmed) {
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.verifyModalOpen = false;
-                toastr.success('Student booking approved! Key handover record generated.');
+                fetch("/sub-admin/verifications/" + student.id + "/approve", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    toastr.success(data.message);
+                    alpineData.verifyModalOpen = false;
+                    setTimeout(() => window.location.reload(), 1000);
+                })
+                .catch(err => {
+                    toastr.error("Failed to approve verification.");
+                });
             }
         });
     }
 
     function rejectBooking() {
+        var alpineData = Alpine.$data(document.querySelector('[x-data]'));
+        var student = alpineData.activeStudent;
+
         Swal.fire({
             title: 'Reject Application?',
             text: "Please confirm application rejection.",
@@ -206,9 +233,22 @@
             confirmButtonText: 'Reject'
         }).then((result) => {
             if (result.isConfirmed) {
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.verifyModalOpen = false;
-                toastr.error('Application rejected.');
+                fetch("/sub-admin/verifications/" + student.id + "/reject", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    toastr.error(data.message);
+                    alpineData.verifyModalOpen = false;
+                    setTimeout(() => window.location.reload(), 1000);
+                })
+                .catch(err => {
+                    toastr.error("Failed to reject application.");
+                });
             }
         });
     }

@@ -50,35 +50,36 @@
                 </button>
             </div>
             
-            <form class="p-6 space-y-4">
+            <form id="record-cash-form" class="p-6 space-y-4">
+                @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Resident Student</label>
-                    <select class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option>Rahul Sharma (Room 101 - Bed 1B)</option>
-                        <option>Karan Patel (Room 102 - Bed 2A)</option>
-                        <option>Vikram Shah (Room 104 - Bed 1A)</option>
+                    <select name="student_id" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        @foreach($students as $st)
+                            <option value="{{ $st->id }}">{{ $st->full_name }} ({{ $st->room ? 'Room ' . $st->room->room_number : 'Unassigned' }})</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Payment Type</label>
-                    <select class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option>Monthly Rent (₹6,500)</option>
-                        <option>Security Deposit (₹10,000)</option>
-                        <option>Electricity Bill (₹450)</option>
+                    <select name="payment_type" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="RENT">Monthly Rent (₹6,500)</option>
+                        <option value="DEPOSIT">Security Deposit (₹10,000)</option>
+                        <option value="ELECTRICITY">Electricity Bill (₹450)</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cash Amount Received (₹)</label>
-                    <input type="number" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="6500">
+                    <input type="number" name="amount" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="6500">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Receipt Remarks</label>
-                    <input type="text" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Received in cash at desk">
+                    <input type="text" name="remarks" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Received in cash at desk">
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" @click="cashModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
-                    <button type="button" @click="cashModalOpen = false; toastr.success('Cash receipt generated successfully!')" class="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">Generate Receipt</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">Generate Receipt</button>
                 </div>
             </form>
         </div>
@@ -96,6 +97,7 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 10,
+        placeholder: "No Rent Dues Found",
         columns: [
             {title: "Resident ID", field: "resident_id", width: 120},
             {title: "Student Name", field: "student_name", formatter: function(cell){
@@ -124,6 +126,34 @@
 
     document.getElementById("export-rent-csv").addEventListener("click", function(){
         table.download("csv", "rent_ledger.csv");
+    });
+
+    document.getElementById("record-cash-form").addEventListener("submit", function(e){
+        e.preventDefault();
+        var formData = new FormData(this);
+
+        fetch("{{ route('sub_admin.rent_ledger.cash_payment') }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                toastr.success(data.message);
+                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
+                alpineData.cashModalOpen = false;
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                toastr.error(data.message || "Failed to record cash payment.");
+            }
+        })
+        .catch(err => {
+            toastr.error("An error occurred during submission.");
+        });
     });
 </script>
 @endsection

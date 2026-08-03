@@ -61,6 +61,7 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 10,
+        placeholder: "No System Audit Activity Found",
         columns: [
             {title: "ID", field: "id", width: 80},
             {title: "Timestamp", field: "timestamp", width: 160},

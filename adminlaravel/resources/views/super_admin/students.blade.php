@@ -31,8 +31,8 @@
             </select>
             <select id="kyc-filter" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none">
                 <option value="">All KYC Status</option>
-                <option value="Verified">Verified</option>
-                <option value="Pending">Pending</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="PENDING">Pending</option>
             </select>
         </div>
     </div>
@@ -50,40 +50,40 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 10,
+        placeholder: "No Resident Students Found",
         columns: [
-            {title: "Student ID", field: "id", width: 110},
-            {title: "Full Name", field: "name", formatter: function(cell){
+            {title: "Student ID", field: "id", width: 130},
+            {title: "Full Name", field: "full_name", formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
             {title: "Phone Number", field: "phone"},
-            {title: "PG Branch", field: "branch", formatter: function(cell){
+            {title: "PG Branch", field: "branch_name", formatter: function(cell){
                 return '<span class="bg-slate-900 text-white text-xs font-medium px-2.5 py-1 rounded-md">' + cell.getValue() + '</span>';
             }},
             {title: "Room & Bed", field: "room_bed"},
-            {title: "Aadhaar No", field: "aadhaar"},
-            {title: "Joining Date", field: "joining"},
+            {title: "Joining Date", field: "joining_date"},
             {title: "KYC Status", field: "kyc_status", formatter: function(cell){
-                return cell.getValue() == "Verified" 
+                return cell.getValue() == "VERIFIED" 
                     ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Verified</span>' 
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
             }},
             {title: "Rent Status", field: "rent_status", formatter: function(cell){
-                if (cell.getValue() == "Paid") return '<span class="bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Paid</span>';
-                if (cell.getValue() == "Pending") return '<span class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Pending</span>';
-                return '<span class="bg-rose-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Overdue</span>';
+                if (cell.getValue() == "PAID" || cell.getValue() == "Paid") return '<span class="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Paid</span>';
+                if (cell.getValue() == "PENDING" || cell.getValue() == "Pending") return '<span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
+                return '<span class="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Overdue</span>';
             }},
         ]
     });
 
     document.getElementById("student-search").addEventListener("keyup", function(){
-        table.setFilter("name", "like", this.value);
+        table.setFilter("full_name", "like", this.value);
     });
 
     document.getElementById("branch-filter").addEventListener("change", function(){
         if(this.value === "") {
             table.clearFilter();
         } else {
-            table.setFilter("branch", "=", this.value);
+            table.setFilter("branch_name", "=", this.value);
         }
     });
 

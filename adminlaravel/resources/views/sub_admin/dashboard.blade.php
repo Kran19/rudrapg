@@ -92,6 +92,7 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 5,
+        placeholder: "No Verification Requests Pending",
         columns: [
             {title: "Booking ID", field: "id", width: 140, formatter: function(cell){
                 return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs'>" + cell.getValue() + "</code>";

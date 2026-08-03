@@ -2,161 +2,384 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
+use App\Models\AuditLog;
+use App\Models\Bed;
+use App\Models\Branch;
+use App\Models\Complaint;
+use App\Models\ElectricityReading;
+use App\Models\Payment;
+use App\Models\PaymentProof;
+use App\Models\RegistrationRequest;
+use App\Models\Room;
+use App\Models\RoomAllocation;
+use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SubAdminController extends Controller
 {
     public function dashboard()
     {
+        $branch = Branch::first();
+
         $branchInfo = [
-            'name' => 'Naroda Branch',
-            'code' => 'PG-NRD-01',
-            'manager' => 'Suresh Patel',
-            'total_rooms' => 40,
-            'total_beds' => 100,
-            'occupied_beds' => 84,
-            'available_beds' => 16,
-            'pending_verifications' => 3,
-            'overdue_rents' => 5,
-            'open_complaints' => 2,
+            'name' => $branch ? $branch->name : 'All Branches',
+            'code' => $branch ? $branch->code : 'PG-ALL',
+            'manager' => $branch ? $branch->manager_name : 'N/A',
+            'total_rooms' => Room::count(),
+            'total_beds' => Bed::count(),
+            'occupied_beds' => Bed::where('status', 'OCCUPIED')->count(),
+            'available_beds' => Bed::where('status', 'AVAILABLE')->count(),
+            'pending_verifications' => RegistrationRequest::where('status', 'PENDING')->count(),
+            'overdue_rents' => Payment::where('status', 'PENDING')->count(),
+            'open_complaints' => Complaint::whereIn('status', ['PENDING', 'IN_PROGRESS'])->count(),
         ];
 
-        $pendingVerifications = [
-            ['id' => 'BK-2026-0089', 'student_name' => 'Amit Trivedi', 'phone' => '+91 97123 44556', 'room' => 'Room 103 (Bed 3C)', 'rent' => '₹5,800', 'deposit' => '₹8,000', 'date' => '29 Jul 2026', 'aadhaar_front' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80', 'aadhaar_back' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80', 'payment_proof' => 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80'],
-            ['id' => 'BK-2026-0091', 'student_name' => 'Vijay Chauhan', 'phone' => '+91 98981 22334', 'room' => 'Room 201 (Private)', 'rent' => '₹11,000', 'deposit' => '₹15,000', 'date' => '29 Jul 2026', 'aadhaar_front' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80', 'aadhaar_back' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80', 'payment_proof' => 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80'],
-        ];
+        $pendingVerifications = RegistrationRequest::with(['student.documents', 'student.room', 'student.bed'])
+            ->where('status', 'PENDING')
+            ->latest()
+            ->get()
+            ->map(function ($req) {
+                $student = $req->student;
+                return [
+                    'id' => $req->app_reference,
+                    'student_name' => $student ? $student->full_name : 'Applicant',
+                    'phone' => $student ? $student->phone : 'N/A',
+                    'room' => ($student && $student->room ? 'Room '.$student->room->room_number : 'Unassigned').($student && $student->bed ? ' ('.$student->bed->bed_code.')' : ''),
+                    'rent' => $student && $student->bed ? '₹'.number_format($student->bed->monthly_rent) : 'N/A',
+                    'deposit' => $student && $student->bed ? '₹'.number_format($student->bed->security_deposit) : 'N/A',
+                    'date' => $req->created_at ? $req->created_at->format('d M Y') : 'N/A',
+                ];
+            });
 
         return view('sub_admin.dashboard', compact('branchInfo', 'pendingVerifications'));
     }
 
     public function verifications()
     {
-        $queue = [
-            [
-                'id' => 'BK-2026-0089',
-                'student_name' => 'Amit Trivedi',
-                'phone' => '+91 97123 44556',
-                'aadhaar' => 'XXXX-XXXX-8822',
-                'pan' => 'PQRTS8812M',
-                'room_number' => '103',
-                'bed_code' => 'Bed 3C',
-                'sharing_type' => '3 Sharing (AC)',
-                'rent' => '₹5,800',
-                'deposit' => '₹8,000',
-                'date' => '29 Jul 2026',
-                'status' => 'Pending Verification',
-                'aadhaar_front' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-                'aadhaar_back' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-                'payment_proof' => 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80',
-            ],
-            [
-                'id' => 'BK-2026-0091',
-                'student_name' => 'Vijay Chauhan',
-                'phone' => '+91 98981 22334',
-                'aadhaar' => 'XXXX-XXXX-1122',
-                'pan' => 'MNOPS4433K',
-                'room_number' => '201',
-                'bed_code' => 'Bed 1A (Private)',
-                'sharing_type' => 'Private Room (AC)',
-                'rent' => '₹11,000',
-                'deposit' => '₹15,000',
-                'date' => '29 Jul 2026',
-                'status' => 'Pending Verification',
-                'aadhaar_front' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-                'aadhaar_back' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-                'payment_proof' => 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80',
-            ],
-            [
-                'id' => 'BK-2026-0080',
-                'student_name' => 'Rahul Sharma',
-                'phone' => '+91 98765 43210',
-                'aadhaar' => 'XXXX-XXXX-9912',
-                'pan' => 'ABCDE1234F',
-                'room_number' => '101',
-                'bed_code' => 'Bed 1B',
-                'sharing_type' => '2 Sharing (AC)',
-                'rent' => '₹6,500',
-                'deposit' => '₹10,000',
-                'date' => '22 Jul 2026',
-                'status' => 'Approved',
-                'aadhaar_front' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-                'aadhaar_back' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-                'payment_proof' => 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80',
-            ],
-        ];
+        $queue = RegistrationRequest::with(['student.documents', 'student.room', 'student.bed', 'branch'])
+            ->latest()
+            ->get()
+            ->map(function ($req) {
+                $student = $req->student;
+                return [
+                    'id' => $req->app_reference,
+                    'db_id' => $req->id,
+                    'student_name' => $student ? $student->full_name : 'Applicant',
+                    'phone' => $student ? $student->phone : 'N/A',
+                    'aadhaar' => $student ? $student->aadhaar_number : 'N/A',
+                    'pan' => $student ? ($student->pan_number ?? 'N/A') : 'N/A',
+                    'room_number' => $student && $student->room ? $student->room->room_number : 'Unassigned',
+                    'bed_code' => $student && $student->bed ? $student->bed->bed_code : 'Unassigned',
+                    'sharing_type' => $student && $student->room ? $student->room->sharing_type : 'Standard',
+                    'rent' => $student && $student->bed ? '₹'.number_format($student->bed->monthly_rent) : '₹0',
+                    'deposit' => $student && $student->bed ? '₹'.number_format($student->bed->security_deposit) : '₹0',
+                    'date' => $req->created_at ? $req->created_at->format('d M Y') : 'N/A',
+                    'status' => $req->status == 'PENDING' ? 'Pending Verification' : $req->status,
+                    'aadhaar_front' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+                    'aadhaar_back' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
+                    'payment_proof' => 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80',
+                ];
+            });
 
         return view('sub_admin.verifications', compact('queue'));
     }
 
+    public function approveVerification($id)
+    {
+        $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+
+        DB::transaction(function () use ($requestRecord) {
+            $requestRecord->update([
+                'status' => 'APPROVED',
+                'processed_by' => Auth::id(),
+            ]);
+
+            if ($student = $requestRecord->student) {
+                $student->update([
+                    'status' => 'APPROVED',
+                    'kyc_status' => 'VERIFIED',
+                ]);
+
+                if ($student->bed) {
+                    $student->bed->update(['status' => 'OCCUPIED']);
+
+                    RoomAllocation::create([
+                        'branch_id' => $student->branch_id,
+                        'student_id' => $student->id,
+                        'room_id' => $student->room_id,
+                        'bed_id' => $student->bed_id,
+                        'start_date' => now()->toDateString(),
+                        'monthly_rent' => $student->bed->monthly_rent,
+                        'security_deposit' => $student->bed->security_deposit,
+                        'status' => 'ACTIVE',
+                        'allocated_by' => Auth::id(),
+                    ]);
+                }
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Approved Verification & Key Handover: '.$id,
+            'module' => 'VERIFICATION',
+            'record_id' => $requestRecord->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Student booking approved and key handover record generated.',
+        ]);
+    }
+
+    public function rejectVerification($id)
+    {
+        $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+
+        DB::transaction(function () use ($requestRecord) {
+            $requestRecord->update([
+                'status' => 'REJECTED',
+                'processed_by' => Auth::id(),
+            ]);
+
+            if ($student = $requestRecord->student) {
+                $student->update(['status' => 'REJECTED']);
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Rejected Registration Request: '.$id,
+            'module' => 'VERIFICATION',
+            'record_id' => $requestRecord->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Application rejected successfully.',
+        ]);
+    }
+
     public function bedMap()
     {
-        $rooms = [];
-        for ($floor = 1; $floor <= 4; $floor++) {
-            for ($r = 1; $r <= 10; $r++) {
-                $roomNum = $floor * 100 + $r;
-                $isAc = ($r % 2 == 1);
-                $sharing = ($r == 1 || $r == 6) ? 'Private Room' : (($r % 3 == 0) ? '4 Sharing' : (($r % 2 == 0) ? '2 Sharing' : '3 Sharing'));
-                $totalBeds = ($sharing == 'Private Room') ? 1 : (($sharing == '2 Sharing') ? 2 : (($sharing == '3 Sharing') ? 3 : 4));
-                $available = ($roomNum % 3 == 0) ? 0 : (($roomNum % 2 == 0) ? 1 : $totalBeds);
+        $roomsData = Room::with('beds.student')->orderBy('floor_number')->orderBy('room_number')->get()->map(function ($room) {
+            $totalBeds = $room->beds->count() > 0 ? $room->beds->count() : $room->max_beds;
+            $occupiedBeds = $room->beds->where('status', 'OCCUPIED')->count();
+            $availableBeds = max(0, $totalBeds - $occupiedBeds);
 
-                $beds = [];
-                for ($b = 1; $b <= $totalBeds; $b++) {
-                    $status = (($roomNum + $b) % 3 == 0) ? 'occupied' : ((($roomNum + $b) % 5 == 0) ? 'reserved' : 'available');
-                    $beds[] = [
-                        'code' => 'Bed ' . $roomNum . chr(64 + $b),
-                        'status' => $status,
-                        'student_name' => $status == 'occupied' ? 'Resident ' . ($roomNum * 10 + $b) : null,
-                    ];
-                }
-
-                $rooms[] = [
-                    'id' => $roomNum,
-                    'room_number' => (string)$roomNum,
-                    'floor' => $floor,
-                    'sharing_type' => $sharing,
-                    'is_ac' => $isAc,
-                    'rent' => $isAc ? 6800 : 5800,
-                    'total_beds' => $totalBeds,
-                    'available_beds' => $available,
-                    'beds' => $beds,
+            $bedsData = $room->beds->map(function ($bed) {
+                return [
+                    'code' => $bed->bed_code,
+                    'status' => strtolower($bed->status),
+                    'student_name' => $bed->student ? $bed->student->full_name : null,
                 ];
-            }
-        }
+            })->toArray();
 
-        return view('sub_admin.bed_map', compact('rooms'));
+            return [
+                'id' => $room->id,
+                'room_number' => (string) $room->room_number,
+                'floor' => $room->floor_number,
+                'sharing_type' => $room->sharing_type,
+                'is_ac' => (bool) $room->is_ac,
+                'rent' => $room->beds->first() ? (int) $room->beds->first()->monthly_rent : 0,
+                'total_beds' => $totalBeds,
+                'available_beds' => $availableBeds,
+                'beds' => $bedsData,
+            ];
+        })->toArray();
+
+        return view('sub_admin.bed_map', ['rooms' => $roomsData]);
     }
 
     public function rentLedger()
     {
-        $dues = [
-            ['resident_id' => 'RES-8812', 'student_name' => 'Rahul Sharma', 'room' => '101 (Bed 1B)', 'rent' => '₹6,500', 'due_date' => '05 Aug 2026', 'status' => 'Paid (Proof Submitted)', 'payment_mode' => 'UPI Transfer', 'utr' => 'UPI/619283746192'],
-            ['resident_id' => 'RES-8815', 'student_name' => 'Karan Patel', 'room' => '102 (Bed 2A)', 'rent' => '₹5,500', 'due_date' => '05 Aug 2026', 'status' => 'Pending Verification', 'payment_mode' => 'Cash', 'utr' => 'CASH-REC-104'],
-            ['resident_id' => 'RES-8820', 'student_name' => 'Vikram Shah', 'room' => '104 (Bed 1A)', 'rent' => '₹6,800', 'due_date' => '05 Aug 2026', 'status' => 'Overdue', 'payment_mode' => '-', 'utr' => '-'],
-            ['resident_id' => 'RES-8822', 'student_name' => 'Manish Dave', 'room' => '105 (Bed 3B)', 'rent' => '₹5,800', 'due_date' => '05 Aug 2026', 'status' => 'Paid', 'payment_mode' => 'UPI Transfer', 'utr' => 'UPI/887711223344'],
-        ];
+        $duesData = Payment::with(['student', 'branch', 'proof'])->latest()->get()->map(function ($payment) {
+            return [
+                'resident_id' => $payment->student ? $payment->student->app_reference : 'N/A',
+                'student_name' => $payment->student ? $payment->student->full_name : 'Resident',
+                'room' => $payment->student && $payment->student->room ? $payment->student->room->room_number.' ('.($payment->student->bed ? $payment->student->bed->bed_code : 'Unassigned').')' : 'Unassigned',
+                'rent' => '₹'.number_format($payment->amount),
+                'due_date' => $payment->due_date ? $payment->due_date->format('d M Y') : 'N/A',
+                'status' => $payment->status == 'VERIFIED' ? 'Paid' : ($payment->status == 'PENDING' ? 'Pending Verification' : $payment->status),
+                'payment_mode' => $payment->payment_mode ?? 'UPI Transfer',
+                'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
+            ];
+        });
 
-        return view('sub_admin.rent_ledger', compact('dues'));
+        $students = Student::with(['room', 'bed'])->where('status', 'APPROVED')->get();
+
+        return view('sub_admin.rent_ledger', ['dues' => $duesData, 'students' => $students]);
+    }
+
+    public function recordCashPayment(Request $request)
+    {
+        $validated = $request->validate([
+            'student_id' => ['required', 'exists:students,id'],
+            'payment_type' => ['required', 'string'],
+            'amount' => ['required', 'numeric', 'min:1'],
+            'remarks' => ['nullable', 'string'],
+        ]);
+
+        $student = Student::findOrFail($validated['student_id']);
+
+        DB::transaction(function () use ($validated, $student) {
+            $payment = Payment::create([
+                'tx_reference' => 'PAY-'.date('Y').'-'.rand(1000, 9999),
+                'student_id' => $student->id,
+                'branch_id' => $student->branch_id,
+                'payment_type' => $validated['payment_type'],
+                'amount' => $validated['amount'],
+                'payment_mode' => 'CASH',
+                'payment_date' => now()->toDateString(),
+                'status' => 'PAID',
+                'paid_at' => now(),
+            ]);
+
+            PaymentProof::create([
+                'payment_id' => $payment->id,
+                'utr_number' => 'CASH/'.rand(100000000000, 999999999999),
+                'screenshot_path' => 'uploads/proofs/cash_receipt.png',
+                'status' => 'VERIFIED',
+                'verified_by' => Auth::id(),
+            ]);
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Recorded Cash Payment ₹'.$validated['amount'].' for '.$student->full_name,
+            'module' => 'FINANCE',
+            'record_id' => $student->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Offline cash payment receipt generated successfully!',
+        ]);
     }
 
     public function electricityAudit()
     {
-        $readings = [
-            ['id' => 'E-2026-071', 'student' => 'Rahul Sharma', 'room' => '101', 'prev_reading' => 14475, 'curr_reading' => 14520, 'units' => 45, 'rate' => '₹10.00', 'total' => '₹450', 'photo_url' => 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80', 'date' => '28 Jul 2026', 'status' => 'Approved'],
-            ['id' => 'E-2026-072', 'student' => 'Amit Trivedi', 'room' => '103', 'prev_reading' => 8810, 'curr_reading' => 8860, 'units' => 50, 'rate' => '₹10.00', 'total' => '₹500', 'photo_url' => 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80', 'date' => '29 Jul 2026', 'status' => 'Pending Audit'],
-            ['id' => 'E-2026-073', 'student' => 'Vikram Shah', 'room' => '104', 'prev_reading' => 12100, 'curr_reading' => 12165, 'units' => 65, 'rate' => '₹10.00', 'total' => '₹650', 'photo_url' => 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80', 'date' => '29 Jul 2026', 'status' => 'Pending Audit'],
-        ];
+        $readingsData = ElectricityReading::with(['student', 'room', 'branch'])->latest()->get()->map(function ($reading) {
+            return [
+                'id' => $reading->id,
+                'code' => 'E-2026-'.str_pad($reading->id, 3, '0', STR_PAD_LEFT),
+                'student' => $reading->student ? $reading->student->full_name : 'Resident',
+                'room' => $reading->room ? $reading->room->room_number : 'N/A',
+                'prev_reading' => $reading->previous_reading,
+                'curr_reading' => $reading->current_reading,
+                'units' => $reading->units_consumed,
+                'rate' => '₹'.number_format($reading->unit_rate, 2),
+                'total' => '₹'.number_format($reading->total_amount),
+                'photo_url' => 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80',
+                'date' => $reading->created_at ? $reading->created_at->format('d M Y') : 'N/A',
+                'status' => $reading->status == 'APPROVED' ? 'Approved' : 'Pending Audit',
+            ];
+        });
 
-        return view('sub_admin.electricity_audit', compact('readings'));
+        return view('sub_admin.electricity_audit', ['readings' => $readingsData]);
+    }
+
+    public function approveElectricityReading($id)
+    {
+        $reading = ElectricityReading::findOrFail($id);
+
+        $reading->update([
+            'status' => 'APPROVED',
+            'audited_by' => Auth::id(),
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Approved Electricity Bill ID: '.$id,
+            'module' => 'ELECTRICITY',
+            'record_id' => $reading->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Electricity bill approved and added to dues!',
+        ]);
+    }
+
+    public function rejectElectricityReading($id)
+    {
+        $reading = ElectricityReading::findOrFail($id);
+
+        $reading->update([
+            'status' => 'REJECTED',
+            'audited_by' => Auth::id(),
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Rejected Electricity Meter Reading ID: '.$id,
+            'module' => 'ELECTRICITY',
+            'record_id' => $reading->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Electricity meter reading rejected.',
+        ]);
     }
 
     public function complaints()
     {
-        $tickets = [
-            ['ticket' => 'TKT-9912', 'student' => 'Rahul Sharma', 'room' => '101', 'category' => 'Plumbing', 'title' => 'Bathroom Geyser Leaking', 'priority' => 'High', 'date' => '28 Jul 2026', 'status' => 'In Progress'],
-            ['ticket' => 'TKT-9915', 'student' => 'Amit Trivedi', 'room' => '103', 'category' => 'Wi-Fi', 'title' => 'Slow Wi-Fi speed on Floor 1', 'priority' => 'Medium', 'date' => '29 Jul 2026', 'status' => 'Open'],
-            ['ticket' => 'TKT-9904', 'student' => 'Karan Patel', 'room' => '102', 'category' => 'Cleaning', 'title' => 'Room Housekeeping Request', 'priority' => 'Low', 'date' => '25 Jul 2026', 'status' => 'Resolved'],
-        ];
+        $ticketsData = Complaint::with(['student', 'room', 'branch'])->latest()->get()->map(function ($complaint) {
+            return [
+                'ticket' => $complaint->ticket_number,
+                'student' => $complaint->student ? $complaint->student->full_name : 'Resident',
+                'room' => $complaint->room ? $complaint->room->room_number : 'N/A',
+                'category' => $complaint->category,
+                'title' => $complaint->subject,
+                'priority' => ucfirst(strtolower($complaint->priority)),
+                'date' => $complaint->created_at ? $complaint->created_at->format('d M Y') : 'N/A',
+                'status' => $complaint->status == 'RESOLVED' ? 'Resolved' : ($complaint->status == 'IN_PROGRESS' ? 'In Progress' : 'Open'),
+            ];
+        });
 
-        return view('sub_admin.complaints', compact('tickets'));
+        return view('sub_admin.complaints', ['tickets' => $ticketsData]);
+    }
+
+    public function broadcastNotice(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'content' => ['required', 'string'],
+            'category' => ['required', 'string'],
+            'is_important' => ['nullable', 'boolean'],
+        ]);
+
+        $branch = Branch::first();
+
+        $announcement = Announcement::create([
+            'branch_id' => $branch ? $branch->id : null,
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'category' => strtoupper(str_replace(' ', '_', $validated['category'])),
+            'is_important' => $request->boolean('is_important', true),
+            'created_by' => Auth::id(),
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Broadcasted Branch Notice: '.$validated['title'],
+            'module' => 'ANNOUNCEMENT',
+            'record_id' => $announcement->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Notice broadcasted to Flutter Student Mobile App!',
+            'data' => $announcement,
+        ]);
     }
 }

@@ -11,6 +11,7 @@ class CustomTextField extends StatelessWidget {
   final IconData? prefixIcon;
   final Widget? suffixIcon;
   final bool readOnly;
+  final bool obscureText;
   final VoidCallback? onTap;
   final int maxLines;
   final String? initialValue;
@@ -24,6 +25,7 @@ class CustomTextField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.readOnly = false,
+    this.obscureText = false,
     this.onTap,
     this.maxLines = 1,
     this.initialValue,
@@ -46,6 +48,7 @@ class CustomTextField extends StatelessWidget {
           initialValue: initialValue,
           keyboardType: keyboardType,
           readOnly: readOnly,
+          obscureText: obscureText,
           onTap: onTap,
           maxLines: maxLines,
           style: AppTypography.bodyLarge,

@@ -51,33 +51,54 @@
                 </button>
             </div>
             
-            <form class="p-6 space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Branch Code</label>
-                    <input type="text" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. PG-NRD-05">
+            <form id="create-branch-form" class="p-6 space-y-4">
+                @csrf
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Branch Code</label>
+                        <input type="text" name="code" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. PG-BPL-05">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Branch Name</label>
+                        <input type="text" name="name" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. Bopal Branch">
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Branch Name</label>
-                    <input type="text" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. Bopal Branch">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">City</label>
+                    <input type="text" name="city" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ahmedabad">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Full Physical Address</label>
-                    <textarea class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" rows="2" placeholder="Full street address"></textarea>
+                    <textarea name="address" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" rows="2" placeholder="Full street address"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Electricity Unit Tariff</label>
-                        <input type="text" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="₹10.00 / unit">
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Branch Phone</label>
+                        <input type="text" name="phone" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="+91 79228 99887">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Branch Email</label>
+                        <input type="email" name="email" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="bopal@rudrapg.com">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Unit Tariff (₹)</label>
+                        <input type="number" step="0.5" name="electricity_unit_rate" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="10.00">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Manager Name</label>
-                        <input type="text" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Branch Manager">
+                        <input type="text" name="manager_name" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Manager Name">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Manager Phone</label>
+                        <input type="text" name="manager_phone" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="+91 98765 00000">
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" @click="addBranchModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
-                    <button type="button" @click="addBranchModalOpen = false; toastr.success('Branch created successfully!')" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Branch</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Branch</button>
                 </div>
             </form>
         </div>
@@ -147,6 +168,7 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 10,
+        placeholder: "No PG Branches Found",
         columns: [
             {title: "Branch Code", field: "code", width: 130, formatter: function(cell){
                 return "<span class='bg-slate-900 text-white font-mono text-xs px-2.5 py-1 rounded-md'>" + cell.getValue() + "</span>";
@@ -155,13 +177,11 @@
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
             {title: "City", field: "city", width: 120},
-            {title: "Manager", field: "manager", width: 150},
-            {title: "Beds Occupied", field: "occupied_beds", formatter: function(cell, row){
-                var total = cell.getRow().getData().beds_count;
-                return cell.getValue() + " / " + total + " beds";
+            {title: "Manager", field: "manager_name", width: 150},
+            {title: "Unit Rate", field: "electricity_unit_rate", width: 130, formatter: function(cell){
+                return "₹" + cell.getValue() + " / unit";
             }},
-            {title: "Unit Rate", field: "unit_rate", width: 130},
-            {title: "QR Standee", field: "qr_hash", formatter: function(cell){
+            {title: "QR Standee", field: "qr_code_hash", formatter: function(cell){
                 return '<button class="border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-semibold py-1 px-2.5 rounded-lg transition-colors flex items-center gap-1"><i class="fa-solid fa-qrcode"></i> View QR</button>';
             }, cellClick: function(e, cell){
                 var rowData = cell.getRow().getData();
@@ -182,6 +202,35 @@
 
     document.getElementById("export-csv").addEventListener("click", function(){
         table.download("csv", "branches.csv");
+    });
+
+    document.getElementById("create-branch-form").addEventListener("submit", function(e){
+        e.preventDefault();
+        var formData = new FormData(this);
+
+        fetch("{{ route('super_admin.branches.store') }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                table.addData([data.data], true);
+                toastr.success(data.message);
+                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
+                alpineData.addBranchModalOpen = false;
+                this.reset();
+            } else {
+                toastr.error(data.message || "Failed to create Branch.");
+            }
+        })
+        .catch(err => {
+            toastr.error("An error occurred during submission.");
+        });
     });
 </script>
 @endsection

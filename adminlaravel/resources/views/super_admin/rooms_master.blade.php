@@ -36,7 +36,7 @@
 
                 <!-- 5 Rooms Per Row Grid -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-                    @foreach(array_filter($rooms, fn($r) => $r['floor'] == $floor) as $room)
+                    @foreach(collect($rooms)->where('floor', $floor) as $room)
                         <div class="p-3.5 rounded-xl border {{ $room['status'] == 'Full' ? 'border-rose-200 bg-rose-50/50' : 'border-emerald-200 bg-emerald-50/40' }} transition-all">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="font-bold text-sm text-slate-900">Room {{ $room['room_number'] }}</span>
@@ -98,49 +98,65 @@
                 </button>
             </div>
             
-            <form class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Room Number</label>
-                        <input type="text" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. 501">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Floor Number</label>
-                        <select class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option>Floor 1</option>
-                            <option>Floor 2</option>
-                            <option>Floor 3</option>
-                            <option>Floor 4</option>
-                        </select>
-                    </div>
-                </div>
+            <form id="create-room-form" class="p-6 space-y-4">
+                @csrf
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sharing Type</label>
-                    <select class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option>Private Room (1 Bed)</option>
-                        <option>2 Sharing (2 Beds)</option>
-                        <option>3 Sharing (3 Beds)</option>
-                        <option>4 Sharing (4 Beds)</option>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">PG Branch</label>
+                    <select name="branch_id" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        @foreach($allBranches as $b)
+                            <option value="{{ $b->id }}">{{ $b->name }} ({{ $b->code }})</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Room Number</label>
+                        <input type="text" name="room_number" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. 501">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Floor Number</label>
+                        <select name="floor_number" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="1">Floor 1</option>
+                            <option value="2">Floor 2</option>
+                            <option value="3">Floor 3</option>
+                            <option value="4">Floor 4</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sharing Type</label>
+                        <select name="sharing_type" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="2 Sharing AC">2 Sharing AC</option>
+                            <option value="3 Sharing AC">3 Sharing AC</option>
+                            <option value="4 Sharing AC">4 Sharing AC</option>
+                            <option value="Private Room">Private Room</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Total Beds</label>
+                        <input type="number" name="max_beds" min="1" max="6" value="2" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Monthly Rent (₹)</label>
-                        <input type="number" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="6500">
+                        <input type="number" name="rent" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="6500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Security Deposit (₹)</label>
-                        <input type="number" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="10000">
+                        <input type="number" name="deposit" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="10000">
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" checked id="acChk" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <input type="hidden" name="is_ac" value="0">
+                    <input type="checkbox" name="is_ac" value="1" checked id="acChk" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                     <label for="acChk" class="text-xs font-semibold text-slate-700">Air Conditioned (AC Room)</label>
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" @click="addRoomModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
-                    <button type="button" @click="addRoomModalOpen = false; toastr.success('New room added!')" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Room</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Room</button>
                 </div>
             </form>
         </div>
@@ -158,6 +174,7 @@
         responsiveLayout: "collapse",
         pagination: "local",
         paginationSize: 10,
+        placeholder: "No Rooms Found",
         columns: [
             {title: "Room No", field: "room_number", width: 100, formatter: function(cell){
                 return "<strong class='text-slate-900'>Room " + cell.getValue() + "</strong>";
@@ -177,6 +194,32 @@
                 return cell.getValue() == "Full" ? '<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-full">FULL</span>' : '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Available</span>';
             }},
         ]
+    });
+
+    document.getElementById("create-room-form").addEventListener("submit", function(e){
+        e.preventDefault();
+        var formData = new FormData(this);
+
+        fetch("{{ route('super_admin.rooms_master.store') }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                toastr.success(data.message);
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                toastr.error(data.message || "Failed to create Room.");
+            }
+        })
+        .catch(err => {
+            toastr.error("An error occurred during submission.");
+        });
     });
 </script>
 @endsection
