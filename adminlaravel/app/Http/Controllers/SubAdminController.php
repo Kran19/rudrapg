@@ -103,6 +103,17 @@ class SubAdminController extends Controller
                     'kyc_status' => 'VERIFIED',
                 ]);
 
+                if (!$student->bed_id) {
+                    $availableBed = \App\Models\Bed::where('status', 'AVAILABLE')->first();
+                    if ($availableBed) {
+                        $student->update([
+                            'room_id' => $availableBed->room_id,
+                            'bed_id' => $availableBed->id
+                        ]);
+                        $student->refresh();
+                    }
+                }
+
                 if ($student->bed) {
                     $student->bed->update(['status' => 'OCCUPIED']);
 

@@ -1,27 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_card.dart';
 import '../../core/widgets/custom_text_field.dart';
-import '../../data/dummy/dummy_data.dart';
+import '../home/data/student_repository.dart';
 
-class ElectricityScreen extends StatefulWidget {
+class ElectricityScreen extends ConsumerStatefulWidget {
   const ElectricityScreen({super.key});
 
   @override
-  State<ElectricityScreen> createState() => _ElectricityScreenState();
+  ConsumerState<ElectricityScreen> createState() => _ElectricityScreenState();
 }
 
-class _ElectricityScreenState extends State<ElectricityScreen> {
+class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
   final _readingController = TextEditingController();
   bool _isPhotoAttached = false;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _readingController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitReading() async {
+    final reading = _readingController.text.trim();
+    if (reading.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter current reading.')));
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await ref.read(studentRepositoryProvider).submitElectricityReading({
+        'current_reading': reading,
+        'meter_photo_path': _isPhotoAttached ? 'uploads/meter/dummy_photo.jpg' : null,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reading submitted! Sub Admin will audit.')));
+        _readingController.clear();
+        setState(() {
+          _isPhotoAttached = false;
+        });
+        ref.invalidate(electricityHistoryProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final elec = DummyData.electricityData;
-    final history = elec['history'] as List<Map<String, dynamic>>;
+    final historyAsync = ref.watch(electricityHistoryProvider);
+    final profileAsync = ref.watch(studentProfileProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,57 +84,41 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Current Reading Summary Card
-              CustomCard(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              profileAsync.when(
+                data: (profile) {
+                  // If we had the real previous reading, we would compute it here.
+                  // For now, we just display static info based on profile or 0 if history is empty.
+                  return CustomCard(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'SUB-METER READING (JULY 2026)',
-                          style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'SUB-METER OVERVIEW',
+                              style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
+                            ),
+                          ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            '✓ APPROVED',
-                            style: AppTypography.badge.copyWith(color: AppColors.success),
-                          ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Room ${profile.roomNumber}',
+                          style: AppTypography.displayMedium.copyWith(color: Colors.white),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Branch: ${profile.branchName}',
+                          style: AppTypography.bodySmall.copyWith(color: Colors.white70),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      '${elec['currReading']} kWh',
-                      style: AppTypography.displayMedium.copyWith(color: Colors.white),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Previous Reading: ${elec['prevReading']} kWh • Units: ${elec['unitsConsumed']} Units',
-                      style: AppTypography.bodySmall.copyWith(color: Colors.white70),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    const Divider(color: Colors.white24),
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Tariff Rate: ₹${elec['unitRate'].toInt()}/unit', style: AppTypography.bodySmall.copyWith(color: Colors.white)),
-                        Text(
-                          'Total Bill: ₹${elec['totalAmount'].toInt()}',
-                          style: AppTypography.titleMedium.copyWith(color: AppColors.accent, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => const SizedBox(),
               ),
               const SizedBox(height: AppSpacing.xxl),
 
@@ -146,11 +176,8 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
                     CustomButton(
                       text: 'Submit Reading for Audit',
                       icon: Icons.send_rounded,
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Reading submitted! Sub Admin will audit and approve.')),
-                        );
-                      },
+                      isLoading: _isSubmitting,
+                      onPressed: _submitReading,
                     ),
                   ],
                 ),
@@ -160,50 +187,60 @@ class _ElectricityScreenState extends State<ElectricityScreen> {
               // Reading History Logs
               Text('Meter Reading History', style: AppTypography.titleLarge),
               const SizedBox(height: AppSpacing.md),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: history.length,
-                separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                itemBuilder: (context, index) {
-                  final item = history[index];
-                  return CustomCard(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+              historyAsync.when(
+                data: (history) {
+                  if (history.isEmpty) {
+                    return const Text('No history found.');
+                  }
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: history.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                    itemBuilder: (context, index) {
+                      final item = history[index];
+                      final amount = (double.tryParse(item['total_amount']?.toString() ?? '0') ?? 0).toInt();
+                      return CustomCard(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(item['month'], style: AppTypography.titleSmall),
-                            const SizedBox(height: 2),
-                            Text('Reading: ${item['reading']} kWh (${item['units']} Units)', style: AppTypography.bodySmall),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(item['reading_month'] ?? 'Month', style: AppTypography.titleSmall),
+                                const SizedBox(height: 2),
+                                Text('Reading: ${item['current_reading']} kWh (${item['units_consumed']} Units)', style: AppTypography.bodySmall),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '₹$amount',
+                                  style: AppTypography.titleSmall.copyWith(color: AppColors.success),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    item['status'] ?? 'PENDING',
+                                    style: AppTypography.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '₹${item['amount'].toInt()}',
-                              style: AppTypography.titleSmall.copyWith(color: AppColors.success),
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.success.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                item['status'],
-                                style: AppTypography.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Text('Error loading history: $err'),
               ),
             ],
           ),

@@ -29,8 +29,11 @@ Route::prefix('v1')->group(function () {
         Route::prefix('student')->middleware('role:STUDENT')->group(function () {
             Route::get('/profile', [StudentApiController::class, 'profile']);
             Route::post('/payment-proof', [StudentApiController::class, 'uploadPaymentProof']);
+            Route::get('/payments', [StudentApiController::class, 'payments']);
             Route::post('/electricity-reading', [StudentApiController::class, 'submitElectricityReading']);
+            Route::get('/electricity-readings', [StudentApiController::class, 'electricityReadings']);
             Route::post('/complaint', [StudentApiController::class, 'createComplaint']);
+            Route::get('/complaints', [StudentApiController::class, 'complaints']);
             Route::get('/notices', [StudentApiController::class, 'notices']);
         });
 

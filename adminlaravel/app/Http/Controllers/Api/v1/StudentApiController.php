@@ -88,4 +88,44 @@ class StudentApiController extends Controller
             'data' => AnnouncementResource::collection($notices),
         ]);
     }
+
+    public function electricityReadings(Request $request): JsonResponse
+    {
+        $student = $this->studentService->getProfile($request->user());
+        $readings = \App\Models\ElectricityReading::where('student_id', $student->id)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => ElectricityReadingResource::collection($readings),
+        ]);
+    }
+
+    public function payments(Request $request): JsonResponse
+    {
+        $student = $this->studentService->getProfile($request->user());
+        $payments = \App\Models\Payment::with('proof')
+            ->where('student_id', $student->id)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => PaymentResource::collection($payments),
+        ]);
+    }
+
+    public function complaints(Request $request): JsonResponse
+    {
+        $student = $this->studentService->getProfile($request->user());
+        $complaints = \App\Models\Complaint::where('student_id', $student->id)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => ComplaintResource::collection($complaints),
+        ]);
+    }
 }

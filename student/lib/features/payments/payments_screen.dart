@@ -1,27 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_card.dart';
 import '../../core/widgets/custom_text_field.dart';
-import '../../data/dummy/dummy_data.dart';
+import '../home/data/student_repository.dart';
 
-class PaymentsScreen extends StatefulWidget {
+class PaymentsScreen extends ConsumerStatefulWidget {
   const PaymentsScreen({super.key});
 
   @override
-  State<PaymentsScreen> createState() => _PaymentsScreenState();
+  ConsumerState<PaymentsScreen> createState() => _PaymentsScreenState();
 }
 
-class _PaymentsScreenState extends State<PaymentsScreen> {
+class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   final _utrController = TextEditingController();
   bool _isProofSelected = false;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _utrController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitProof() async {
+    final utr = _utrController.text.trim();
+    if (utr.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter UTR number.')));
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await ref.read(studentRepositoryProvider).submitPaymentProof({
+        'utr_number': utr,
+        'screenshot_path': _isProofSelected ? 'uploads/proofs/dummy_proof.jpg' : null,
+      });
+
+      if (mounted) {
+        Navigator.pop(context); // close modal
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment proof submitted for verification.')));
+        _utrController.clear();
+        setState(() {
+          _isProofSelected = false;
+        });
+        ref.invalidate(paymentHistoryProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final resident = DummyData.sampleResident;
-    final history = DummyData.paymentHistory;
+    final profileAsync = ref.watch(studentProfileProvider);
+    final historyAsync = ref.watch(paymentHistoryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,96 +85,108 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Pending Dues Summary Header Card
-              CustomCard(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              profileAsync.when(
+                data: (resident) => Column(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'TOTAL OUTSTANDING DUES',
-                          style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
+                    CustomCard(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'TOTAL OUTSTANDING DUES',
+                                style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.success.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  resident.rentStatus.toUpperCase() == 'UNPAID' ? '! DUES PENDING' : '✓ NO DUES PENDING',
+                                  style: AppTypography.badge.copyWith(
+                                      color: resident.rentStatus.toUpperCase() == 'UNPAID' ? AppColors.warning : AppColors.success),
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Text(
-                            '✓ NO DUES PENDING',
-                            style: AppTypography.badge.copyWith(color: AppColors.success),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            resident.rentStatus.toUpperCase() == 'UNPAID' ? '₹${resident.monthlyRent.toInt()}' : '₹0.00',
+                            style: AppTypography.displayLarge.copyWith(color: Colors.white),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Current rent of ₹${resident.monthlyRent.toInt()} is ${resident.rentStatus}. Deposit: ₹${resident.securityDeposit.toInt()}.',
+                            style: AppTypography.bodySmall.copyWith(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+
+                    // Breakout Categories Grid
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Dues Breakdown', style: AppTypography.titleLarge),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildBreakdownCard(
+                            title: 'Monthly Rent',
+                            amount: '₹${resident.monthlyRent.toInt()}',
+                            status: resident.rentStatus,
+                            color: resident.rentStatus.toUpperCase() == 'UNPAID' ? AppColors.warning : AppColors.success,
+                            icon: Icons.home_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: _buildBreakdownCard(
+                            title: 'Security Deposit',
+                            amount: '₹${resident.securityDeposit.toInt()}',
+                            status: resident.depositStatus,
+                            color: AppColors.accent,
+                            icon: Icons.security_rounded,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      '₹0.00',
-                      style: AppTypography.displayLarge.copyWith(color: Colors.white),
-                    ),
                     const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'August rent of ₹${resident.monthlyRent.toInt()} is paid. Deposit held: ₹${resident.securityDeposit.toInt()}.',
-                      style: AppTypography.bodySmall.copyWith(color: Colors.white70),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildBreakdownCard(
+                            title: 'Electricity Charges',
+                            amount: 'N/A',
+                            status: 'Unknown',
+                            color: AppColors.secondary,
+                            icon: Icons.bolt_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: _buildBreakdownCard(
+                            title: 'Pending Amount',
+                            amount: resident.rentStatus.toUpperCase() == 'UNPAID' ? '₹${resident.monthlyRent.toInt()}' : '₹0',
+                            status: resident.rentStatus.toUpperCase() == 'UNPAID' ? 'Due' : 'Clear',
+                            color: resident.rentStatus.toUpperCase() == 'UNPAID' ? AppColors.warning : AppColors.success,
+                            icon: Icons.check_circle_rounded,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Breakout Categories Grid
-              Text('Dues Breakdown', style: AppTypography.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildBreakdownCard(
-                      title: 'Monthly Rent',
-                      amount: '₹6,500',
-                      status: 'Paid',
-                      color: AppColors.success,
-                      icon: Icons.home_rounded,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: _buildBreakdownCard(
-                      title: 'Security Deposit',
-                      amount: '₹10,000',
-                      status: 'Verified & Held',
-                      color: AppColors.accent,
-                      icon: Icons.security_rounded,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildBreakdownCard(
-                      title: 'Electricity Charges',
-                      amount: '₹450',
-                      status: 'Paid',
-                      color: AppColors.success,
-                      icon: Icons.bolt_rounded,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: _buildBreakdownCard(
-                      title: 'Pending Amount',
-                      amount: '₹0',
-                      status: 'Clear',
-                      color: AppColors.success,
-                      icon: Icons.check_circle_rounded,
-                    ),
-                  ),
-                ],
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => const SizedBox(),
               ),
               const SizedBox(height: AppSpacing.xxl),
 
@@ -176,61 +235,71 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               // Payment Timeline & History
               Text('Payment History', style: AppTypography.titleLarge),
               const SizedBox(height: AppSpacing.md),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: history.length,
-                separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                itemBuilder: (context, index) {
-                  final item = history[index];
-                  return CustomCard(
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.receipt_long_rounded, color: AppColors.success, size: 20),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(item['type'], style: AppTypography.titleSmall),
-                              const SizedBox(height: 2),
-                              Text('${item['mode']} • ${item['ref']}', style: AppTypography.bodySmall),
-                              Text(item['date'], style: AppTypography.caption),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+              historyAsync.when(
+                data: (history) {
+                  if (history.isEmpty) {
+                    return const Text('No payment history found.');
+                  }
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: history.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                    itemBuilder: (context, index) {
+                      final item = history[index];
+                      final amount = (double.tryParse(item['amount']?.toString() ?? '0') ?? 0).toInt();
+                      return CustomCard(
+                        child: Row(
                           children: [
-                            Text(
-                              '₹${item['amount'].toInt()}',
-                              style: AppTypography.titleSmall.copyWith(color: AppColors.success),
-                            ),
-                            const SizedBox(height: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppColors.success.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppColors.success.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
                               ),
-                              child: Text(
-                                item['status'],
-                                style: AppTypography.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
+                              child: const Icon(Icons.receipt_long_rounded, color: AppColors.success, size: 20),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(item['payment_type'] ?? 'PAYMENT', style: AppTypography.titleSmall),
+                                  const SizedBox(height: 2),
+                                  Text('${item['payment_mode']} • ${item['tx_reference']}', style: AppTypography.bodySmall),
+                                  Text(item['payment_date'] ?? '', style: AppTypography.caption),
+                                ],
                               ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '₹$amount',
+                                  style: AppTypography.titleSmall.copyWith(color: AppColors.success),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    item['status'] ?? 'PENDING',
+                                    style: AppTypography.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   );
                 },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Text('Error loading payments: $err'),
               ),
             ],
           ),
@@ -344,12 +413,8 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   CustomButton(
                     text: 'Submit Proof to Manager',
                     icon: Icons.send_rounded,
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Payment proof submitted for Sub Admin verification.')),
-                      );
-                    },
+                    isLoading: _isSubmitting,
+                    onPressed: _submitProof,
                   ),
                 ],
               ),

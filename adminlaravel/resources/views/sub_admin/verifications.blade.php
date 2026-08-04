@@ -4,7 +4,9 @@
 @section('page_title', 'Student Verification Desk (Naroda Branch)')
 
 @section('content')
-<div x-data="{ verifyModalOpen: false, activeStudent: {} }">
+<div x-data="{ verifyModalOpen: false, activeStudent: {} }"
+     @open-verify-modal.window="activeStudent = $event.detail; verifyModalOpen = true"
+     @close-verify-modal.window="verifyModalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h3 class="text-lg font-bold text-slate-900">Student Booking Approval Queue</h3>
@@ -124,11 +126,11 @@
 
             <!-- Footer Actions with SweetAlert2 Triggers -->
             <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-                <button type="button" @click="rejectBooking()" 
+                <button type="button" @click="rejectBooking(activeStudent)" 
                         class="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors">
                     <i class="fa-solid fa-xmark mr-1"></i> Reject Application
                 </button>
-                <button type="button" @click="approveBooking()" 
+                <button type="button" @click="approveBooking(activeStudent)" 
                         class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
                     <i class="fa-solid fa-check mr-1"></i> Approve Booking & Key Handover
                 </button>
@@ -172,9 +174,7 @@
                 return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1"><i class="fa-solid fa-file-contract"></i> Audit</button>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.activeStudent = data;
-                alpineData.verifyModalOpen = true;
+                window.dispatchEvent(new CustomEvent('open-verify-modal', { detail: data }));
             }},
         ]
     });
@@ -187,10 +187,7 @@
         table.download("csv", "verification_queue.csv");
     });
 
-    function approveBooking() {
-        var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-        var student = alpineData.activeStudent;
-
+    function approveBooking(student) {
         Swal.fire({
             title: 'Approve Student Booking?',
             text: "This will allocate the bed, update database records, and confirm booking.",
@@ -210,7 +207,7 @@
                 .then(res => res.json())
                 .then(data => {
                     toastr.success(data.message);
-                    alpineData.verifyModalOpen = false;
+                    window.dispatchEvent(new CustomEvent('close-verify-modal'));
                     setTimeout(() => window.location.reload(), 1000);
                 })
                 .catch(err => {
@@ -220,10 +217,7 @@
         });
     }
 
-    function rejectBooking() {
-        var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-        var student = alpineData.activeStudent;
-
+    function rejectBooking(student) {
         Swal.fire({
             title: 'Reject Application?',
             text: "Please confirm application rejection.",
@@ -243,7 +237,7 @@
                 .then(res => res.json())
                 .then(data => {
                     toastr.error(data.message);
-                    alpineData.verifyModalOpen = false;
+                    window.dispatchEvent(new CustomEvent('close-verify-modal'));
                     setTimeout(() => window.location.reload(), 1000);
                 })
                 .catch(err => {
