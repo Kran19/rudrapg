@@ -1,4 +1,5 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(.*)$ adminlaravel/public/$1 [L]
+    RewriteBase /rudrapgwebsite/
+    RewriteRule ^(.*)$ adminlaravel/public/$1 [L,QSA]
 </IfModule>
