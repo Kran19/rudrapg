@@ -18,6 +18,15 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/student/register', [StudentApiController::class, 'register']);
 
+    // Public App Version Check
+    Route::get('/app-version', function () {
+        return response()->json([
+            'version' => config('version.android_version', '1.0.0'),
+            'download_url' => config('version.download_url', ''),
+            'force_update' => config('version.force_update', false),
+        ]);
+    });
+
     // Protected Routes (Sanctum Auth)
     Route::middleware('auth:sanctum')->group(function () {
 
