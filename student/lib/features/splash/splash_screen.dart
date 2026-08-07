@@ -97,7 +97,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
         return WillPopScope(
           onWillPop: () async => !forceUpdate,
           child: AlertDialog(
-            backgroundColor: AppColors.surface,
+            backgroundColor: AppColors.card,
             title: const Text('Update Required', style: TextStyle(color: AppColors.textPrimary)),
             content: const Text(
               'A new version of the app is available. Please update to continue using the application seamlessly.',
