@@ -4,7 +4,8 @@
 @section('page_title', 'Sub Admin Directory & Branch Assignment')
 
 @section('content')
-<div x-data="{ modalOpen: false }">
+<div x-data="{ modalOpen: false }"
+     @close-subadmin-modal.window="modalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h3 class="text-lg font-bold text-slate-900">Sub Admin Directory</h3>
@@ -147,11 +148,10 @@
         })
         .then(res => res.json())
         .then(data => {
-            if (data.status === "success") {
+                if (data.status === "success") {
                 table.addData([data.data], true);
                 toastr.success(data.message);
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.modalOpen = false;
+                window.dispatchEvent(new CustomEvent('close-subadmin-modal'));
                 this.reset();
             } else {
                 toastr.error(data.message || "Failed to create Sub Admin.");

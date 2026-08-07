@@ -4,7 +4,9 @@
 @section('page_title', 'Monthly Electricity Meter Reading Audit')
 
 @section('content')
-<div x-data="{ auditModalOpen: false, activeReading: {} }">
+<div x-data="{ auditModalOpen: false, activeReading: {} }"
+     @open-audit-modal.window="activeReading = $event.detail; auditModalOpen = true"
+     @close-audit-modal.window="auditModalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h3 class="text-lg font-bold text-slate-900">Student Electricity Meter Submissions</h3>
@@ -86,9 +88,9 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" @click="rejectReading()" 
+                    <button type="button" @click="rejectReading(activeReading.id)" 
                             class="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl">Reject</button>
-                    <button type="button" @click="approveReading()" 
+                    <button type="button" @click="approveReading(activeReading.id)" 
                             class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">
                         <i class="fa-solid fa-check mr-1"></i> Approve Bill
                     </button>
@@ -135,9 +137,7 @@
                 return '<button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Audit</button>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.activeReading = data;
-                alpineData.auditModalOpen = true;
+                window.dispatchEvent(new CustomEvent('open-audit-modal', { detail: data }));
             }},
         ]
     });
@@ -150,11 +150,8 @@
         table.download("csv", "electricity_meter_audit.csv");
     });
 
-    function approveReading() {
-        var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-        var reading = alpineData.activeReading;
-
-        fetch("/sub-admin/electricity-audit/" + reading.id + "/approve", {
+    function approveReading(id) {
+        fetch("/sub-admin/electricity-audit/" + id + "/approve", {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -164,7 +161,7 @@
         .then(res => res.json())
         .then(data => {
             toastr.success(data.message);
-            alpineData.auditModalOpen = false;
+            window.dispatchEvent(new CustomEvent('close-audit-modal'));
             setTimeout(() => window.location.reload(), 1000);
         })
         .catch(err => {
@@ -172,11 +169,8 @@
         });
     }
 
-    function rejectReading() {
-        var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-        var reading = alpineData.activeReading;
-
-        fetch("/sub-admin/electricity-audit/" + reading.id + "/reject", {
+    function rejectReading(id) {
+        fetch("/sub-admin/electricity-audit/" + id + "/reject", {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -186,7 +180,7 @@
         .then(res => res.json())
         .then(data => {
             toastr.error(data.message);
-            alpineData.auditModalOpen = false;
+            window.dispatchEvent(new CustomEvent('close-audit-modal'));
             setTimeout(() => window.location.reload(), 1000);
         })
         .catch(err => {

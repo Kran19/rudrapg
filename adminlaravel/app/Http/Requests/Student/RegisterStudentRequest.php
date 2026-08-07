@@ -24,6 +24,10 @@ class RegisterStudentRequest extends FormRequest
             'parent_name' => ['required', 'string', 'max:255'],
             'parent_phone' => ['required', 'string', 'max:20'],
             'current_address' => ['required', 'string'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:5120'],
+            'aadhaar_front' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:5120'],
+            'aadhaar_back' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:5120'],
+            'pan_card' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:5120'],
         ];
     }
 }

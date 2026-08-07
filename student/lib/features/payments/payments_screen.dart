@@ -1,5 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
@@ -17,7 +20,7 @@ class PaymentsScreen extends ConsumerStatefulWidget {
 
 class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   final _utrController = TextEditingController();
-  bool _isProofSelected = false;
+  XFile? _proofImage;
   bool _isSubmitting = false;
 
   @override
@@ -26,10 +29,33 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage(StateSetter setModalState) async {
+    final status = await Permission.photos.request();
+    if (status.isGranted) {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image != null) {
+        setModalState(() {
+          _proofImage = image;
+        });
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permission required to access gallery')),
+        );
+      }
+    }
+  }
+
   Future<void> _submitProof() async {
     final utr = _utrController.text.trim();
     if (utr.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter UTR number.')));
+      return;
+    }
+    if (_proofImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a payment screenshot.')));
       return;
     }
 
@@ -38,17 +64,19 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     });
 
     try {
-      await ref.read(studentRepositoryProvider).submitPaymentProof({
+      final formData = FormData.fromMap({
         'utr_number': utr,
-        'screenshot_path': _isProofSelected ? 'uploads/proofs/dummy_proof.jpg' : null,
+        'screenshot_path': await MultipartFile.fromFile(_proofImage!.path),
       });
+
+      await ref.read(studentRepositoryProvider).submitPaymentProof(formData);
 
       if (mounted) {
         Navigator.pop(context); // close modal
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment proof submitted for verification.')));
         _utrController.clear();
         setState(() {
-          _isProofSelected = false;
+          _proofImage = null;
         });
         ref.invalidate(paymentHistoryProvider);
       }
@@ -104,7 +132,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success.withValues(alpha: 0.2),
+                                  color: AppColors.success.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
@@ -202,7 +230,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.secondary.withValues(alpha: 0.12),
+                            color: AppColors.secondary.withOpacity(0.12),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.qr_code_rounded, color: AppColors.secondary, size: 24),
@@ -254,7 +282,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppColors.success.withValues(alpha: 0.12),
+                                color: AppColors.success.withOpacity(0.12),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.receipt_long_rounded, color: AppColors.success, size: 20),
@@ -282,7 +310,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.success.withValues(alpha: 0.1),
+                                    color: AppColors.success.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -327,7 +355,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -357,6 +385,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final isProofSelected = _proofImage != null;
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -386,22 +415,20 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
 
                   CustomCard(
                     onTap: () {
-                      setModalState(() {
-                        _isProofSelected = !_isProofSelected;
-                      });
+                      _pickImage(setModalState);
                     },
-                    backgroundColor: _isProofSelected ? AppColors.success.withValues(alpha: 0.05) : Colors.white,
-                    border: Border.all(color: _isProofSelected ? AppColors.success : AppColors.divider),
+                    backgroundColor: isProofSelected ? AppColors.success.withOpacity(0.05) : Colors.white,
+                    border: Border.all(color: isProofSelected ? AppColors.success : AppColors.divider),
                     child: Row(
                       children: [
                         Icon(
-                          _isProofSelected ? Icons.check_circle_rounded : Icons.add_photo_alternate_rounded,
-                          color: _isProofSelected ? AppColors.success : AppColors.secondary,
+                          isProofSelected ? Icons.check_circle_rounded : Icons.add_photo_alternate_rounded,
+                          color: isProofSelected ? AppColors.success : AppColors.secondary,
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
-                            _isProofSelected ? 'payment_screenshot_august.png Attached' : 'Select Screenshot Image File',
+                            isProofSelected ? 'File Attached: ${_proofImage!.name}' : 'Select Screenshot Image File',
                             style: AppTypography.bodyMedium,
                           ),
                         ),

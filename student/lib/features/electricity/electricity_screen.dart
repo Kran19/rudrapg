@@ -1,5 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
@@ -17,7 +20,7 @@ class ElectricityScreen extends ConsumerStatefulWidget {
 
 class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
   final _readingController = TextEditingController();
-  bool _isPhotoAttached = false;
+  XFile? _meterPhoto;
   bool _isSubmitting = false;
 
   @override
@@ -26,10 +29,33 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final status = await Permission.camera.request();
+    if (status.isGranted) {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+      if (image != null) {
+        setState(() {
+          _meterPhoto = image;
+        });
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permission required to access camera')),
+        );
+      }
+    }
+  }
+
   Future<void> _submitReading() async {
     final reading = _readingController.text.trim();
     if (reading.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter current reading.')));
+      return;
+    }
+    if (_meterPhoto == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please capture a meter photo.')));
       return;
     }
 
@@ -38,16 +64,18 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
     });
 
     try {
-      await ref.read(studentRepositoryProvider).submitElectricityReading({
+      final formData = FormData.fromMap({
         'current_reading': reading,
-        'meter_photo_path': _isPhotoAttached ? 'uploads/meter/dummy_photo.jpg' : null,
+        'meter_photo_path': await MultipartFile.fromFile(_meterPhoto!.path),
       });
+
+      await ref.read(studentRepositoryProvider).submitElectricityReading(formData);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reading submitted! Sub Admin will audit.')));
         _readingController.clear();
         setState(() {
-          _isPhotoAttached = false;
+          _meterPhoto = null;
         });
         ref.invalidate(electricityHistoryProvider);
       }
@@ -68,6 +96,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
   Widget build(BuildContext context) {
     final historyAsync = ref.watch(electricityHistoryProvider);
     final profileAsync = ref.watch(studentProfileProvider);
+    final isPhotoAttached = _meterPhoto != null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -86,8 +115,6 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
               // Current Reading Summary Card
               profileAsync.when(
                 data: (profile) {
-                  // If we had the real previous reading, we would compute it here.
-                  // For now, we just display static info based on profile or 0 if history is empty.
                   return CustomCard(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.all(AppSpacing.xl),
@@ -131,7 +158,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                   children: [
                     CustomTextField(
                       label: 'Current Sub-Meter Reading (kWh)',
-                      hint: 'Enter 5-digit meter reading',
+                      hint: 'Enter meter reading',
                       prefixIcon: Icons.electric_meter_rounded,
                       keyboardType: TextInputType.number,
                       controller: _readingController,
@@ -139,18 +166,14 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                     const SizedBox(height: AppSpacing.md),
 
                     CustomCard(
-                      onTap: () {
-                        setState(() {
-                          _isPhotoAttached = !_isPhotoAttached;
-                        });
-                      },
-                      backgroundColor: _isPhotoAttached ? AppColors.success.withValues(alpha: 0.05) : Colors.white,
-                      border: Border.all(color: _isPhotoAttached ? AppColors.success : AppColors.divider),
+                      onTap: _pickImage,
+                      backgroundColor: isPhotoAttached ? AppColors.success.withOpacity(0.05) : Colors.white,
+                      border: Border.all(color: isPhotoAttached ? AppColors.success : AppColors.divider),
                       child: Row(
                         children: [
                           Icon(
-                            _isPhotoAttached ? Icons.check_circle_rounded : Icons.camera_alt_outlined,
-                            color: _isPhotoAttached ? AppColors.success : AppColors.secondary,
+                            isPhotoAttached ? Icons.check_circle_rounded : Icons.camera_alt_outlined,
+                            color: isPhotoAttached ? AppColors.success : AppColors.secondary,
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
@@ -160,9 +183,9 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                                 Text('Physical Meter Photo Snapshot', style: AppTypography.titleSmall),
                                 const SizedBox(height: 2),
                                 Text(
-                                  _isPhotoAttached ? 'meter_photo_july.jpg Attached' : 'Tap to capture or upload meter photo',
+                                  isPhotoAttached ? 'Attached: ${_meterPhoto!.name}' : 'Tap to capture meter photo',
                                   style: AppTypography.bodySmall.copyWith(
-                                    color: _isPhotoAttached ? AppColors.success : AppColors.textSecondary,
+                                    color: isPhotoAttached ? AppColors.success : AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -223,7 +246,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.success.withValues(alpha: 0.1),
+                                    color: AppColors.success.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(

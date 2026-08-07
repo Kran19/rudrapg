@@ -4,7 +4,8 @@
 @section('page_title', 'Monthly Rent Dues & Collection Ledger')
 
 @section('content')
-<div x-data="{ cashModalOpen: false }">
+<div x-data="{ cashModalOpen: false }"
+     @close-cash-modal.window="cashModalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h3 class="text-lg font-bold text-slate-900">August 2026 Rent Dues & Offline Payments</h3>
@@ -144,8 +145,7 @@
         .then(data => {
             if (data.status === "success") {
                 toastr.success(data.message);
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.cashModalOpen = false;
+                window.dispatchEvent(new CustomEvent('close-cash-modal'));
                 setTimeout(() => window.location.reload(), 1000);
             } else {
                 toastr.error(data.message || "Failed to record cash payment.");

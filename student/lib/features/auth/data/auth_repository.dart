@@ -25,8 +25,8 @@ class AuthRepository {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        if (data['token'] != null) {
-          await _prefs.setString('auth_token', data['token']);
+        if (data['data'] != null && data['data']['token'] != null) {
+          await _prefs.setString('auth_token', data['data']['token']);
           // Could also save user data to prefs if needed
         }
       }

@@ -4,7 +4,8 @@
 @section('page_title', 'Complaints Desk & Branch Announcement Notices')
 
 @section('content')
-<div x-data="{ noticeModalOpen: false }">
+<div x-data="{ noticeModalOpen: false }"
+     @close-notice-modal.window="noticeModalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h3 class="text-lg font-bold text-slate-900">Branch Complaints & Announcements</h3>
@@ -152,8 +153,7 @@
         .then(data => {
             if (data.status === "success") {
                 toastr.success(data.message);
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.noticeModalOpen = false;
+                window.dispatchEvent(new CustomEvent('close-notice-modal'));
                 this.reset();
             } else {
                 toastr.error(data.message || "Failed to broadcast notice.");

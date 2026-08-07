@@ -22,7 +22,22 @@ class StudentApiController extends Controller
 
     public function register(RegisterStudentRequest $request): JsonResponse
     {
-        $student = $this->studentService->registerFromQr($request->validated());
+        $data = $request->validated();
+        
+        if ($request->hasFile('profile_photo')) {
+            $data['profile_photo_path'] = $request->file('profile_photo')->store('uploads/kyc', 'public');
+        }
+        if ($request->hasFile('aadhaar_front')) {
+            $data['aadhaar_front_path'] = $request->file('aadhaar_front')->store('uploads/kyc', 'public');
+        }
+        if ($request->hasFile('aadhaar_back')) {
+            $data['aadhaar_back_path'] = $request->file('aadhaar_back')->store('uploads/kyc', 'public');
+        }
+        if ($request->hasFile('pan_card')) {
+            $data['pan_card_path'] = $request->file('pan_card')->store('uploads/kyc', 'public');
+        }
+
+        $student = $this->studentService->registerFromQr($data);
 
         return response()->json([
             'status' => 'success',

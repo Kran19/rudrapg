@@ -10,8 +10,10 @@ class AuthService
 {
     public function login(array $credentials): array
     {
-        $user = User::where('email', $credentials['email'])
-            ->orWhere('phone', $credentials['email'])
+        $loginId = $credentials['phone'] ?? $credentials['email'] ?? null;
+
+        $user = User::where('email', $loginId)
+            ->orWhere('phone', $loginId)
             ->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {

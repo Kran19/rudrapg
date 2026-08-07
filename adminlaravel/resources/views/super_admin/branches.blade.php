@@ -4,7 +4,9 @@
 @section('page_title', 'PG Branch Directory & QR Generator')
 
 @section('content')
-<div x-data="{ addBranchModalOpen: false, qrModalOpen: false, qrBranchName: '', qrBranchCode: '' }">
+<div x-data="{ addBranchModalOpen: false, qrModalOpen: false, qrBranchName: '', qrBranchCode: '' }"
+     @open-qr-modal.window="qrBranchName = $event.detail.name; qrBranchCode = $event.detail.code; qrModalOpen = true"
+     @close-branch-modal.window="addBranchModalOpen = false">
     <!-- Header Controls -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -185,10 +187,7 @@
                 return '<button class="border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-semibold py-1 px-2.5 rounded-lg transition-colors flex items-center gap-1"><i class="fa-solid fa-qrcode"></i> View QR</button>';
             }, cellClick: function(e, cell){
                 var rowData = cell.getRow().getData();
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.qrBranchName = rowData.name;
-                alpineData.qrBranchCode = rowData.code;
-                alpineData.qrModalOpen = true;
+                window.dispatchEvent(new CustomEvent('open-qr-modal', { detail: rowData }));
             }},
             {title: "Status", field: "status", width: 100, formatter: function(cell){
                 return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Active</span>';
@@ -221,8 +220,7 @@
             if (data.status === "success") {
                 table.addData([data.data], true);
                 toastr.success(data.message);
-                var alpineData = Alpine.$data(document.querySelector('[x-data]'));
-                alpineData.addBranchModalOpen = false;
+                window.dispatchEvent(new CustomEvent('close-branch-modal'));
                 this.reset();
             } else {
                 toastr.error(data.message || "Failed to create Branch.");

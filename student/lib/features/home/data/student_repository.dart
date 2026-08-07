@@ -83,9 +83,9 @@ class StudentRepository {
     }
   }
 
-  Future<void> submitElectricityReading(Map<String, dynamic> data) async {
+  Future<void> submitElectricityReading(FormData formData) async {
     try {
-      await _dio.post('/student/electricity-reading', data: data);
+      await _dio.post('/student/electricity-reading', data: formData);
     } catch (e) {
       throw Exception('Error submitting reading: $e');
     }
@@ -100,9 +100,9 @@ class StudentRepository {
     }
   }
 
-  Future<void> submitPaymentProof(Map<String, dynamic> data) async {
+  Future<void> submitPaymentProof(FormData formData) async {
     try {
-      await _dio.post('/student/payment-proof', data: data);
+      await _dio.post('/student/payment-proof', data: formData);
     } catch (e) {
       throw Exception('Error submitting payment proof: $e');
     }
@@ -131,6 +131,17 @@ class StudentRepository {
       return response.data['data'] ?? [];
     } catch (e) {
       throw Exception('Error fetching notices: $e');
+    }
+  }
+
+  Future<void> register(FormData formData) async {
+    try {
+      final response = await _dio.post('/student/register', data: formData);
+      if (response.statusCode != 201) {
+        throw Exception('Failed to register');
+      }
+    } catch (e) {
+      throw Exception('Error registering student: $e');
     }
   }
 }
