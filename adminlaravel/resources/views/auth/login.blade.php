@@ -146,6 +146,14 @@
             </button>
         </form>
 
+        <!-- Download Android App Button -->
+        <div class="mt-6">
+            <a href="{{ asset('downloads/student-app.apk') }}" download 
+               class="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-sm rounded-xl border border-slate-600 transition-all flex items-center justify-center gap-2">
+                <i class="fa-brands fa-android text-emerald-400"></i> Download Student App (APK)
+            </a>
+        </div>
+
         <div class="mt-8 pt-4 border-t border-slate-700/50 text-center text-xs text-slate-500">
             © 2026 Rudra Group PG Management System v2.4
         </div>
