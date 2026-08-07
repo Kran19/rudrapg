@@ -13,7 +13,7 @@ final apiClientProvider = Provider<Dio>((ref) {
   final prefs = ref.read(sharedPreferencesProvider);
   
   // Use 10.0.2.2 if testing on Android emulator, otherwise localhost for web/desktop
-  String baseUrl = 'https://emperorsmartsolutions.com/rudrapgwebsite/public/api/v1';
+  String baseUrl = 'https://emperorsmartsolutions.com/rudrapgwebsite/api/v1';
   
   // NOTE: If you are running locally and want to test on the emulator, uncomment this block:
   /*
