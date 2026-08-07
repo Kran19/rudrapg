@@ -10,6 +10,7 @@ import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_card.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../home/data/student_repository.dart';
+import 'package:flutter/foundation.dart';
 
 class ElectricityScreen extends ConsumerStatefulWidget {
   const ElectricityScreen({super.key});
@@ -30,21 +31,24 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
   }
 
   Future<void> _pickImage() async {
-    final status = await Permission.camera.request();
-    if (status.isGranted) {
-      final picker = ImagePicker();
-      final image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
-      if (image != null) {
-        setState(() {
-          _meterPhoto = image;
-        });
+    if (!kIsWeb) {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Permission required to access camera')),
+          );
+        }
+        return;
       }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Permission required to access camera')),
-        );
-      }
+    }
+    
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    if (image != null) {
+      setState(() {
+        _meterPhoto = image;
+      });
     }
   }
 

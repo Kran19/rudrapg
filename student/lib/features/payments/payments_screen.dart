@@ -10,6 +10,7 @@ import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_card.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../home/data/student_repository.dart';
+import 'package:flutter/foundation.dart';
 
 class PaymentsScreen extends ConsumerStatefulWidget {
   const PaymentsScreen({super.key});
@@ -30,21 +31,24 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   }
 
   Future<void> _pickImage(StateSetter setModalState) async {
-    final status = await Permission.photos.request();
-    if (status.isGranted) {
-      final picker = ImagePicker();
-      final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-      if (image != null) {
-        setModalState(() {
-          _proofImage = image;
-        });
+    if (!kIsWeb) {
+      final status = await Permission.photos.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Permission required to access gallery')),
+          );
+        }
+        return;
       }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Permission required to access gallery')),
-        );
-      }
+    }
+    
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (image != null) {
+      setModalState(() {
+        _proofImage = image;
+      });
     }
   }
 

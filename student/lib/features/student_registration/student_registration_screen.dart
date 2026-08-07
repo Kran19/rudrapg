@@ -12,6 +12,7 @@ import '../../core/widgets/custom_card.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../registration_submitted/registration_submitted_screen.dart';
 import '../home/data/student_repository.dart';
+import 'package:flutter/foundation.dart';
 
 class StudentRegistrationScreen extends ConsumerStatefulWidget {
   const StudentRegistrationScreen({super.key});
@@ -38,23 +39,26 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
   bool _isLoading = false;
 
   Future<void> _pickImage(ImageSource source, void Function(XFile?) onPicked) async {
-    final permission = source == ImageSource.camera ? Permission.camera : Permission.photos;
-    final status = await permission.request();
+    if (!kIsWeb) {
+      final permission = source == ImageSource.camera ? Permission.camera : Permission.photos;
+      final status = await permission.request();
 
-    if (status.isGranted) {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: source, imageQuality: 70);
-      if (image != null) {
-        setState(() {
-          onPicked(image);
-        });
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Permission required to access ${source == ImageSource.camera ? "camera" : "gallery"}')),
+          );
+        }
+        return;
       }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Permission required to access ${source == ImageSource.camera ? "camera" : "gallery"}')),
-        );
-      }
+    }
+    
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: source, imageQuality: 70);
+    if (image != null) {
+      setState(() {
+        onPicked(image);
+      });
     }
   }
 
