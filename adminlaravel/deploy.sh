@@ -40,9 +40,13 @@ fi
 echo "🗄️ Running database migrations..."
 php artisan migrate --force
 
-# 6. Storage Link
-echo "🔗 Creating storage link..."
-php artisan storage:link || true
+# 6. Storage Link & Permissions
+echo "🔗 Creating storage link manually (bypassing disabled PHP exec())..."
+rm -rf public/storage
+ln -s ../storage/app/public public/storage || true
+
+echo "🔐 Setting folder permissions..."
+chmod -R 775 storage bootstrap/cache
 
 echo "======================================"
 echo "✅ Deployment completed successfully!"
