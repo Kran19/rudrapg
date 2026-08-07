@@ -1,5 +1,12 @@
 <IfModule mod_rewrite.c>
+    <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /rudrapgwebsite/
-    RewriteRule ^(.*)$ adminlaravel/public/$1 [L,QSA]
+
+    RewriteCond %{REQUEST_URI} !^/index\.php
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    RewriteRule ^ index.php [L]
+</IfModule>
 </IfModule>
