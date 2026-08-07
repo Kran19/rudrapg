@@ -28,9 +28,21 @@ php artisan route:cache
 echo "🎨 Caching Views..."
 php artisan view:cache
 
-# 4. Run Migrations (Safe for production with --force)
+# 4. Environment & Keys
+if [ ! -f .env ]; then
+    echo "📝 .env file not found. Copying from .env.example..."
+    cp .env.example .env
+    echo "🔑 Generating Application Key..."
+    php artisan key:generate --force
+fi
+
+# 5. Run Migrations (Safe for production with --force)
 echo "🗄️ Running database migrations..."
 php artisan migrate --force
+
+# 6. Storage Link
+echo "🔗 Creating storage link..."
+php artisan storage:link || true
 
 echo "======================================"
 echo "✅ Deployment completed successfully!"
