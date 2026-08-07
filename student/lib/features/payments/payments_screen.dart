@@ -136,7 +136,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success.withOpacity(0.2),
+                                  color: AppColors.success.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
@@ -234,7 +234,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.secondary.withOpacity(0.12),
+                            color: AppColors.secondary.withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.qr_code_rounded, color: AppColors.secondary, size: 24),
@@ -286,7 +286,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppColors.success.withOpacity(0.12),
+                                color: AppColors.success.withValues(alpha: 0.12),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.receipt_long_rounded, color: AppColors.success, size: 20),
@@ -314,7 +314,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.success.withOpacity(0.1),
+                                    color: AppColors.success.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -359,7 +359,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -421,7 +421,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     onTap: () {
                       _pickImage(setModalState);
                     },
-                    backgroundColor: isProofSelected ? AppColors.success.withOpacity(0.05) : Colors.white,
+                    backgroundColor: isProofSelected ? AppColors.success.withValues(alpha: 0.05) : Colors.white,
                     border: Border.all(color: isProofSelected ? AppColors.success : AppColors.divider),
                     child: Row(
                       children: [

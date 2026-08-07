@@ -88,9 +88,12 @@ class CustomButton extends StatelessWidget {
                       Icon(icon, size: 20, color: textColor),
                       const SizedBox(width: AppSpacing.sm),
                     ],
-                    Text(
-                      text,
-                      style: AppTypography.buttonText.copyWith(color: textColor),
+                    Flexible(
+                      child: Text(
+                        text,
+                        style: AppTypography.buttonText.copyWith(color: textColor),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

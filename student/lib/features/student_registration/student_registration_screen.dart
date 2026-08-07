@@ -1,4 +1,4 @@
-import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -154,7 +154,7 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.2),
+                        color: AppColors.accent.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.qr_code_2_rounded, color: AppColors.accent, size: 24),
@@ -167,7 +167,7 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.accent.withOpacity(0.2),
+                              color: AppColors.accent.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -267,16 +267,16 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
     final isUploaded = file != null;
     return CustomCard(
       onTap: onTap,
-      backgroundColor: isUploaded ? AppColors.success.withOpacity(0.05) : Colors.white,
+      backgroundColor: isUploaded ? AppColors.success.withValues(alpha: 0.05) : Colors.white,
       border: Border.all(
-        color: isUploaded ? AppColors.success.withOpacity(0.4) : AppColors.divider,
+        color: isUploaded ? AppColors.success.withValues(alpha: 0.4) : AppColors.divider,
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (isUploaded ? AppColors.success : AppColors.secondary).withOpacity(0.12),
+              color: (isUploaded ? AppColors.success : AppColors.secondary).withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(

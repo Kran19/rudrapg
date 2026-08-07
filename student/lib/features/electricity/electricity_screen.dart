@@ -171,7 +171,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
 
                     CustomCard(
                       onTap: _pickImage,
-                      backgroundColor: isPhotoAttached ? AppColors.success.withOpacity(0.05) : Colors.white,
+                      backgroundColor: isPhotoAttached ? AppColors.success.withValues(alpha: 0.05) : Colors.white,
                       border: Border.all(color: isPhotoAttached ? AppColors.success : AppColors.divider),
                       child: Row(
                         children: [
@@ -250,7 +250,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.success.withOpacity(0.1),
+                                    color: AppColors.success.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
