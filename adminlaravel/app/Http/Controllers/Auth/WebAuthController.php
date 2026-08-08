@@ -78,4 +78,17 @@ class WebAuthController extends Controller
 
         return redirect()->route('login')->with('success', 'You have been signed out successfully.');
     }
+
+    public function downloadApp()
+    {
+        $path = public_path('downloads/student-app.apk');
+        if (!file_exists($path)) {
+            abort(404, 'APK file not found.');
+        }
+        return response()->download($path, 'rudraboyspg-student-v2.4.apk', [
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
 }

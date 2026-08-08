@@ -148,9 +148,9 @@
 
         <!-- Download Android App Button -->
         <div class="mt-6">
-            <a href="/rudrapgwebsite/adminlaravel/public/downloads/student-app.apk" download 
+            <a href="{{ route('download_app') }}?v={{ time() }}" download="rudraboyspg-student-v2.4.apk" 
                class="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-sm rounded-xl border border-slate-600 transition-all flex items-center justify-center gap-2">
-                <i class="fa-brands fa-android text-emerald-400"></i> Download Student App (APK)
+                <i class="fa-brands fa-android text-emerald-400"></i> Download Student App v2.4 (APK)
             </a>
         </div>
 

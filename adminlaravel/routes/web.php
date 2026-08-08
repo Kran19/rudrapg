@@ -14,6 +14,9 @@ Route::get('/login', [WebAuthController::class, 'showLoginForm'])->name('login')
 Route::post('/login', [WebAuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
+// Uncached Direct Mobile APK Download Route
+Route::get('/download-app', [WebAuthController::class, 'downloadApp'])->name('download_app');
+
 // Super Admin Protected Routes
 Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('super_admin.')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
