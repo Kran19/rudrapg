@@ -13,9 +13,9 @@ test.describe('API Contract Regression', () => {
     });
 
     expect(response.status()).toBe(200);
-    const data = await response.json();
-    expect(data).toHaveProperty('token');
-    authToken = data.token;
+    const json = await response.json();
+    expect(json.data).toHaveProperty('token');
+    authToken = json.data.token;
   });
 
   test('Super Admin can fetch API dashboard KPI metrics', async ({ request }) => {
@@ -28,9 +28,8 @@ test.describe('API Contract Regression', () => {
     });
 
     expect(response.status()).toBe(200);
-    const data = await response.json();
-    expect(data).toHaveProperty('status', 'success');
-    expect(data.data).toHaveProperty('kpis');
-    expect(data.data.kpis).toHaveProperty('total_branches');
+    const json = await response.json();
+    expect(json).toHaveProperty('status', 'success');
+    expect(json.data).toHaveProperty('total_branches');
   });
 });

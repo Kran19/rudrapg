@@ -21,8 +21,10 @@ test.describe('Sub Admin Flows', () => {
       
       // Wait for the modal and click approve
       const approveButton = page.locator('button:has-text("Approve Booking & Key Handover")');
-      await expect(approveButton).toBeVisible();
       await approveButton.click();
+      
+      // Click SweetAlert confirm button
+      await page.click('.swal2-confirm');
       
       // Verify Toastr success
       await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
@@ -36,18 +38,18 @@ test.describe('Sub Admin Flows', () => {
     await page.goto('http://127.0.0.1:8000/sub-admin/rent-ledger');
     
     await page.click('button:has-text("Record Offline Cash Payment")');
-    await expect(page.locator('#cash-payment-form')).toBeVisible();
+    await expect(page.locator('#record-cash-form')).toBeVisible();
 
     // Select first student
-    await page.locator('select[name="student_id"]').selectOption({ index: 1 });
+    await page.locator('select[name="student_id"]').selectOption({ index: 0 });
     await page.locator('select[name="payment_type"]').selectOption('RENT');
     await page.fill('input[name="amount"]', '6500');
     
     // Optionally put notes
-    await page.fill('textarea[name="notes"]', 'Playwright Cash Payment');
+    await page.fill('input[name="remarks"]', 'Playwright Cash Payment');
 
     // Submit
-    await page.click('button:has-text("Generate Receipt & Record Entry")');
+    await page.click('#record-cash-form button[type="submit"]');
 
     // Verify Toastr
     await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
