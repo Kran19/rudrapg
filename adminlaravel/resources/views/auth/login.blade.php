@@ -57,7 +57,7 @@
                     @click="activePreset = 'super'; document.getElementById('email').value = 'admin@rudrapg.com'; document.getElementById('password').value = 'password'"
                     :class="activePreset === 'super' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'"
                     class="flex-1 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-crown text-amber-400"></i> Super Admin
+                <i class="fa-solid fa-user-shield text-blue-400"></i> Executive Admin
             </button>
             <button type="button" 
                     @click="activePreset = 'sub'; document.getElementById('email').value = 'subadmin.naroda@rudrapg.com'; document.getElementById('password').value = 'password'"

@@ -5,10 +5,14 @@
 
 @section('content')
 <!-- Financial Summary Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
     <div class="bg-white rounded-2xl p-6 border-l-4 border-l-emerald-500 border-t border-r border-b border-slate-200 shadow-xs">
         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Monthly Collections</p>
         <h3 class="text-2xl font-extrabold text-emerald-600 mt-2">{{ $financeSummary['total_collections_this_month'] }}</h3>
+    </div>
+    <div class="bg-white rounded-2xl p-6 border-l-4 border-l-amber-500 border-t border-r border-b border-slate-200 shadow-xs">
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Cash in Hand</p>
+        <h3 class="text-2xl font-extrabold text-amber-600 mt-2">{{ $financeSummary['total_cash_in_hand'] ?? '₹0' }}</h3>
     </div>
     <div class="bg-white rounded-2xl p-6 border-l-4 border-l-rose-500 border-t border-r border-b border-slate-200 shadow-xs">
         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Rent Dues</p>
@@ -24,8 +28,69 @@
     </div>
 </div>
 
-<!-- Tabulator Financial Ledger Table -->
+<!-- Sub-Admin Manager Cash Collection Breakdown -->
 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-hand-holding-dollar text-amber-600"></i> Sub-Admin Manager Cash Holdings Breakdown
+            </h3>
+            <p class="text-xs text-slate-500">Track physical cash collected by each branch sub-admin manager.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        @foreach($managerCashLedger as $manager)
+            <div class="bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-user-shield text-blue-600"></i> {{ $manager['manager_name'] }}
+                        </h4>
+                        <p class="text-xs text-slate-500">{{ $manager['branch_name'] }} • {{ $manager['manager_email'] }}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-bold text-slate-500 uppercase block">Total Cash Held</span>
+                        <span class="text-lg font-extrabold text-emerald-600">{{ $manager['total_cash_collected'] }}</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="text-xs font-bold text-slate-700 uppercase mb-2">Itemized Cash Receipts</h5>
+                    @if(count($manager['recent_cash_entries']) > 0)
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left">
+                                <thead class="bg-slate-200/60 text-slate-700 font-bold uppercase">
+                                    <tr>
+                                        <th class="p-2">Date & Time</th>
+                                        <th class="p-2">Resident</th>
+                                        <th class="p-2">Amount</th>
+                                        <th class="p-2">Reference</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    @foreach($manager['recent_cash_entries'] as $entry)
+                                        <tr class="hover:bg-slate-100">
+                                            <td class="p-2 text-slate-600">{{ $entry['date'] }}</td>
+                                            <td class="p-2 font-semibold text-slate-900">{{ $entry['student'] }}</td>
+                                            <td class="p-2 font-bold text-emerald-600">{{ $entry['amount'] }}</td>
+                                            <td class="p-2 font-mono text-[10px] text-slate-500">{{ $entry['utr'] }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-xs text-slate-400 italic">No cash receipts recorded yet for this manager.</p>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+
+<!-- Tabulator Financial Ledger Table -->
+<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8 overflow-x-auto">
     <div class="flex items-center justify-between gap-4 mb-4">
         <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
             <i class="fa-solid fa-receipt text-blue-600"></i> Master Transaction Ledger (Tabulator.js)

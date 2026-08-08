@@ -42,7 +42,7 @@
     </div>
 
     <!-- Immutable Audit Log Table -->
-    <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+    <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
         <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
             <i class="fa-solid fa-shield-halved text-blue-600"></i> Immutable Audit Activity Trail
         </h3>

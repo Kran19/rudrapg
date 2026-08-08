@@ -15,7 +15,7 @@
     </div>
 
     <!-- Tabulator Electricity Readings Table -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8 overflow-x-auto">
         <div class="flex items-center justify-between gap-4 mb-4">
             <input type="text" id="elec-search" 
                    class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" 
@@ -87,13 +87,17 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <div x-show="activeReading && activeReading.status !== 'Approved' && activeReading.status !== 'APPROVED'" class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" @click="rejectReading(activeReading.id)" 
                             class="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl">Reject</button>
                     <button type="button" @click="approveReading(activeReading.id)" 
                             class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">
                         <i class="fa-solid fa-check mr-1"></i> Approve Bill
                     </button>
+                </div>
+                <div x-show="activeReading && (activeReading.status === 'Approved' || activeReading.status === 'APPROVED')" class="flex items-center justify-between pt-4 border-t border-emerald-100">
+                    <span class="text-xs font-bold text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i> Reading Audited & Approved</span>
+                    <button type="button" @click="auditModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl">Close</button>
                 </div>
             </div>
         </div>
@@ -134,10 +138,16 @@
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending Audit</span>';
             }},
             {title: "Audit Action", field: "id", width: 130, formatter: function(cell){
+                var status = cell.getRow().getData().status;
+                if (status === "Approved" || status === "APPROVED") {
+                    return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Approved</span>';
+                }
                 return '<button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Audit</button>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                window.dispatchEvent(new CustomEvent('open-audit-modal', { detail: data }));
+                if (data.status !== "Approved" && data.status !== "APPROVED") {
+                    window.dispatchEvent(new CustomEvent('open-audit-modal', { detail: data }));
+                }
             }},
         ]
     });

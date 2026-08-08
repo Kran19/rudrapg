@@ -15,7 +15,7 @@
 </div>
 
 <!-- Tabulator Student Directory Table -->
-<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8">
+<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8 overflow-x-auto">
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
         <input type="text" id="student-search" 
                class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full md:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" 

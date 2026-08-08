@@ -15,7 +15,7 @@
     </div>
 
     <!-- Tabulator Verification Table -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8 overflow-x-auto">
         <div class="flex items-center justify-between gap-4 mb-4">
             <input type="text" id="verify-search" 
                    class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" 
@@ -125,7 +125,7 @@
             </div>
 
             <!-- Footer Actions with SweetAlert2 Triggers -->
-            <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+            <div x-show="activeStudent && activeStudent.status !== 'Approved' && activeStudent.status !== 'APPROVED'" class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button type="button" @click="rejectBooking(activeStudent)" 
                         class="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors">
                     <i class="fa-solid fa-xmark mr-1"></i> Reject Application
@@ -134,6 +134,10 @@
                         class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
                     <i class="fa-solid fa-check mr-1"></i> Approve Booking & Key Handover
                 </button>
+            </div>
+            <div x-show="activeStudent && (activeStudent.status === 'Approved' || activeStudent.status === 'APPROVED')" class="p-4 bg-emerald-50 border-t border-emerald-100 flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Application Approved & Bed Allocated</span>
+                <button type="button" @click="verifyModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl">Close</button>
             </div>
         </div>
     </div>
@@ -171,10 +175,16 @@
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending Verification</span>';
             }},
             {title: "Actions", field: "id", width: 130, formatter: function(cell){
+                var status = cell.getRow().getData().status;
+                if (status === "Approved" || status === "APPROVED") {
+                    return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Approved</span>';
+                }
                 return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1"><i class="fa-solid fa-file-contract"></i> Audit</button>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                window.dispatchEvent(new CustomEvent('open-verify-modal', { detail: data }));
+                if (data.status !== "Approved" && data.status !== "APPROVED") {
+                    window.dispatchEvent(new CustomEvent('open-verify-modal', { detail: data }));
+                }
             }},
         ]
     });

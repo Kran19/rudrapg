@@ -276,7 +276,38 @@ class SuperAdminController extends Controller
             'pending_rent_dues' => '₹'.number_format(Payment::where('status', 'PENDING')->sum('amount')),
             'total_security_deposits_held' => '₹'.number_format(Student::where('deposit_status', 'VERIFIED')->count() * 10000),
             'electricity_collections' => '₹'.number_format(ElectricityReading::where('status', 'APPROVED')->sum('total_amount')),
+            'total_cash_in_hand' => '₹'.number_format(Payment::where('payment_mode', 'CASH')->whereIn('status', ['PAID', 'VERIFIED'])->sum('amount')),
         ];
+
+        $subAdmins = User::where('role', 'SUB_ADMIN')->with('branches')->get();
+
+        $managerCashLedger = $subAdmins->map(function ($subAdmin) {
+            $cashPayments = Payment::with(['student', 'proof'])
+                ->where('payment_mode', 'CASH')
+                ->latest()
+                ->get();
+
+            $totalCash = $cashPayments->sum('amount');
+
+            return [
+                'manager_id' => $subAdmin->id,
+                'manager_name' => $subAdmin->name,
+                'manager_email' => $subAdmin->email,
+                'branch_name' => $subAdmin->branches->first() ? $subAdmin->branches->first()->name : 'Naroda Branch',
+                'total_cash_collected' => '₹'.number_format($totalCash),
+                'total_cash_raw' => $totalCash,
+                'transactions_count' => $cashPayments->count(),
+                'recent_cash_entries' => $cashPayments->take(5)->map(function ($p) {
+                    return [
+                        'tx' => $p->tx_reference,
+                        'student' => $p->student ? $p->student->full_name : 'Resident',
+                        'amount' => '₹'.number_format($p->amount),
+                        'date' => $p->created_at ? $p->created_at->format('d M Y, h:i A') : 'N/A',
+                        'utr' => $p->proof ? $p->proof->utr_number : 'CASH',
+                    ];
+                }),
+            ];
+        });
 
         $transactionsData = Payment::with(['student', 'branch', 'proof'])->latest()->get()->map(function ($payment) {
             return [
@@ -292,7 +323,7 @@ class SuperAdminController extends Controller
             ];
         });
 
-        return view('super_admin.finance', compact('financeSummary'), ['transactions' => $transactionsData]);
+        return view('super_admin.finance', compact('financeSummary', 'managerCashLedger'), ['transactions' => $transactionsData]);
     }
 
     public function settings()

@@ -18,7 +18,7 @@
     </div>
 
     <!-- Tabulator Complaints Table -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8 overflow-x-auto">
         <div class="flex items-center justify-between gap-4 mb-4">
             <h4 class="text-base font-bold text-slate-900 flex items-center gap-2">
                 <i class="fa-solid fa-headset text-blue-600"></i> Active Maintenance Tickets (Tabulator.js)

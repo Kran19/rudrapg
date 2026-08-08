@@ -222,7 +222,7 @@
                     @if(request()->is('sub-admin*'))
                         <i class="fa-solid fa-shield-halved text-cyan-400"></i> SUB ADMIN VIEW
                     @else
-                        <i class="fa-solid fa-crown text-amber-400"></i> SUPER ADMIN VIEW
+                        <i class="fa-solid fa-user-shield text-blue-400"></i> SUPER ADMIN VIEW
                     @endif
                 </span>
             </div>
@@ -393,7 +393,7 @@
                         <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-full border border-slate-200 dark:border-slate-600 flex items-center">
                             <a href="{{ route('super_admin.dashboard') }}" 
                                class="px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 {{ !request()->is('sub-admin*') ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
-                                👑 Super Admin
+                                🛡️ Executive Admin
                             </a>
                             <a href="{{ route('sub_admin.dashboard') }}" 
                                class="px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 {{ request()->is('sub-admin*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">

@@ -12,7 +12,7 @@
 </div>
 
 <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs mb-6">
-    <div class="flex items-center justify-around text-center text-xs font-semibold">
+    <div class="flex flex-wrap items-center justify-around text-center text-xs font-semibold gap-2">
         <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 bg-emerald-500 rounded-md inline-block"></span> Available Bed</div>
         <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 bg-rose-500 rounded-md inline-block"></span> Occupied Bed</div>
         <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 bg-amber-500 rounded-md inline-block"></span> Reserved Bed</div>
@@ -21,9 +21,9 @@
 
 <div class="space-y-6 mb-8">
     @for($floor = 1; $floor <= 4; $floor++)
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+        <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-xs">
             <h4 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-4">FLOOR {{ $floor }} ROOMS</h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
                 @foreach(collect($rooms)->where('floor', $floor) as $room)
                     <div class="p-3.5 border border-slate-200 rounded-xl bg-slate-50">
                         <div class="flex items-center justify-between mb-2">

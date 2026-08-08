@@ -72,7 +72,7 @@
     </div>
 
     <!-- Tabulator Table View -->
-    <div x-show="viewMode === 'table'" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8">
+    <div x-show="viewMode === 'table'" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8 overflow-x-auto">
         <h4 class="font-bold text-sm text-slate-900 mb-4">Tabulator Room Inventory Table</h4>
         <div id="rooms-table"></div>
     </div>
