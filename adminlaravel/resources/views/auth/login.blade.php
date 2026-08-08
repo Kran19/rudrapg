@@ -100,7 +100,7 @@
                     <input type="email" 
                            id="email" 
                            name="email" 
-                           value="{{ old('email', 'admin@rudrapg.com') }}" 
+                           value="{{ old('email') }}" 
                            required 
                            autofocus
                            placeholder="admin@rudrapg.com"
@@ -118,7 +118,7 @@
                     <input :type="showPassword ? 'text' : 'password'" 
                            id="password" 
                            name="password" 
-                           value="password" 
+                           value="" 
                            required
                            placeholder="••••••••"
                            class="w-full pl-10 pr-11 py-3 bg-slate-900/60 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">

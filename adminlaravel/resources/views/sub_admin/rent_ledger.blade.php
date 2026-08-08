@@ -64,14 +64,14 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Payment Type</label>
                     <select name="payment_type" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option value="RENT">Monthly Rent (₹6,500)</option>
-                        <option value="DEPOSIT">Security Deposit (₹10,000)</option>
-                        <option value="ELECTRICITY">Electricity Bill (₹450)</option>
+                        <option value="RENT">Monthly Rent</option>
+                        <option value="DEPOSIT">Security Deposit</option>
+                        <option value="ELECTRICITY">Electricity Bill</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cash Amount Received (₹)</label>
-                    <input type="number" name="amount" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" value="6500">
+                    <input type="number" name="amount" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Enter amount">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Receipt Remarks</label>

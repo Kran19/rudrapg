@@ -22,14 +22,14 @@ class StudentRegistrationScreen extends ConsumerStatefulWidget {
 }
 
 class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationScreen> {
-  final _fullNameController = TextEditingController(text: 'Rahul Sharma');
-  final _phoneController = TextEditingController(text: '+91 98765 43210');
-  final _emailController = TextEditingController(text: 'rahul.sharma@gmail.com');
-  final _aadhaarController = TextEditingController(text: '9912-3456-7890');
-  final _panController = TextEditingController(text: 'ABCDE1234F');
-  final _parentNameController = TextEditingController(text: 'Sanjay Sharma');
-  final _parentPhoneController = TextEditingController(text: '+91 98250 11223');
-  final _addressController = TextEditingController(text: '102, Shanti Nagar, SG Highway, Ahmedabad');
+  final _fullNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _aadhaarController = TextEditingController();
+  final _panController = TextEditingController();
+  final _parentNameController = TextEditingController();
+  final _parentPhoneController = TextEditingController();
+  final _addressController = TextEditingController();
 
   XFile? _profilePhoto;
   XFile? _aadhaarFront;

@@ -10,12 +10,15 @@ import '../resident/my_room_screen.dart';
 import '../settings/settings_screen.dart';
 import '../support/support_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../home/data/student_repository.dart';
+
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final resident = DummyData.sampleResident;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profileAsync = ref.watch(studentProfileProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -26,61 +29,62 @@ class ProfileScreen extends StatelessWidget {
         foregroundColor: AppColors.primary,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Profile Header Card
-              CustomCard(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                        boxShadow: AppSpacing.softShadow,
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'RS',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+        child: profileAsync.when(
+          data: (resident) => SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Profile Header Card
+                CustomCard(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                          boxShadow: AppSpacing.softShadow,
+                        ),
+                        child: Center(
+                          child: Text(
+                            resident.fullName.isNotEmpty ? resident.fullName[0].toUpperCase() : 'S',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.lg),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(resident.fullName, style: AppTypography.titleLarge),
-                          const SizedBox(height: 2),
-                          Text(
-                            'ID: ${resident.id} • ${resident.branchName}',
-                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(resident.fullName.isNotEmpty ? resident.fullName : 'Resident', style: AppTypography.titleLarge),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${resident.branchName}',
+                              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
                             ),
-                            child: Text(
-                              '✓ KYC VERIFIED RESIDENT',
-                              style: AppTypography.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '✓ ${resident.kycStatus.toUpperCase()}',
+                                style: AppTypography.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
+                const SizedBox(height: AppSpacing.xxl),
 
               // Personal Information Section
               Text('Personal Information', style: AppTypography.titleLarge),
@@ -193,7 +197,10 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error loading profile: $err')),
       ),
+    ),
     );
   }
 

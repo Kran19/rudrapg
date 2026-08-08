@@ -132,7 +132,7 @@ class DummyData {
     },
     {
       'question': 'How is electricity bill calculated?',
-      'answer': 'Each room has a dedicated sub-meter. Your monthly consumption (Current Reading - Previous Reading) is multiplied by the branch tariff rate (₹10.00/unit).'
+      'answer': 'Each room has a dedicated sub-meter. Your monthly consumption (Current Reading - Previous Reading) is multiplied by your branch tariff rate.'
     },
     {
       'question': 'Can I request a room or bed transfer?',

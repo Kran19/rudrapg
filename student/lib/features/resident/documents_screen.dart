@@ -31,8 +31,8 @@ class DocumentsScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           _buildDocTile(
-            title: 'Security Deposit Receipt (₹10,000)',
-            subtitle: 'Issued by Sub Admin Suresh Patel',
+            title: 'Security Deposit Receipt',
+            subtitle: 'Issued by Branch Manager',
             icon: Icons.receipt_long_rounded,
             isVerified: true,
           ),

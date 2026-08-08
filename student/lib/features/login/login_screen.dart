@@ -18,8 +18,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _mobileController = TextEditingController(text: '9876543210');
-  final _passwordController = TextEditingController(text: '••••••••');
+  final _mobileController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override

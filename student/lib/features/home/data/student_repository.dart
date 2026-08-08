@@ -42,30 +42,33 @@ class StudentRepository {
       final response = await _dio.get('/student/profile');
       if (response.statusCode == 200) {
         final data = response.data;
-        // In a real app we'd map this properly, but for now we map to our existing ResidentModel
-        // Or if the backend sends it exactly as we need it, we use factory constructors.
-        // For now, let's map the fields manually to fit ResidentModel if needed, 
-        // or just let fromJson handle it if the API matches.
-        // Assuming the API returns a 'user' or 'student' object
         final studentData = data['student'] ?? data['data'] ?? data;
         
         return ResidentModel(
-          id: studentData['id'].toString(),
-          fullName: studentData['name'] ?? 'Student',
+          id: studentData['id']?.toString() ?? '',
+          fullName: studentData['full_name'] ?? studentData['name'] ?? '',
           phone: studentData['phone'] ?? '',
           email: studentData['email'] ?? '',
           aadhaarNumber: studentData['aadhaar_number'] ?? '',
           panNumber: studentData['pan_number'] ?? '',
-          branchName: studentData['branch']?['name'] ?? 'Assigned Branch',
-          roomNumber: studentData['bed']?['room']?['room_number'] ?? 'N/A',
+          parentName: studentData['parent_name'] ?? '',
+          parentPhone: studentData['parent_phone'] ?? '',
+          emergencyContact: studentData['emergency_contact'] ?? studentData['parent_phone'] ?? '',
+          currentAddress: studentData['current_address'] ?? '',
+          branchId: studentData['branch']?['id']?.toString() ?? '',
+          branchName: studentData['branch']?['name'] ?? 'N/A',
+          floorNumber: int.tryParse(studentData['room']?['floor_number']?.toString() ?? '1') ?? 1,
+          roomNumber: studentData['room']?['room_number'] ?? studentData['bed']?['room']?['room_number'] ?? 'N/A',
           bedCode: studentData['bed']?['bed_code'] ?? 'N/A',
-          sharingType: studentData['bed']?['room']?['sharing_type'] ?? 'N/A',
-          monthlyRent: double.tryParse(studentData['monthly_rent']?.toString() ?? '0') ?? 0,
-          securityDeposit: double.tryParse(studentData['deposit_amount']?.toString() ?? '0') ?? 0,
+          sharingType: studentData['room']?['sharing_type'] ?? 'N/A',
+          monthlyRent: double.tryParse((studentData['bed']?['monthly_rent'] ?? studentData['monthly_rent'])?.toString() ?? '0') ?? 0,
+          securityDeposit: double.tryParse((studentData['bed']?['security_deposit'] ?? studentData['deposit_amount'])?.toString() ?? '0') ?? 0,
           joiningDate: studentData['joining_date'] ?? 'N/A',
-          rentStatus: studentData['rent_status'] ?? 'Paid',
-          depositStatus: studentData['deposit_status'] ?? 'Paid',
-          kycStatus: studentData['kyc_status'] ?? 'Verified',
+          rentStatus: studentData['rent_status'] ?? 'N/A',
+          depositStatus: studentData['deposit_status'] ?? 'N/A',
+          kycStatus: studentData['kyc_status'] ?? 'N/A',
+          emergencyContactName: studentData['parent_name'] ?? '',
+          emergencyContactPhone: studentData['emergency_contact'] ?? studentData['parent_phone'] ?? '',
         );
       }
       throw Exception('Failed to load profile');
