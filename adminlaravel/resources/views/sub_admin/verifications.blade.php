@@ -4,8 +4,8 @@
 @section('page_title', 'Student Verification Desk (Naroda Branch)')
 
 @section('content')
-<div x-data="{ verifyModalOpen: false, activeStudent: {} }"
-     @open-verify-modal.window="activeStudent = $event.detail; verifyModalOpen = true"
+<div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: @json($availableBeds) }"
+     @open-verify-modal.window="activeStudent = $event.detail; selectedBedId = ''; verifyModalOpen = true"
      @close-verify-modal.window="verifyModalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -27,7 +27,7 @@
         <div id="verifications-table"></div>
     </div>
 
-    <!-- Pure Tailwind Modal: Side-by-Side Document & Payment Verification -->
+    <!-- Pure Tailwind Modal: View Document Verification -->
     <div x-show="verifyModalOpen" 
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
@@ -50,7 +50,7 @@
             </div>
             
             <div class="p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-6">
-                <!-- Left: Student Details -->
+                <!-- Left: Student Details & Bed Assignment -->
                 <div class="md:col-span-4 space-y-4 border-r border-slate-100 pr-4">
                     <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fa-solid fa-id-card"></i> Applicant Details
@@ -76,11 +76,20 @@
                     </div>
 
                     <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5 pt-2">
-                        <i class="fa-solid fa-bed"></i> Allocated Bed Details
+                        <i class="fa-solid fa-bed"></i> Assign / Allocate Bed
                     </h5>
-                    <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 space-y-1.5 text-xs">
-                        <div class="flex justify-between">
-                            <span class="text-slate-600">Spot:</span>
+                    <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 space-y-2 text-xs">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Select Room & Bed:</label>
+                            <select x-model="selectedBedId" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">Auto-allocate or Assign Bed Later</option>
+                                <template x-for="bed in availableBeds" :key="bed.id">
+                                    <option :value="bed.id" x-text="bed.label"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="flex justify-between pt-1">
+                            <span class="text-slate-600">Current Spot:</span>
                             <span class="font-bold text-slate-900" x-text="'Room ' + activeStudent.room_number + ' (' + activeStudent.bed_code + ')'"></span>
                         </div>
                         <div class="flex justify-between">
@@ -130,7 +139,7 @@
                         class="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors">
                     <i class="fa-solid fa-xmark mr-1"></i> Reject Application
                 </button>
-                <button type="button" @click="approveBooking(activeStudent)" 
+                <button type="button" @click="approveBooking(activeStudent, selectedBedId)" 
                         class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
                     <i class="fa-solid fa-check mr-1"></i> Approve Booking & Key Handover
                 </button>
@@ -196,28 +205,35 @@
         table.download("csv", "verification_queue.csv");
     });
 
-    function approveBooking(student) {
+    function approveBooking(student, selectedBedId) {
         Swal.fire({
-            title: 'Approve Student Booking?',
-            text: "This will allocate the bed, update database records, and confirm booking.",
+            title: 'Approve Student Registration?',
+            text: "This will verify the student profile and confirm booking.",
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#16A34A',
             confirmButtonText: 'Yes, Approve Booking'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/sub-admin/verifications/" + student.id + "/approve", {
+                var targetId = student.db_id || student.id;
+                fetch("/sub-admin/verifications/" + targetId + "/approve", {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Content-Type": "application/json",
                         "Accept": "application/json"
-                    }
+                    },
+                    body: JSON.stringify({ bed_id: selectedBedId || null })
                 })
                 .then(res => res.json())
                 .then(data => {
-                    toastr.success(data.message);
-                    window.dispatchEvent(new CustomEvent('close-verify-modal'));
-                    setTimeout(() => window.location.reload(), 1000);
+                    if (data.status === "success") {
+                        toastr.success(data.message);
+                        window.dispatchEvent(new CustomEvent('close-verify-modal'));
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to approve verification.");
+                    }
                 })
                 .catch(err => {
                     toastr.error("Failed to approve verification.");

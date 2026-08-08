@@ -59,11 +59,27 @@ class SubAdminController extends Controller
 
     public function verifications()
     {
-        $queue = RegistrationRequest::with(['student.documents', 'student.room', 'student.bed', 'branch'])
+        $queue = RegistrationRequest::with(['student.documents', 'student.payments.proof', 'student.room', 'student.bed', 'branch'])
             ->latest()
             ->get()
             ->map(function ($req) {
                 $student = $req->student;
+
+                $aadhaarFrontDoc = $student ? $student->documents->firstWhere('doc_type', 'AADHAAR_FRONT') : null;
+                $aadhaarBackDoc = $student ? $student->documents->firstWhere('doc_type', 'AADHAAR_BACK') : null;
+                
+                $latestPayment = $student ? $student->payments->first() : null;
+                $paymentProof = $latestPayment ? $latestPayment->proof : null;
+
+                $formatUrl = function (?string $path, string $fallback) {
+                    if (!$path) return $fallback;
+                    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+                    return asset('storage/' . ltrim(str_replace('storage/', '', $path), '/'));
+                };
+
+                $fallbackAadhaar = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80';
+                $fallbackProof = 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80';
+
                 return [
                     'id' => $req->app_reference,
                     'db_id' => $req->id,
@@ -78,20 +94,32 @@ class SubAdminController extends Controller
                     'deposit' => $student && $student->bed ? '₹'.number_format($student->bed->security_deposit) : '₹0',
                     'date' => $req->created_at ? $req->created_at->format('d M Y') : 'N/A',
                     'status' => $req->status == 'PENDING' ? 'Pending Verification' : $req->status,
-                    'aadhaar_front' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-                    'aadhaar_back' => 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80',
-                    'payment_proof' => 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80',
+                    'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path, $fallbackAadhaar),
+                    'aadhaar_back' => $formatUrl($aadhaarBackDoc?->file_path, $fallbackAadhaar),
+                    'payment_proof' => $formatUrl($paymentProof?->screenshot_path, $fallbackProof),
                 ];
             });
 
-        return view('sub_admin.verifications', compact('queue'));
+        $availableBeds = \App\Models\Bed::with('room')
+            ->where('status', 'AVAILABLE')
+            ->get()
+            ->map(function ($b) {
+                return [
+                    'id' => $b->id,
+                    'label' => 'Room ' . ($b->room ? $b->room->room_number : 'N/A') . ' (' . $b->bed_code . ') - ₹' . number_format($b->monthly_rent) . '/mo',
+                ];
+            });
+
+        return view('sub_admin.verifications', compact('queue', 'availableBeds'));
     }
 
-    public function approveVerification($id)
+    public function approveVerification(Request $request, $id)
     {
-        $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+        $requestRecord = RegistrationRequest::where('app_reference', $id)
+            ->orWhere('id', $id)
+            ->firstOrFail();
 
-        DB::transaction(function () use ($requestRecord) {
+        DB::transaction(function () use ($requestRecord, $request) {
             $requestRecord->update([
                 'status' => 'APPROVED',
                 'processed_by' => Auth::id(),
@@ -103,31 +131,35 @@ class SubAdminController extends Controller
                     'kyc_status' => 'VERIFIED',
                 ]);
 
-                if (!$student->bed_id) {
+                $selectedBedId = $request->input('bed_id');
+                if (!$selectedBedId && !$student->bed_id) {
                     $availableBed = \App\Models\Bed::where('status', 'AVAILABLE')->first();
                     if ($availableBed) {
-                        $student->update([
-                            'room_id' => $availableBed->room_id,
-                            'bed_id' => $availableBed->id
-                        ]);
-                        $student->refresh();
+                        $selectedBedId = $availableBed->id;
                     }
                 }
 
-                if ($student->bed) {
-                    $student->bed->update(['status' => 'OCCUPIED']);
+                if ($selectedBedId) {
+                    $bed = \App\Models\Bed::find($selectedBedId);
+                    if ($bed && $bed->status === 'AVAILABLE') {
+                        $student->update([
+                            'room_id' => $bed->room_id,
+                            'bed_id' => $bed->id,
+                        ]);
+                        $bed->update(['status' => 'OCCUPIED']);
 
-                    RoomAllocation::create([
-                        'branch_id' => $student->branch_id,
-                        'student_id' => $student->id,
-                        'room_id' => $student->room_id,
-                        'bed_id' => $student->bed_id,
-                        'start_date' => now()->toDateString(),
-                        'monthly_rent' => $student->bed->monthly_rent,
-                        'security_deposit' => $student->bed->security_deposit,
-                        'status' => 'ACTIVE',
-                        'allocated_by' => Auth::id(),
-                    ]);
+                        RoomAllocation::create([
+                            'branch_id' => $student->branch_id,
+                            'student_id' => $student->id,
+                            'room_id' => $bed->room_id,
+                            'bed_id' => $bed->id,
+                            'start_date' => now()->toDateString(),
+                            'monthly_rent' => $bed->monthly_rent,
+                            'security_deposit' => $bed->security_deposit,
+                            'status' => 'ACTIVE',
+                            'allocated_by' => Auth::id(),
+                        ]);
+                    }
                 }
             }
         });
@@ -142,7 +174,7 @@ class SubAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Student booking approved and key handover record generated.',
+            'message' => 'Student booking approved successfully.',
         ]);
     }
 

@@ -122,18 +122,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Password reset instructions sent to your registered mobile number.'),
-                      ),
-                    );
-                  },
-                  child: Text('Forgot Password?', style: AppTypography.caption.copyWith(color: AppColors.secondary)),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Default Password: password123',
+                    style: AppTypography.caption.copyWith(color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Default registration password is: password123'),
+                        ),
+                      );
+                    },
+                    child: Text('Forgot Password?', style: AppTypography.caption.copyWith(color: AppColors.secondary)),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.lg),
 

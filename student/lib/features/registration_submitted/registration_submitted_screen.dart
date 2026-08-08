@@ -62,32 +62,42 @@ class RegistrationSubmittedScreen extends StatelessWidget {
                       isBold: false,
                     ),
                     const Divider(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Approval Status:', style: AppTypography.bodySmall),
+                        const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppColors.warning.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.hourglass_top_rounded, size: 14, color: AppColors.warning),
                               const SizedBox(width: 4),
-                              Text(
-                                'Pending Sub Admin Approval',
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.warning,
-                                  fontWeight: FontWeight.bold,
+                              Flexible(
+                                child: Text(
+                                  'Pending Sub Admin Approval',
+                                  style: AppTypography.caption.copyWith(
+                                    color: AppColors.warning,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ],
+                    ),
+                    const Divider(height: 24),
+                    _buildSummaryRow(
+                      label: 'Default Login Password:',
+                      value: 'password123',
+                      isBold: true,
                     ),
                   ],
                 ),
@@ -103,7 +113,7 @@ class RegistrationSubmittedScreen extends StatelessWidget {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
-                        'Your registration has been submitted successfully. The branch manager will verify your details and assign your room. You will be notified once your account has been approved.',
+                        'Your registration is submitted. Use your registered mobile number & default password "password123" to log in. The branch manager will approve your profile and assign your room.',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.primary,
                           height: 1.4,
@@ -141,13 +151,18 @@ class RegistrationSubmittedScreen extends StatelessWidget {
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: AppTypography.bodySmall),
-        Text(
-          value,
-          style: AppTypography.titleSmall.copyWith(
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: isBold ? AppColors.secondary : AppColors.textPrimary,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: AppTypography.titleSmall.copyWith(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+              color: isBold ? AppColors.secondary : AppColors.textPrimary,
+            ),
           ),
         ),
       ],

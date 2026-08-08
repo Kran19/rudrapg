@@ -54,10 +54,19 @@ class StudentService
                 'status' => 'PENDING_APPROVAL',
             ]);
 
-            // Save Document Placeholders
-            StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'PROFILE_PHOTO', 'file_path' => $data['profile_photo_path'] ?? 'uploads/kyc/profile.jpg']);
-            StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'AADHAAR_FRONT', 'file_path' => $data['aadhaar_front_path'] ?? 'uploads/kyc/aadhaar_front.jpg']);
-            StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'PAN_CARD', 'file_path' => $data['pan_card_path'] ?? 'uploads/kyc/pan.jpg']);
+            // Save Document Records if attached
+            if (!empty($data['profile_photo_path'])) {
+                StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'PROFILE_PHOTO', 'file_path' => $data['profile_photo_path']]);
+            }
+            if (!empty($data['aadhaar_front_path'])) {
+                StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'AADHAAR_FRONT', 'file_path' => $data['aadhaar_front_path']]);
+            }
+            if (!empty($data['aadhaar_back_path'])) {
+                StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'AADHAAR_BACK', 'file_path' => $data['aadhaar_back_path']]);
+            }
+            if (!empty($data['pan_card_path'])) {
+                StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'PAN_CARD', 'file_path' => $data['pan_card_path']]);
+            }
 
             // Create Verification Queue Entry
             RegistrationRequest::create([
