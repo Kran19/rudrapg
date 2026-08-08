@@ -44,6 +44,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     
     Route::get('/rent-ledger', [SubAdminController::class, 'rentLedger'])->name('rent_ledger');
     Route::post('/rent-ledger/cash-payment', [SubAdminController::class, 'recordCashPayment'])->name('rent_ledger.cash_payment');
+    Route::post('/rent-ledger/{id}/verify', [SubAdminController::class, 'verifyPayment'])->name('rent_ledger.verify');
     
     Route::get('/electricity-audit', [SubAdminController::class, 'electricityAudit'])->name('electricity_audit');
     Route::post('/electricity-audit/{id}/approve', [SubAdminController::class, 'approveElectricityReading'])->name('electricity_audit.approve');

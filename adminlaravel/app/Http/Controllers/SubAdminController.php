@@ -210,6 +210,7 @@ class SubAdminController extends Controller
     {
         $duesData = Payment::with(['student', 'branch', 'proof'])->latest()->get()->map(function ($payment) {
             return [
+                'id' => $payment->id,
                 'resident_id' => $payment->student ? $payment->student->app_reference : 'N/A',
                 'student_name' => $payment->student ? $payment->student->full_name : 'Resident',
                 'room' => $payment->student && $payment->student->room ? $payment->student->room->room_number.' ('.($payment->student->bed ? $payment->student->bed->bed_code : 'Unassigned').')' : 'Unassigned',
@@ -270,6 +271,44 @@ class SubAdminController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Offline cash payment receipt generated successfully!',
+        ]);
+    }
+
+    public function verifyPayment($id)
+    {
+        $payment = Payment::where('id', $id)->orWhere('tx_reference', $id)->firstOrFail();
+
+        DB::transaction(function () use ($payment) {
+            $payment->update([
+                'status' => 'VERIFIED',
+                'paid_at' => now(),
+            ]);
+
+            if ($payment->proof) {
+                $payment->proof->update([
+                    'status' => 'VERIFIED',
+                    'verified_by' => Auth::id(),
+                ]);
+            }
+
+            if ($student = $payment->student) {
+                $student->update([
+                    'rent_status' => 'PAID',
+                ]);
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Verified Payment ID: '.$payment->id.' (₹'.$payment->amount.')',
+            'module' => 'FINANCE',
+            'record_id' => $payment->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Payment verified successfully!',
         ]);
     }
 

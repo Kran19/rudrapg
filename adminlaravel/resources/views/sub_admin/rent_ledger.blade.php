@@ -115,11 +115,53 @@
                 if (status.includes("Pending")) return '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">' + status + '</span>';
                 return '<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-full">' + status + '</span>';
             }},
-            {title: "Action", field: "status", width: 130, formatter: function(cell){
+            {title: "Action", field: "id", width: 130, formatter: function(cell){
+                var status = cell.getRow().getData().status;
+                if (status === "Paid" || status === "PAID" || status === "VERIFIED") {
+                    return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Verified</span>';
+                }
                 return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1"><i class="fa-solid fa-check"></i> Verify</button>';
+            }, cellClick: function(e, cell){
+                var data = cell.getRow().getData();
+                if (data.status !== "Paid" && data.status !== "PAID" && data.status !== "VERIFIED") {
+                    verifyPayment(data.id);
+                }
             }},
         ]
     });
+
+    function verifyPayment(id) {
+        Swal.fire({
+            title: 'Verify Rent/Deposit Payment?',
+            text: 'This will mark the payment as verified and update student rent status.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563EB',
+            confirmButtonText: 'Yes, Verify Payment'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("/sub-admin/rent-ledger/" + id + "/verify", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        toastr.success(data.message);
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to verify payment.");
+                    }
+                })
+                .catch(err => {
+                    toastr.error("An error occurred during verification.");
+                });
+            }
+        });
+    }
 
     document.getElementById("rent-search").addEventListener("keyup", function(){
         table.setFilter("student_name", "like", this.value);
