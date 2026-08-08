@@ -7,19 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Default Root Redirect
-Route::get('/', function () {
-    if (Auth::check()) {
-        $user = Auth::user();
-        if ($user->role === 'SUPER_ADMIN') {
-            return redirect()->route('super_admin.dashboard');
-        }
-        if ($user->role === 'SUB_ADMIN') {
-            return redirect()->route('sub_admin.dashboard');
-        }
-    }
-
-    return redirect()->route('login');
-});
+Route::get('/', [WebAuthController::class, 'showLoginForm'])->name('root');
 
 // Authentication Web Routes
 Route::get('/login', [WebAuthController::class, 'showLoginForm'])->name('login');

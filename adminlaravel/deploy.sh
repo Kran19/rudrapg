@@ -18,12 +18,8 @@ composer install --optimize-autoloader --no-dev
 # 3. Clear and rebuild caches
 echo "🧹 Clearing old caches..."
 php artisan optimize:clear
-
-echo "⚙️ Caching Configuration..."
-php artisan config:cache
-
-echo "🛣️ Caching Routes..."
-php artisan route:cache
+php artisan route:clear
+php artisan config:clear
 
 echo "🎨 Caching Views..."
 php artisan view:cache
