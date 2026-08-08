@@ -98,20 +98,19 @@
     var subAdminData = @json($subAdmins);
 
     var table = new Tabulator("#subadmins-table", {
-        data: subAdminData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        data: subAdminsData,
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No Sub Admin Accounts Found",
         columns: [
-            {title: "ID", field: "id", width: 110},
-            {title: "Sub Admin Name", field: "name", formatter: function(cell){
+            {title: "ID", field: "id", minWidth: 110},
+            {title: "Sub Admin Name", field: "name", minWidth: 160, formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Email (Login)", field: "email"},
-            {title: "Phone", field: "phone"},
-            {title: "Assigned Branches", field: "assigned_branches", formatter: function(cell){
+            {title: "Email (Login)", field: "email", minWidth: 180},
+            {title: "Phone", field: "phone", minWidth: 130},
+            {title: "Assigned Branches", field: "assigned_branches", minWidth: 180, formatter: function(cell){
                 var branches = cell.getValue() || [];
                 var html = "";
                 branches.forEach(function(b){
@@ -119,10 +118,10 @@
                 });
                 return html || '<span class="text-slate-400 text-xs">None</span>';
             }},
-            {title: "Status", field: "status", width: 100, formatter: function(cell){
+            {title: "Status", field: "status", minWidth: 110, formatter: function(cell){
                 return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Active</span>';
             }},
-            {title: "Created Date", field: "created_at", width: 130},
+            {title: "Created Date", field: "created_at", minWidth: 130},
         ]
     });
 

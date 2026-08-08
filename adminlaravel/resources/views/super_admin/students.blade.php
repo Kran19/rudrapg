@@ -45,29 +45,28 @@
     var studentData = @json($students);
 
     var table = new Tabulator("#students-table", {
-        data: studentData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        data: studentsData,
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No Resident Students Found",
         columns: [
-            {title: "Student ID", field: "id", width: 130},
-            {title: "Full Name", field: "full_name", formatter: function(cell){
+            {title: "Student ID", field: "id", minWidth: 140},
+            {title: "Full Name", field: "full_name", minWidth: 160, formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Phone Number", field: "phone"},
-            {title: "PG Branch", field: "branch_name", formatter: function(cell){
+            {title: "Phone Number", field: "phone", minWidth: 130},
+            {title: "PG Branch", field: "branch_name", minWidth: 140, formatter: function(cell){
                 return '<span class="bg-slate-900 text-white text-xs font-medium px-2.5 py-1 rounded-md">' + cell.getValue() + '</span>';
             }},
-            {title: "Room & Bed", field: "room_bed"},
-            {title: "Joining Date", field: "joining_date"},
-            {title: "KYC Status", field: "kyc_status", formatter: function(cell){
+            {title: "Room & Bed", field: "room_bed", minWidth: 140},
+            {title: "Joining Date", field: "joining_date", minWidth: 120},
+            {title: "KYC Status", field: "kyc_status", minWidth: 120, formatter: function(cell){
                 return cell.getValue() == "VERIFIED" 
                     ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Verified</span>' 
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
             }},
-            {title: "Rent Status", field: "rent_status", formatter: function(cell){
+            {title: "Rent Status", field: "rent_status", minWidth: 120, formatter: function(cell){
                 if (cell.getValue() == "PAID" || cell.getValue() == "Paid") return '<span class="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Paid</span>';
                 if (cell.getValue() == "PENDING" || cell.getValue() == "Pending") return '<span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
                 return '<span class="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Overdue</span>';

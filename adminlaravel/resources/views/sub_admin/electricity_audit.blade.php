@@ -111,33 +111,32 @@
 
     var table = new Tabulator("#electricity-table", {
         data: readingsData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No Electricity Submissions Pending Audit",
         columns: [
-            {title: "Reading ID", field: "code", width: 130},
-            {title: "Student Name", field: "student", formatter: function(cell){
+            {title: "Reading ID", field: "code", minWidth: 130},
+            {title: "Student Name", field: "student", minWidth: 160, formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Room No", field: "room", width: 100},
-            {title: "Current Reading", field: "curr_reading", formatter: function(cell){
+            {title: "Room No", field: "room", minWidth: 100},
+            {title: "Current Reading", field: "curr_reading", minWidth: 140, formatter: function(cell){
                 return cell.getValue() + " kWh";
             }},
-            {title: "Units Consumed", field: "units", formatter: function(cell){
+            {title: "Units Consumed", field: "units", minWidth: 140, formatter: function(cell){
                 return "<strong>" + cell.getValue() + " Units</strong>";
             }},
-            {title: "Total Amount", field: "total", formatter: function(cell){
+            {title: "Total Amount", field: "total", minWidth: 120, formatter: function(cell){
                 return "<strong class='text-emerald-600'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Submission Date", field: "date"},
-            {title: "Status", field: "status", formatter: function(cell){
+            {title: "Submission Date", field: "date", minWidth: 130},
+            {title: "Status", field: "status", minWidth: 130, formatter: function(cell){
                 return (cell.getValue() === "Approved" || cell.getValue() === "APPROVED")
                     ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Approved</span>'
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending Audit</span>';
             }},
-            {title: "Audit Action", field: "id", width: 130, formatter: function(cell){
+            {title: "Audit Action", field: "id", minWidth: 130, formatter: function(cell){
                 var status = cell.getRow().getData().status;
                 if (status === "Approved" || status === "APPROVED") {
                     return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Approved</span>';

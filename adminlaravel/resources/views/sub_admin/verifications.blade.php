@@ -150,36 +150,35 @@
 
     var table = new Tabulator("#verifications-table", {
         data: queueData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No Booking Verification Requests Pending",
         columns: [
-            {title: "Booking ID", field: "id", width: 140, formatter: function(cell){
-                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs'>" + cell.getValue() + "</code>";
+            {title: "Booking ID", field: "id", minWidth: 150, formatter: function(cell){
+                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs font-mono'>" + cell.getValue() + "</code>";
             }},
-            {title: "Student Name", field: "student_name", formatter: function(cell){
+            {title: "Student Name", field: "student_name", minWidth: 160, formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Phone", field: "phone"},
-            {title: "Requested Bed", field: "bed_code", formatter: function(cell, row){
+            {title: "Phone", field: "phone", minWidth: 130},
+            {title: "Requested Bed", field: "bed_code", minWidth: 160, formatter: function(cell, row){
                 return "Room " + cell.getRow().getData().room_number + " (" + cell.getValue() + ")";
             }},
-            {title: "Rent", field: "rent"},
-            {title: "Deposit", field: "deposit"},
-            {title: "Date", field: "date"},
-            {title: "Status", field: "status", formatter: function(cell){
+            {title: "Rent", field: "rent", minWidth: 100},
+            {title: "Deposit", field: "deposit", minWidth: 100},
+            {title: "Date", field: "date", minWidth: 120},
+            {title: "Status", field: "status", minWidth: 140, formatter: function(cell){
                 return (cell.getValue() === "Approved" || cell.getValue() === "APPROVED")
-                    ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Approved</span>'
-                    : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending Verification</span>';
+                    ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check"></i> Approved</span>'
+                    : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-clock"></i> Pending</span>';
             }},
-            {title: "Actions", field: "id", width: 130, formatter: function(cell){
+            {title: "Actions", field: "id", minWidth: 130, formatter: function(cell){
                 var status = cell.getRow().getData().status;
                 if (status === "Approved" || status === "APPROVED") {
                     return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Approved</span>';
                 }
-                return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1"><i class="fa-solid fa-file-contract"></i> Audit</button>';
+                return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xs flex items-center gap-1"><i class="fa-solid fa-file-contract"></i> Audit</button>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 if (data.status !== "Approved" && data.status !== "APPROVED") {

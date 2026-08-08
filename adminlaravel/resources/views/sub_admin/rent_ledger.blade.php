@@ -94,28 +94,27 @@
 
     var table = new Tabulator("#rent-table", {
         data: duesData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No Rent Dues Found",
         columns: [
-            {title: "Resident ID", field: "resident_id", width: 120},
-            {title: "Student Name", field: "student_name", formatter: function(cell){
+            {title: "Resident ID", field: "resident_id", minWidth: 140},
+            {title: "Student Name", field: "student_name", minWidth: 160, formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Room & Bed", field: "room"},
-            {title: "Monthly Rent", field: "rent"},
-            {title: "Due Date", field: "due_date"},
-            {title: "Mode", field: "payment_mode"},
-            {title: "Ref / UTR", field: "utr"},
-            {title: "Status", field: "status", formatter: function(cell){
+            {title: "Room & Bed", field: "room", minWidth: 150},
+            {title: "Monthly Rent", field: "rent", minWidth: 120},
+            {title: "Due Date", field: "due_date", minWidth: 120},
+            {title: "Mode", field: "payment_mode", minWidth: 100},
+            {title: "Ref / UTR", field: "utr", minWidth: 140},
+            {title: "Status", field: "status", minWidth: 140, formatter: function(cell){
                 var status = cell.getValue();
                 if (status.includes("Paid")) return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">' + status + '</span>';
                 if (status.includes("Pending")) return '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">' + status + '</span>';
                 return '<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-full">' + status + '</span>';
             }},
-            {title: "Action", field: "id", width: 130, formatter: function(cell){
+            {title: "Action", field: "id", minWidth: 130, formatter: function(cell){
                 var status = cell.getRow().getData().status;
                 if (status === "Paid" || status === "PAID" || status === "VERIFIED") {
                     return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Verified</span>';

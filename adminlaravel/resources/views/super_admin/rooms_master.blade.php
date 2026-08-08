@@ -170,27 +170,26 @@
 
     var table = new Tabulator("#rooms-table", {
         data: roomsData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No Rooms Found",
         columns: [
-            {title: "Room No", field: "room_number", width: 100, formatter: function(cell){
+            {title: "Room No", field: "room_number", minWidth: 110, formatter: function(cell){
                 return "<strong class='text-slate-900'>Room " + cell.getValue() + "</strong>";
             }},
-            {title: "Floor", field: "floor", width: 90},
-            {title: "Sharing Type", field: "sharing_type"},
-            {title: "AC Status", field: "is_ac", formatter: function(cell){
+            {title: "Floor", field: "floor", minWidth: 90},
+            {title: "Sharing Type", field: "sharing_type", minWidth: 140},
+            {title: "AC Status", field: "is_ac", minWidth: 110, formatter: function(cell){
                 return cell.getValue() ? '<span class="bg-cyan-100 text-cyan-700 text-xs font-bold px-2.5 py-1 rounded-full">AC</span>' : '<span class="bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-1 rounded-full">Non-AC</span>';
             }},
-            {title: "Monthly Rent", field: "rent", formatter: function(cell){ return "₹" + cell.getValue(); }},
-            {title: "Deposit", field: "deposit", formatter: function(cell){ return "₹" + cell.getValue(); }},
-            {title: "Occupancy", field: "occupied_beds", formatter: function(cell, row){
+            {title: "Monthly Rent", field: "rent", minWidth: 120, formatter: function(cell){ return "₹" + cell.getValue(); }},
+            {title: "Deposit", field: "deposit", minWidth: 120, formatter: function(cell){ return "₹" + cell.getValue(); }},
+            {title: "Occupancy", field: "occupied_beds", minWidth: 130, formatter: function(cell, row){
                 var total = cell.getRow().getData().total_beds;
                 return cell.getValue() + " / " + total + " beds";
             }},
-            {title: "Status", field: "status", formatter: function(cell){
+            {title: "Status", field: "status", minWidth: 110, formatter: function(cell){
                 return cell.getValue() == "Full" ? '<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-full">FULL</span>' : '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Available</span>';
             }},
         ]

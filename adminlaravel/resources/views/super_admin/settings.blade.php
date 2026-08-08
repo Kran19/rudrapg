@@ -57,20 +57,19 @@
 
     var table = new Tabulator("#audit-table", {
         data: logsData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No System Audit Activity Found",
         columns: [
-            {title: "ID", field: "id", width: 80},
-            {title: "Timestamp", field: "timestamp", width: 160},
-            {title: "User", field: "user", width: 180},
-            {title: "Action Performed", field: "action"},
-            {title: "Module", field: "module", width: 110, formatter: function(cell){
+            {title: "ID", field: "id", minWidth: 80},
+            {title: "Timestamp", field: "timestamp", minWidth: 160},
+            {title: "User", field: "user", minWidth: 180},
+            {title: "Action Performed", field: "action", minWidth: 200},
+            {title: "Module", field: "module", minWidth: 110, formatter: function(cell){
                 return '<span class="bg-slate-900 text-white text-xs font-medium px-2 py-0.5 rounded">' + cell.getValue() + '</span>';
             }},
-            {title: "IP Address", field: "ip", width: 120},
+            {title: "IP Address", field: "ip", minWidth: 120},
         ]
     });
 </script>

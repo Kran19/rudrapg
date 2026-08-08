@@ -94,33 +94,32 @@
 <script>
     var ticketsData = @json($tickets);
 
-    var table = new Tabulator("#tickets-table", {
+    var table = new Tabulator("#complaints-table", {
         data: ticketsData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No Active Maintenance Tickets",
         columns: [
-            {title: "Ticket No", field: "ticket", width: 130, formatter: function(cell){
-                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs'>" + cell.getValue() + "</code>";
+            {title: "Ticket No", field: "ticket", minWidth: 130, formatter: function(cell){
+                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs font-mono'>" + cell.getValue() + "</code>";
             }},
-            {title: "Student Name", field: "student", formatter: function(cell){
+            {title: "Student Name", field: "student", minWidth: 160, formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Room No", field: "room", width: 100},
-            {title: "Category", field: "category", width: 120, formatter: function(cell){
+            {title: "Room No", field: "room", minWidth: 100},
+            {title: "Category", field: "category", minWidth: 120, formatter: function(cell){
                 return '<span class="bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-md">' + cell.getValue() + '</span>';
             }},
-            {title: "Issue Title", field: "title"},
-            {title: "Priority", field: "priority", width: 110, formatter: function(cell){
+            {title: "Issue Title", field: "title", minWidth: 180},
+            {title: "Priority", field: "priority", minWidth: 110, formatter: function(cell){
                 var p = cell.getValue();
                 if(p === 'High') return '<span class="bg-rose-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">High</span>';
                 if(p === 'Medium') return '<span class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Medium</span>';
                 return '<span class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Low</span>';
             }},
-            {title: "Created Date", field: "date", width: 120},
-            {title: "Status", field: "status", width: 120, formatter: function(cell){
+            {title: "Created Date", field: "date", minWidth: 120},
+            {title: "Status", field: "status", minWidth: 120, formatter: function(cell){
                 var s = cell.getValue();
                 if(s === 'Resolved') return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Resolved</span>';
                 if(s === 'In Progress') return '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">In Progress</span>';

@@ -109,32 +109,31 @@
 
     var table = new Tabulator("#finance-table", {
         data: txData,
-        layout: "fitColumns",
-        responsiveLayout: "collapse",
+        layout: "fitDataFill",
         pagination: "local",
         paginationSize: 10,
         placeholder: "No Financial Transactions Found",
         columns: [
-            {title: "Txn Reference", field: "tx_reference", width: 160, formatter: function(cell){
-                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs'>" + cell.getValue() + "</code>";
+            {title: "Txn Reference", field: "tx_reference", minWidth: 160, formatter: function(cell){
+                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs font-mono'>" + cell.getValue() + "</code>";
             }},
-            {title: "Student Name", field: "student_name", formatter: function(cell){
+            {title: "Student Name", field: "student_name", minWidth: 160, formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Branch", field: "branch_name"},
-            {title: "Payment Type", field: "payment_type", formatter: function(cell){
+            {title: "Branch", field: "branch_name", minWidth: 140},
+            {title: "Payment Type", field: "payment_type", minWidth: 120, formatter: function(cell){
                 var type = cell.getValue();
                 if(type === 'Rent' || type === 'RENT') return '<span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">Rent</span>';
                 if(type === 'Security Deposit' || type === 'DEPOSIT') return '<span class="bg-purple-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">Deposit</span>';
                 return '<span class="bg-cyan-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">Electricity</span>';
             }},
-            {title: "Amount", field: "amount", formatter: function(cell){
+            {title: "Amount", field: "amount", minWidth: 110, formatter: function(cell){
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Payment Mode", field: "payment_mode"},
-            {title: "Ref / UTR No", field: "utr"},
-            {title: "Date", field: "date"},
-            {title: "Status", field: "status", formatter: function(cell){
+            {title: "Payment Mode", field: "payment_mode", minWidth: 120},
+            {title: "Ref / UTR No", field: "utr", minWidth: 140},
+            {title: "Date", field: "date", minWidth: 120},
+            {title: "Status", field: "status", minWidth: 120, formatter: function(cell){
                 return (cell.getValue() === "Verified" || cell.getValue() === "VERIFIED" || cell.getValue() === "PAID")
                     ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Verified</span>' 
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';

@@ -301,22 +301,22 @@
     <!-- Main Content Area Container -->
     <div class="flex-1 flex flex-col min-w-0">
         <!-- Sticky Navbar Header -->
-        <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 px-4 lg:px-8 py-3 flex items-center justify-between shadow-xs transition-colors duration-200">
+        <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 px-3 sm:px-6 py-2.5 flex items-center justify-between shadow-xs transition-colors duration-200">
             <!-- Left Side: Mobile Toggle, Breadcrumbs & Title -->
-            <div class="flex items-center gap-4">
-                <button @click="sidebarOpen = true" class="lg:hidden text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white p-2 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <i class="fa-solid fa-bars text-lg"></i>
+            <div class="flex items-center gap-2 sm:gap-4 min-w-0">
+                <button @click="sidebarOpen = true" class="lg:hidden text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white p-2 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+                    <i class="fa-solid fa-bars text-base"></i>
                 </button>
-                <div>
+                <div class="min-w-0">
                     <!-- Breadcrumbs Component -->
                     <nav class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-400 font-medium mb-0.5">
                         <span>Portal</span>
                         <i class="fa-solid fa-chevron-right text-[10px]"></i>
                         <span>{{ request()->is('sub-admin*') ? 'Sub Admin' : 'Super Admin' }}</span>
                         <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                        <span class="text-blue-600 dark:text-blue-400 font-semibold">@yield('page_title', 'Dashboard')</span>
+                        <span class="text-blue-600 dark:text-blue-400 font-semibold truncate">@yield('page_title', 'Dashboard')</span>
                     </nav>
-                    <h2 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">@yield('page_title', 'Dashboard')</h2>
+                    <h2 class="text-sm sm:text-base lg:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-none">@yield('page_title', 'Dashboard')</h2>
                 </div>
             </div>
 
@@ -334,16 +334,16 @@
             </div>
 
             <!-- Right Side: Dark Mode Toggle, Notifications & Profile -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 <!-- Dark Mode Toggle Button -->
                 <button @click="darkMode = !darkMode" 
                         class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                         title="Toggle Light / Dark Mode">
                     <template x-if="!darkMode">
-                        <i class="fa-solid fa-moon text-base text-amber-500"></i>
+                        <i class="fa-solid fa-moon text-sm sm:text-base text-amber-500"></i>
                     </template>
                     <template x-if="darkMode">
-                        <i class="fa-solid fa-sun text-base text-amber-400"></i>
+                        <i class="fa-solid fa-sun text-sm sm:text-base text-amber-400"></i>
                     </template>
                 </button>
 
@@ -351,7 +351,7 @@
                 <div class="relative">
                     <button @click="notificationOpen = !notificationOpen" @click.away="notificationOpen = false"
                             class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative">
-                        <i class="fa-solid fa-bell text-base"></i>
+                        <i class="fa-solid fa-bell text-sm sm:text-base"></i>
                         <span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
                     </button>
 
@@ -363,7 +363,7 @@
                          x-transition:leave="transition ease-in duration-75"
                          x-transition:leave-start="transform opacity-100 scale-100"
                          x-transition:leave-end="transform opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50">
+                         class="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50">
                         <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                             <span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">System Alerts</span>
                             <span class="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full">3 New</span>
@@ -387,21 +387,21 @@
                     </div>
                 </div>
 
-                <!-- Role Switcher Pill -->
+                <!-- Role Switcher Pill (Responsive) -->
                 @auth
                     @if(auth()->user()->role === 'SUPER_ADMIN')
-                        <div class="bg-slate-100 dark:bg-slate-700 p-1 rounded-full border border-slate-200 dark:border-slate-600 flex items-center">
+                        <div class="hidden sm:flex bg-slate-100 dark:bg-slate-700 p-1 rounded-full border border-slate-200 dark:border-slate-600 items-center">
                             <a href="{{ route('super_admin.dashboard') }}" 
-                               class="px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 {{ !request()->is('sub-admin*') ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
-                                🛡️ Executive Admin
+                               class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 {{ !request()->is('sub-admin*') ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
+                                🛡️ Executive
                             </a>
                             <a href="{{ route('sub_admin.dashboard') }}" 
-                               class="px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 {{ request()->is('sub-admin*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
+                               class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 {{ request()->is('sub-admin*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
                                 🛡️ Sub Admin
                             </a>
                         </div>
                     @else
-                        <div class="bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                        <div class="hidden sm:flex bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold items-center gap-1">
                             <i class="fa-solid fa-shield-halved"></i> Sub Admin Desk
                         </div>
                     @endif
