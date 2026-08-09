@@ -4,7 +4,7 @@
 @section('page_title', 'Student Verification Desk (Naroda Branch)')
 
 @section('content')
-<div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: @json($availableBeds) }"
+<div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: (window.availableBedsData || []) }"
      @open-verify-modal.window="activeStudent = $event.detail; selectedBedId = ''; verifyModalOpen = true"
      @close-verify-modal.window="verifyModalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -155,6 +155,7 @@
 
 @section('scripts')
 <script>
+    window.availableBedsData = @json($availableBeds);
     var queueData = @json($queue);
 
     var table = new Tabulator("#verifications-table", {
