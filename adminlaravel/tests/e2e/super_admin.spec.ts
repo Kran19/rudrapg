@@ -18,9 +18,10 @@ test.describe('Super Admin Flows', () => {
     await expect(page.locator('form#create-subadmin-form')).toBeVisible();
 
     // Fill form
+    const uniqueEmail = `playwright.${Date.now()}@rudrapg.com`;
     await page.fill('input[name="name"]', 'Playwright Tester');
-    await page.fill('input[name="email"]', 'playwright.tester@rudrapg.com');
-    await page.fill('input[name="phone"]', '9999988888');
+    await page.fill('input[name="email"]', uniqueEmail);
+    await page.fill('input[name="phone"]', '99999' + Math.floor(10000 + Math.random() * 90000));
     await page.fill('input[name="password"]', 'password');
     
     // Check at least one branch
@@ -30,12 +31,10 @@ test.describe('Super Admin Flows', () => {
     }
 
     // Submit
-    await page.click('button[type="submit"]');
+    await page.click('button:has-text("Create Account")');
 
-    // Verify Toastr
-    await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
-    
-    // Verify it appeared in table
-    await expect(page.locator('.tabulator-row:has-text("Playwright Tester")')).toBeVisible();
+    // Reload page to verify persistence in table
+    await page.reload();
+    await expect(page.locator(`.tabulator-row:has-text("${uniqueEmail}")`)).toBeVisible({ timeout: 15000 });
   });
 });

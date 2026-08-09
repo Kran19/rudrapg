@@ -20,7 +20,7 @@ test.describe('Sub Admin Flows', () => {
       await auditButton.click();
       
       // Wait for the modal and click approve
-      const approveButton = page.locator('button:has-text("Approve Booking & Key Handover")');
+      const approveButton = page.locator('button:has-text("Step 3: Approve & Key Handover")');
       await approveButton.click();
       
       // Click SweetAlert confirm button

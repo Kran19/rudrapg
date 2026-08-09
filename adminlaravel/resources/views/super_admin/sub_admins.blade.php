@@ -95,7 +95,7 @@
 
 @section('scripts')
 <script>
-    var subAdminData = @json($subAdmins);
+    var subAdminsData = @json($subAdmins);
 
     var table = new Tabulator("#subadmins-table", {
         data: subAdminsData,

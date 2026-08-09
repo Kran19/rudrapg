@@ -50,7 +50,7 @@ test.describe('End-to-End Student Lifecycle', () => {
     await auditButton.click();
 
     // Assign Room/Bed if modal requires it (assuming modal has these fields)
-    const approveButton = page.locator('button:has-text("Approve Booking & Key Handover")');
+    const approveButton = page.locator('button:has-text("Step 3: Approve & Key Handover")');
     await expect(approveButton).toBeVisible({ timeout: 15000 });
     await page.waitForTimeout(500); // Give Alpine transition a moment
     await approveButton.click();
