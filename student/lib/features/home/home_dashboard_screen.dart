@@ -87,16 +87,20 @@ class HomeDashboardScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.accent.withValues(alpha: 0.2),
+                              color: (resident.isRoomAssigned ? AppColors.accent : AppColors.warning).withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              'ROOM ${resident.roomNumber} • ${resident.bedCode}',
-                              style: AppTypography.badge.copyWith(color: AppColors.accent),
+                              resident.isRoomAssigned
+                                  ? 'ROOM ${resident.roomNumber} • ${resident.bedCode}'
+                                  : 'ROOM ALLOCATION PENDING',
+                              style: AppTypography.badge.copyWith(
+                                color: resident.isRoomAssigned ? AppColors.accent : AppColors.warning,
+                              ),
                             ),
                           ),
                           Text(
-                            '₹${resident.monthlyRent.toInt()}/mo',
+                            resident.isRoomAssigned ? '₹${resident.monthlyRent.toInt()}/mo' : 'Pending Allocation',
                             style: AppTypography.titleMedium.copyWith(color: Colors.white),
                           ),
                         ],

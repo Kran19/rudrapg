@@ -52,4 +52,13 @@ class ResidentModel {
     this.emergencyContactName = '',
     this.emergencyContactPhone = '',
   });
+
+  bool get isRoomAssigned =>
+      roomNumber.isNotEmpty &&
+      roomNumber != 'N/A' &&
+      roomNumber != 'Pending Allocation' &&
+      roomNumber != 'Pending' &&
+      bedCode != 'N/A' &&
+      bedCode != 'Pending' &&
+      monthlyRent > 0;
 }

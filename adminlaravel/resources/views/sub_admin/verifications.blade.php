@@ -113,7 +113,7 @@
                         </div>
                         <div class="flex justify-between pt-1">
                             <span class="text-slate-600">Current Spot:</span>
-                            <span class="font-bold text-slate-900" x-text="'Room ' + activeStudent.room_number + ' (' + activeStudent.bed_code + ')'"></span>
+                            <span class="font-bold text-slate-900" x-text="(!activeStudent.room_number || activeStudent.room_number === 'Pending' || activeStudent.room_number === 'Unassigned') ? 'Room Not Assigned Yet' : 'Room ' + activeStudent.room_number + ' (' + activeStudent.bed_code + ')'"></span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-600">Monthly Rent:</span>
@@ -296,11 +296,28 @@
                 return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
             }},
             {title: "Phone", field: "phone", minWidth: 130},
-            {title: "Requested Bed", field: "bed_code", minWidth: 160, formatter: function(cell, row){
-                return "Room " + cell.getRow().getData().room_number + " (" + cell.getValue() + ")";
+            {title: "Requested Bed", field: "bed_code", minWidth: 160, formatter: function(cell){
+                var room = cell.getRow().getData().room_number;
+                var bed = cell.getValue();
+                if (!room || room === "Pending" || room === "Unassigned") {
+                    return "<span class='text-amber-600 font-semibold text-xs'><i class='fa-solid fa-bed mr-1'></i> Pending Assignment</span>";
+                }
+                return "Room " + room + " (" + bed + ")";
             }},
-            {title: "Rent", field: "rent", minWidth: 100},
-            {title: "Deposit", field: "deposit", minWidth: 100},
+            {title: "Rent", field: "rent", minWidth: 140, formatter: function(cell){
+                var val = cell.getValue();
+                if (!val || val === "Pending Room Allocation" || val === "₹0") {
+                    return "<span class='text-slate-400 italic text-xs'>Pending Allocation</span>";
+                }
+                return "<strong class='text-slate-900'>" + val + "</strong>";
+            }},
+            {title: "Deposit", field: "deposit", minWidth: 140, formatter: function(cell){
+                var val = cell.getValue();
+                if (!val || val === "Pending Room Allocation" || val === "₹0") {
+                    return "<span class='text-slate-400 italic text-xs'>Pending Allocation</span>";
+                }
+                return "<strong class='text-slate-900'>" + val + "</strong>";
+            }},
             {title: "Date", field: "date", minWidth: 120},
             {title: "Status", field: "status", minWidth: 140, formatter: function(cell){
                 return (cell.getValue() === "Approved" || cell.getValue() === "APPROVED")

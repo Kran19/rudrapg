@@ -113,7 +113,7 @@ class RegistrationSubmittedScreen extends StatelessWidget {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
-                        'Your registration is submitted. Use your registered mobile number & default password "password123" to log in. The branch manager will approve your profile and assign your room.',
+                        'Your registration is submitted! Step 1: Sub-Admin audits your KYC documents. Step 2: Sub-Admin assigns your Room & Bed. Log in using your registered mobile number & default password "password123".',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.primary,
                           height: 1.4,

@@ -26,6 +26,8 @@ class StudentResource extends JsonResource
             'rent_status' => $this->rent_status,
             'deposit_status' => $this->deposit_status,
             'status' => $this->status,
+            'is_room_assigned' => !is_null($this->bed_id),
+            'allocation_status' => is_null($this->bed_id) ? 'PENDING_ROOM_ALLOCATION' : 'ROOM_ALLOCATED',
             'branch' => new BranchResource($this->whenLoaded('branch')),
             'room' => $this->whenLoaded('room', function () {
                 return [
