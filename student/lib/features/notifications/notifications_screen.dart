@@ -3,7 +3,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_card.dart';
-import '../../data/dummy/dummy_data.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../home/data/student_repository.dart';

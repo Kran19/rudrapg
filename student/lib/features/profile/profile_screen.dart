@@ -3,7 +3,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_card.dart';
-import '../../data/dummy/dummy_data.dart';
 import '../electricity/electricity_screen.dart';
 import '../login/login_screen.dart';
 import '../resident/my_room_screen.dart';
@@ -63,7 +62,7 @@ class ProfileScreen extends ConsumerWidget {
                             Text(resident.fullName.isNotEmpty ? resident.fullName : 'Resident', style: AppTypography.titleLarge),
                             const SizedBox(height: 2),
                             Text(
-                              '${resident.branchName}',
+                              resident.branchName,
                               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
                             ),
                             const SizedBox(height: 6),

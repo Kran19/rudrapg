@@ -318,7 +318,7 @@ class SuperAdminController extends Controller
                 'amount' => '₹'.number_format($payment->amount),
                 'payment_mode' => $payment->payment_mode ?? 'UPI',
                 'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
-                'date' => $payment->payment_date ? $payment->payment_date->format('d M Y') : 'N/A',
+                'date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : 'N/A',
                 'status' => $payment->status,
             ];
         });
