@@ -111,7 +111,7 @@ class SubAdminController extends Controller
                 ];
             });
 
-        $availableBeds = \App\Models\Bed::with('room')
+        $availableBeds = Bed::with('room')
             ->where('status', 'AVAILABLE')
             ->get()
             ->map(function ($b) {
@@ -158,7 +158,7 @@ class SubAdminController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Please select a Room & Bed to allocate.'], 422);
         }
 
-        $bed = \App\Models\Bed::find($selectedBedId);
+        $bed = Bed::find($selectedBedId);
         if (!$bed || $bed->status !== 'AVAILABLE') {
             return response()->json(['status' => 'error', 'message' => 'Selected bed is no longer available.'], 422);
         }
@@ -221,14 +221,14 @@ class SubAdminController extends Controller
 
                 $selectedBedId = $request->input('bed_id');
                 if (!$selectedBedId && !$student->bed_id) {
-                    $availableBed = \App\Models\Bed::where('status', 'AVAILABLE')->first();
+                    $availableBed = Bed::where('status', 'AVAILABLE')->first();
                     if ($availableBed) {
                         $selectedBedId = $availableBed->id;
                     }
                 }
 
                 if ($selectedBedId) {
-                    $bed = \App\Models\Bed::find($selectedBedId);
+                    $bed = Bed::find($selectedBedId);
                     if ($bed) {
                         $student->update([
                             'room_id' => $bed->room_id,
