@@ -85,7 +85,10 @@ class WebAuthController extends Controller
         if (!file_exists($path)) {
             abort(404, 'APK file not found.');
         }
-        return response()->download($path, 'rudraboyspg-student-v2.4.apk', [
+
+        return response()->file($path, [
+            'Content-Type' => 'application/vnd.android.package-archive',
+            'Content-Disposition' => 'attachment; filename="rudraboyspg-student-v2.4.apk"',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
             'Pragma' => 'no-cache',
             'Expires' => '0',

@@ -6,6 +6,9 @@
     RewriteEngine On
     RewriteBase /rudrapgwebsite/adminlaravel/public/
 
+    # Handle Android APK MIME Type
+    AddType application/vnd.android.package-archive .apk
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
