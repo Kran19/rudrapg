@@ -65,28 +65,31 @@ class SubAdminController extends Controller
             ->map(function ($req) {
                 $student = $req->student;
 
+                $profilePhotoDoc = $student ? $student->documents->firstWhere('doc_type', 'PROFILE_PHOTO') : null;
                 $aadhaarFrontDoc = $student ? $student->documents->firstWhere('doc_type', 'AADHAAR_FRONT') : null;
                 $aadhaarBackDoc = $student ? $student->documents->firstWhere('doc_type', 'AADHAAR_BACK') : null;
+                $panCardDoc = $student ? $student->documents->firstWhere('doc_type', 'PAN_CARD') : null;
                 
                 $latestPayment = $student ? $student->payments->first() : null;
                 $paymentProof = $latestPayment ? $latestPayment->proof : null;
 
-                $formatUrl = function (?string $path, string $fallback) {
-                    if (!$path) return $fallback;
+                $formatUrl = function (?string $path) {
+                    if (!$path) return null;
                     if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
                     return asset('storage/' . ltrim(str_replace('storage/', '', $path), '/'));
                 };
-
-                $fallbackAadhaar = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=600&q=80';
-                $fallbackProof = 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80';
 
                 return [
                     'id' => $req->app_reference,
                     'db_id' => $req->id,
                     'student_name' => $student ? $student->full_name : 'Applicant',
                     'phone' => $student ? $student->phone : 'N/A',
+                    'email' => $student ? ($student->email ?? 'N/A') : 'N/A',
                     'aadhaar' => $student ? $student->aadhaar_number : 'N/A',
                     'pan' => $student ? ($student->pan_number ?? 'N/A') : 'N/A',
+                    'parent_name' => $student ? ($student->parent_name ?? 'N/A') : 'N/A',
+                    'parent_phone' => $student ? ($student->parent_phone ?? 'N/A') : 'N/A',
+                    'address' => $student ? ($student->current_address ?? 'N/A') : 'N/A',
                     'room_number' => $student && $student->room ? $student->room->room_number : 'Unassigned',
                     'bed_code' => $student && $student->bed ? $student->bed->bed_code : 'Unassigned',
                     'sharing_type' => $student && $student->room ? $student->room->sharing_type : 'Standard',
@@ -94,9 +97,12 @@ class SubAdminController extends Controller
                     'deposit' => $student && $student->bed ? '₹'.number_format($student->bed->security_deposit) : '₹0',
                     'date' => $req->created_at ? $req->created_at->format('d M Y') : 'N/A',
                     'status' => $req->status == 'PENDING' ? 'Pending Verification' : $req->status,
-                    'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path, $fallbackAadhaar),
-                    'aadhaar_back' => $formatUrl($aadhaarBackDoc?->file_path, $fallbackAadhaar),
-                    'payment_proof' => $formatUrl($paymentProof?->screenshot_path, $fallbackProof),
+                    'profile_photo' => $formatUrl($profilePhotoDoc?->file_path),
+                    'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path),
+                    'aadhaar_back' => $formatUrl($aadhaarBackDoc?->file_path),
+                    'pan_card' => $formatUrl($panCardDoc?->file_path),
+                    'payment_proof' => $formatUrl($paymentProof?->screenshot_path),
+                    'payment_status' => $latestPayment ? $latestPayment->status : ($paymentProof ? 'UPLOADED' : 'PENDING_UPLOAD'),
                 ];
             });
 

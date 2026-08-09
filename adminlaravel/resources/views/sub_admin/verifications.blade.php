@@ -4,9 +4,10 @@
 @section('page_title', 'Student Verification Desk (Naroda Branch)')
 
 @section('content')
-<div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: (window.availableBedsData || []) }"
+<div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: (window.availableBedsData || []), lightboxOpen: false, lightboxSrc: '', lightboxTitle: '' }"
      @open-verify-modal.window="activeStudent = $event.detail; selectedBedId = ''; verifyModalOpen = true"
-     @close-verify-modal.window="verifyModalOpen = false">
+     @close-verify-modal.window="verifyModalOpen = false"
+     @open-lightbox.window="lightboxSrc = $event.detail.src; lightboxTitle = $event.detail.title; lightboxOpen = true">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h3 class="text-lg font-bold text-slate-900">Student Booking Approval Queue</h3>
@@ -38,11 +39,11 @@
          class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         
         <div @click.away="verifyModalOpen = false" 
-             class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
+             class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden transform transition-all">
             
             <div class="bg-slate-900 text-white p-5 flex items-center justify-between">
                 <h4 class="font-bold text-base flex items-center gap-2">
-                    <i class="fa-solid fa-user-shield text-blue-400"></i> Document Verification: <span x-text="activeStudent.student_name"></span>
+                    <i class="fa-solid fa-user-shield text-blue-400"></i> Applicant Audit Desk: <span class="text-blue-300" x-text="activeStudent.student_name"></span>
                 </h4>
                 <button @click="verifyModalOpen = false" class="text-slate-400 hover:text-white">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -51,32 +52,54 @@
             
             <div class="p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-6">
                 <!-- Left: Student Details & Bed Assignment -->
-                <div class="md:col-span-4 space-y-4 border-r border-slate-100 pr-4">
+                <div class="md:col-span-5 space-y-4 border-r border-slate-100 pr-4">
                     <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-id-card"></i> Applicant Details
+                        <i class="fa-solid fa-id-card"></i> Personal & Contact Info
                     </h5>
                     
-                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
-                        <div>
-                            <span class="text-[11px] text-slate-500 font-medium block">Booking Reference</span>
-                            <span class="font-mono text-sm font-bold text-slate-900" x-text="activeStudent.id"></span>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 font-medium">Ref Code:</span>
+                            <span class="font-mono font-bold text-slate-900" x-text="activeStudent.id"></span>
                         </div>
-                        <div>
-                            <span class="text-[11px] text-slate-500 font-medium block">Phone Number</span>
-                            <span class="text-xs font-semibold text-slate-800" x-text="activeStudent.phone"></span>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 font-medium">Phone:</span>
+                            <span class="font-semibold text-slate-800" x-text="activeStudent.phone"></span>
                         </div>
-                        <div>
-                            <span class="text-[11px] text-slate-500 font-medium block">Aadhaar Number</span>
-                            <span class="text-xs font-semibold text-slate-800" x-text="activeStudent.aadhaar"></span>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 font-medium">Email:</span>
+                            <span class="font-semibold text-slate-800" x-text="activeStudent.email"></span>
                         </div>
-                        <div>
-                            <span class="text-[11px] text-slate-500 font-medium block">PAN Card Number</span>
-                            <span class="text-xs font-semibold text-slate-800" x-text="activeStudent.pan"></span>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 font-medium">Aadhaar No:</span>
+                            <span class="font-semibold text-slate-800" x-text="activeStudent.aadhaar"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 font-medium">PAN No:</span>
+                            <span class="font-semibold text-slate-800" x-text="activeStudent.pan"></span>
                         </div>
                     </div>
 
-                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5 pt-2">
-                        <i class="fa-solid fa-bed"></i> Assign / Allocate Bed
+                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5 pt-1">
+                        <i class="fa-solid fa-people-roof"></i> Parent & Address Info
+                    </h5>
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 font-medium">Parent Name:</span>
+                            <span class="font-semibold text-slate-800" x-text="activeStudent.parent_name"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 font-medium">Parent Phone:</span>
+                            <span class="font-semibold text-slate-800" x-text="activeStudent.parent_phone"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 font-medium block mb-0.5">Permanent Address:</span>
+                            <span class="font-normal text-slate-700 block leading-tight" x-text="activeStudent.address"></span>
+                        </div>
+                    </div>
+
+                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5 pt-1">
+                        <i class="fa-solid fa-bed"></i> Assign Room & Bed
                     </h5>
                     <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 space-y-2 text-xs">
                         <div>
@@ -103,31 +126,115 @@
                     </div>
                 </div>
 
-                <!-- Center/Right: Images Preview -->
-                <div class="md:col-span-8 space-y-4">
-                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-images"></i> Identity & Payment Attachments
+                <!-- Center/Right: Images Preview & Lightbox Triggers -->
+                <div class="md:col-span-7 space-y-4">
+                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center justify-between">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-images"></i> Identity & Document Attachments</span>
+                        <span class="text-[10px] text-slate-400 font-normal"><i class="fa-solid fa-magnifying-glass-plus mr-0.5"></i> Click image to zoom</span>
                     </h5>
                     
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Aadhaar Front Image</label>
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center">
-                                <img :src="activeStudent.aadhaar_front" class="w-full h-32 object-cover rounded-lg">
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Passport Profile Photo</label>
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
+                                 @click="activeStudent.profile_photo && $dispatch('open-lightbox', { src: activeStudent.profile_photo, title: 'Profile Photo - ' + activeStudent.student_name })">
+                                <template x-if="activeStudent.profile_photo">
+                                    <div class="relative">
+                                        <img :src="activeStudent.profile_photo" class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
+                                        <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
+                                            <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!activeStudent.profile_photo">
+                                    <div class="h-28 flex flex-col items-center justify-center text-slate-400 text-xs">
+                                        <i class="fa-solid fa-user-gear text-2xl mb-1"></i>
+                                        <span>Not Uploaded</span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Aadhaar Front Image</label>
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
+                                 @click="activeStudent.aadhaar_front && $dispatch('open-lightbox', { src: activeStudent.aadhaar_front, title: 'Aadhaar Front - ' + activeStudent.student_name })">
+                                <template x-if="activeStudent.aadhaar_front">
+                                    <div class="relative">
+                                        <img :src="activeStudent.aadhaar_front" class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
+                                        <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
+                                            <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!activeStudent.aadhaar_front">
+                                    <div class="h-28 flex flex-col items-center justify-center text-slate-400 text-xs">
+                                        <i class="fa-solid fa-id-card text-2xl mb-1"></i>
+                                        <span>Not Uploaded</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
                         <div>
                             <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Aadhaar Back Image</label>
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center">
-                                <img :src="activeStudent.aadhaar_back" class="w-full h-32 object-cover rounded-lg">
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
+                                 @click="activeStudent.aadhaar_back && $dispatch('open-lightbox', { src: activeStudent.aadhaar_back, title: 'Aadhaar Back - ' + activeStudent.student_name })">
+                                <template x-if="activeStudent.aadhaar_back">
+                                    <div class="relative">
+                                        <img :src="activeStudent.aadhaar_back" class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
+                                        <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
+                                            <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!activeStudent.aadhaar_back">
+                                    <div class="h-28 flex flex-col items-center justify-center text-slate-400 text-xs">
+                                        <i class="fa-solid fa-id-card text-2xl mb-1"></i>
+                                        <span>Not Uploaded</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">PAN Card Attachment</label>
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
+                                 @click="activeStudent.pan_card && $dispatch('open-lightbox', { src: activeStudent.pan_card, title: 'PAN Card - ' + activeStudent.student_name })">
+                                <template x-if="activeStudent.pan_card">
+                                    <div class="relative">
+                                        <img :src="activeStudent.pan_card" class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
+                                        <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
+                                            <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!activeStudent.pan_card">
+                                    <div class="h-28 flex flex-col items-center justify-center text-slate-400 text-xs">
+                                        <i class="fa-solid fa-credit-card text-2xl mb-1"></i>
+                                        <span>Not Uploaded</span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Payment Proof Screenshot (Rent + Deposit)</label>
-                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-center">
-                            <img :src="activeStudent.payment_proof" class="w-full h-44 object-contain rounded-lg">
+                    <div class="pt-2">
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Payment Proof (Rent + Deposit Receipt)</label>
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-center relative group overflow-hidden">
+                            <template x-if="activeStudent.payment_proof">
+                                <div class="cursor-pointer" @click="$dispatch('open-lightbox', { src: activeStudent.payment_proof, title: 'Payment Receipt - ' + activeStudent.student_name })">
+                                    <img :src="activeStudent.payment_proof" class="w-full h-36 object-contain rounded-lg group-hover:scale-105 transition-all">
+                                    <div class="mt-1 text-[11px] text-blue-600 font-bold"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom High-Res Payment Proof</div>
+                                </div>
+                            </template>
+                            <template x-if="!activeStudent.payment_proof">
+                                <div class="p-4 bg-amber-50/60 rounded-lg border border-amber-100 text-center">
+                                    <i class="fa-solid fa-clock text-amber-500 text-lg mb-1"></i>
+                                    <div class="text-xs font-bold text-amber-800">Payment Upload Pending from Resident App</div>
+                                    <p class="text-[11px] text-amber-600 mt-0.5">Payment proof can be submitted by resident after profile approval and bed allocation.</p>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -148,6 +255,23 @@
                 <span class="text-xs font-bold text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Application Approved & Bed Allocated</span>
                 <button type="button" @click="verifyModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Image Lightbox Zoom Modal -->
+    <div x-show="lightboxOpen" 
+         x-transition
+         class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[60] flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl flex justify-between items-center text-white mb-3">
+            <h3 class="text-sm font-bold flex items-center gap-2">
+                <i class="fa-solid fa-magnifying-glass-plus text-blue-400"></i> <span x-text="lightboxTitle"></span>
+            </h3>
+            <button @click="lightboxOpen = false" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-700">
+                <i class="fa-solid fa-xmark mr-1"></i> Close Lightbox (Esc)
+            </button>
+        </div>
+        <div class="relative max-w-4xl max-h-[85vh] flex items-center justify-center overflow-auto rounded-2xl border border-slate-800 bg-slate-900/50 p-2">
+            <img :src="lightboxSrc" class="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl transition-transform hover:scale-125 cursor-zoom-in">
         </div>
     </div>
 </div>
