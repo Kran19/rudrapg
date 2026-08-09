@@ -240,19 +240,32 @@
                 </div>
             </div>
 
-            <!-- Footer Actions with SweetAlert2 Triggers -->
-            <div x-show="activeStudent && activeStudent.status !== 'Approved' && activeStudent.status !== 'APPROVED'" class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+            <!-- Footer Actions with Sequential Step Triggers -->
+            <div x-show="activeStudent && activeStudent.status !== 'Approved' && activeStudent.status !== 'APPROVED'" class="p-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <button type="button" @click="rejectBooking(activeStudent)" 
                         class="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors">
                     <i class="fa-solid fa-xmark mr-1"></i> Reject Application
                 </button>
-                <button type="button" @click="approveBooking(activeStudent, selectedBedId)" 
-                        class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
-                    <i class="fa-solid fa-check mr-1"></i> Approve Booking & Key Handover
-                </button>
+                
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="approveKycOnly(activeStudent)" 
+                            class="px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all">
+                        <i class="fa-solid fa-user-check mr-1"></i> Step 1: Approve Profile KYC
+                    </button>
+
+                    <button type="button" @click="assignBedOnly(activeStudent, selectedBedId)" 
+                            class="px-4 py-2 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all">
+                        <i class="fa-solid fa-bed mr-1"></i> Step 2: Assign Room & Bed
+                    </button>
+
+                    <button type="button" @click="approveBooking(activeStudent, selectedBedId)" 
+                            class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
+                        <i class="fa-solid fa-key mr-1"></i> Step 3: Approve & Key Handover
+                    </button>
+                </div>
             </div>
             <div x-show="activeStudent && (activeStudent.status === 'Approved' || activeStudent.status === 'APPROVED')" class="p-4 bg-emerald-50 border-t border-emerald-100 flex items-center justify-between">
-                <span class="text-xs font-bold text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Application Approved & Bed Allocated</span>
+                <span class="text-xs font-bold text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Application Fully Approved & Key Handed Over</span>
                 <button type="button" @click="verifyModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl">Close</button>
             </div>
         </div>
@@ -319,15 +332,21 @@
                 return "<strong class='text-slate-900'>" + val + "</strong>";
             }},
             {title: "Date", field: "date", minWidth: 120},
-            {title: "Status", field: "status", minWidth: 140, formatter: function(cell){
-                return (cell.getValue() === "Approved" || cell.getValue() === "APPROVED")
-                    ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check"></i> Approved</span>'
-                    : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-clock"></i> Pending</span>';
+            {title: "Status", field: "status", minWidth: 160, formatter: function(cell){
+                var val = cell.getValue();
+                if (val === "Approved" || val === "APPROVED") {
+                    return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check"></i> Approved</span>';
+                } else if (val === "KYC_APPROVED") {
+                    return '<span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-user-check"></i> KYC Approved</span>';
+                } else if (val === "BED_ALLOCATED") {
+                    return '<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-bed"></i> Bed Assigned</span>';
+                }
+                return '<span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-clock"></i> Pending Audit</span>';
             }},
             {title: "Actions", field: "id", minWidth: 130, formatter: function(cell){
                 var status = cell.getRow().getData().status;
                 if (status === "Approved" || status === "APPROVED") {
-                    return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Approved</span>';
+                    return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Active</span>';
                 }
                 return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xs flex items-center gap-1"><i class="fa-solid fa-file-contract"></i> Audit</button>';
             }, cellClick: function(e, cell){
@@ -347,14 +366,91 @@
         table.download("csv", "verification_queue.csv");
     });
 
+    function approveKycOnly(student) {
+        Swal.fire({
+            title: 'Approve Student KYC Profile?',
+            text: "This will verify the student's personal info & documents. Room can be assigned next.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563EB',
+            confirmButtonText: 'Yes, Approve KYC Profile'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                var targetId = student.db_id || student.id;
+                fetch("/sub-admin/verifications/" + targetId + "/approve-kyc", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        toastr.success(data.message);
+                        window.dispatchEvent(new CustomEvent('close-verify-modal'));
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to approve KYC profile.");
+                    }
+                })
+                .catch(err => {
+                    toastr.error("Failed to approve KYC profile.");
+                });
+            }
+        });
+    }
+
+    function assignBedOnly(student, selectedBedId) {
+        if (!selectedBedId) {
+            toastr.warning("Please select a Room & Bed from the dropdown first.");
+            return;
+        }
+        Swal.fire({
+            title: 'Assign Selected Room & Bed?',
+            text: "This will allocate the selected bed and send payment notice to the resident app.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#D97706',
+            confirmButtonText: 'Yes, Assign Bed'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                var targetId = student.db_id || student.id;
+                fetch("/sub-admin/verifications/" + targetId + "/assign-bed", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({ bed_id: selectedBedId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        toastr.success(data.message);
+                        window.dispatchEvent(new CustomEvent('close-verify-modal'));
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to assign bed.");
+                    }
+                })
+                .catch(err => {
+                    toastr.error("Failed to assign bed.");
+                });
+            }
+        });
+    }
+
     function approveBooking(student, selectedBedId) {
         Swal.fire({
-            title: 'Approve Student Registration?',
-            text: "This will verify the student profile and confirm booking.",
+            title: 'Approve Payment & Hand Over Key?',
+            text: "This will confirm full resident onboarding and key handover.",
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#16A34A',
-            confirmButtonText: 'Yes, Approve Booking'
+            confirmButtonText: 'Yes, Complete Key Handover'
         }).then((result) => {
             if (result.isConfirmed) {
                 var targetId = student.db_id || student.id;
@@ -398,14 +494,19 @@
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Content-Type": "application/json",
                         "Accept": "application/json"
                     }
                 })
                 .then(res => res.json())
                 .then(data => {
-                    toastr.error(data.message);
-                    window.dispatchEvent(new CustomEvent('close-verify-modal'));
-                    setTimeout(() => window.location.reload(), 1000);
+                    if (data.status === "success") {
+                        toastr.success("Application rejected.");
+                        window.dispatchEvent(new CustomEvent('close-verify-modal'));
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to reject application.");
+                    }
                 })
                 .catch(err => {
                     toastr.error("Failed to reject application.");

@@ -40,6 +40,8 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::get('/dashboard', [SubAdminController::class, 'dashboard'])->name('dashboard');
     
     Route::get('/verifications', [SubAdminController::class, 'verifications'])->name('verifications');
+    Route::post('/verifications/{id}/approve-kyc', [SubAdminController::class, 'approveKycOnly'])->name('verifications.approve_kyc');
+    Route::post('/verifications/{id}/assign-bed', [SubAdminController::class, 'assignBedOnly'])->name('verifications.assign_bed');
     Route::post('/verifications/{id}/approve', [SubAdminController::class, 'approveVerification'])->name('verifications.approve');
     Route::post('/verifications/{id}/reject', [SubAdminController::class, 'rejectVerification'])->name('verifications.reject');
     

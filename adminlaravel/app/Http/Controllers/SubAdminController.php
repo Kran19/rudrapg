@@ -124,6 +124,83 @@ class SubAdminController extends Controller
         return view('sub_admin.verifications', compact('queue', 'availableBeds'));
     }
 
+    public function approveKycOnly($id)
+    {
+        $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+
+        DB::transaction(function () use ($requestRecord) {
+            $requestRecord->update(['status' => 'KYC_APPROVED', 'processed_by' => Auth::id()]);
+            if ($student = $requestRecord->student) {
+                $student->update(['kyc_status' => 'APPROVED', 'status' => 'KYC_APPROVED']);
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Approved Student KYC Profile: '.$id,
+            'module' => 'VERIFICATION',
+            'record_id' => $requestRecord->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Student KYC Profile Approved! You can now assign a room & bed.',
+        ]);
+    }
+
+    public function assignBedOnly(Request $request, $id)
+    {
+        $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+        $selectedBedId = $request->input('bed_id');
+
+        if (!$selectedBedId) {
+            return response()->json(['status' => 'error', 'message' => 'Please select a Room & Bed to allocate.'], 422);
+        }
+
+        $bed = \App\Models\Bed::find($selectedBedId);
+        if (!$bed || $bed->status !== 'AVAILABLE') {
+            return response()->json(['status' => 'error', 'message' => 'Selected bed is no longer available.'], 422);
+        }
+
+        DB::transaction(function () use ($requestRecord, $bed) {
+            $requestRecord->update(['status' => 'BED_ALLOCATED', 'processed_by' => Auth::id()]);
+            if ($student = $requestRecord->student) {
+                $student->update([
+                    'room_id' => $bed->room_id,
+                    'bed_id' => $bed->id,
+                    'status' => 'BED_ALLOCATED',
+                ]);
+                $bed->update(['status' => 'RESERVED']);
+
+                RoomAllocation::create([
+                    'branch_id' => $student->branch_id,
+                    'student_id' => $student->id,
+                    'room_id' => $bed->room_id,
+                    'bed_id' => $bed->id,
+                    'start_date' => now()->toDateString(),
+                    'monthly_rent' => $bed->monthly_rent,
+                    'security_deposit' => $bed->security_deposit,
+                    'status' => 'ACTIVE',
+                    'allocated_by' => Auth::id(),
+                ]);
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Allocated Room & Bed for: '.$id,
+            'module' => 'VERIFICATION',
+            'record_id' => $requestRecord->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Room & Bed assigned successfully! Payment notice sent to resident app.',
+        ]);
+    }
+
     public function approveVerification(Request $request, $id)
     {
         $requestRecord = RegistrationRequest::where('app_reference', $id)
@@ -152,24 +229,25 @@ class SubAdminController extends Controller
 
                 if ($selectedBedId) {
                     $bed = \App\Models\Bed::find($selectedBedId);
-                    if ($bed && $bed->status === 'AVAILABLE') {
+                    if ($bed) {
                         $student->update([
                             'room_id' => $bed->room_id,
                             'bed_id' => $bed->id,
                         ]);
                         $bed->update(['status' => 'OCCUPIED']);
 
-                        RoomAllocation::create([
-                            'branch_id' => $student->branch_id,
-                            'student_id' => $student->id,
-                            'room_id' => $bed->room_id,
-                            'bed_id' => $bed->id,
-                            'start_date' => now()->toDateString(),
-                            'monthly_rent' => $bed->monthly_rent,
-                            'security_deposit' => $bed->security_deposit,
-                            'status' => 'ACTIVE',
-                            'allocated_by' => Auth::id(),
-                        ]);
+                        RoomAllocation::firstOrCreate(
+                            ['student_id' => $student->id, 'bed_id' => $bed->id],
+                            [
+                                'branch_id' => $student->branch_id,
+                                'room_id' => $bed->room_id,
+                                'start_date' => now()->toDateString(),
+                                'monthly_rent' => $bed->monthly_rent,
+                                'security_deposit' => $bed->security_deposit,
+                                'status' => 'ACTIVE',
+                                'allocated_by' => Auth::id(),
+                            ]
+                        );
                     }
                 }
             }
