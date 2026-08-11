@@ -78,10 +78,13 @@ class SubAdminController extends Controller
                     if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
                     if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
                     $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
-                    if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
-                        return null;
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+                        return asset('storage/' . $cleanPath);
                     }
-                    return asset('storage/' . $cleanPath);
+                    if (str_starts_with($cleanPath, 'uploads/')) {
+                        return asset('storage/' . $cleanPath);
+                    }
+                    return null;
                 };
 
                 return [
@@ -107,6 +110,7 @@ class SubAdminController extends Controller
                     'aadhaar_back' => $formatUrl($aadhaarBackDoc?->file_path),
                     'pan_card' => $formatUrl($panCardDoc?->file_path),
                     'payment_proof' => $formatUrl($paymentProof?->screenshot_path),
+                    'payment_utr' => $paymentProof?->utr_number,
                     'payment_status' => $latestPayment ? $latestPayment->status : ($paymentProof ? 'UPLOADED' : 'PENDING_UPLOAD'),
                 ];
             });

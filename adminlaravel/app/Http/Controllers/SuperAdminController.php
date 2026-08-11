@@ -271,10 +271,15 @@ class SuperAdminController extends Controller
 
     public function finance()
     {
+        $totalDepositsHeld = \App\Models\RoomAllocation::where('status', 'ACTIVE')->sum('security_deposit');
+        if ($totalDepositsHeld == 0) {
+            $totalDepositsHeld = \App\Models\Bed::where('status', 'OCCUPIED')->sum('security_deposit');
+        }
+
         $financeSummary = [
             'total_collections_this_month' => '₹'.number_format(Payment::whereIn('status', ['PAID', 'VERIFIED'])->sum('amount')),
             'pending_rent_dues' => '₹'.number_format(Payment::where('status', 'PENDING')->sum('amount')),
-            'total_security_deposits_held' => '₹'.number_format(Student::where('deposit_status', 'VERIFIED')->count() * 10000),
+            'total_security_deposits_held' => '₹'.number_format($totalDepositsHeld),
             'electricity_collections' => '₹'.number_format(ElectricityReading::where('status', 'APPROVED')->sum('total_amount')),
             'total_cash_in_hand' => '₹'.number_format(Payment::where('payment_mode', 'CASH')->whereIn('status', ['PAID', 'VERIFIED'])->sum('amount')),
         ];
@@ -282,8 +287,10 @@ class SuperAdminController extends Controller
         $subAdmins = User::where('role', 'SUB_ADMIN')->with('branches')->get();
 
         $managerCashLedger = $subAdmins->map(function ($subAdmin) {
+            $branchIds = $subAdmin->branches->pluck('id');
             $cashPayments = Payment::with(['student', 'proof'])
                 ->where('payment_mode', 'CASH')
+                ->whereIn('branch_id', $branchIds)
                 ->latest()
                 ->get();
 

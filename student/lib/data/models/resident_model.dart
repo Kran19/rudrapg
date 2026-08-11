@@ -22,6 +22,7 @@ class ResidentModel {
   final String kycStatus;
   final String rentStatus;
   final String depositStatus;
+  final String status;
   final String emergencyContactName;
   final String emergencyContactPhone;
 
@@ -49,6 +50,7 @@ class ResidentModel {
     this.kycStatus = 'Pending',
     this.rentStatus = 'Due',
     this.depositStatus = 'Pending',
+    this.status = 'PENDING_APPROVAL',
     this.emergencyContactName = '',
     this.emergencyContactPhone = '',
   });

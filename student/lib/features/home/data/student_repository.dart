@@ -67,6 +67,7 @@ class StudentRepository {
           rentStatus: studentData['rent_status'] ?? 'N/A',
           depositStatus: studentData['deposit_status'] ?? 'N/A',
           kycStatus: studentData['kyc_status'] ?? 'N/A',
+          status: studentData['status'] ?? 'PENDING_APPROVAL',
           emergencyContactName: studentData['parent_name'] ?? '',
           emergencyContactPhone: studentData['emergency_contact'] ?? studentData['parent_phone'] ?? '',
         );

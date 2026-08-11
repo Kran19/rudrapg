@@ -226,13 +226,16 @@
                                 <div class="cursor-pointer" @click="$dispatch('open-lightbox', { src: activeStudent.payment_proof, title: 'Payment Receipt - ' + activeStudent.student_name })">
                                     <img :src="activeStudent.payment_proof" class="w-full h-36 object-contain rounded-lg group-hover:scale-105 transition-all">
                                     <div class="mt-1 text-[11px] text-blue-600 font-bold"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom High-Res Payment Proof</div>
+                                    <template x-if="activeStudent.payment_utr">
+                                        <div class="mt-0.5 text-[11px] font-mono text-slate-700">UTR: <span class="font-bold" x-text="activeStudent.payment_utr"></span></div>
+                                    </template>
                                 </div>
                             </template>
                             <template x-if="!activeStudent.payment_proof">
                                 <div class="p-4 bg-amber-50/60 rounded-lg border border-amber-100 text-center">
                                     <i class="fa-solid fa-clock text-amber-500 text-lg mb-1"></i>
-                                    <div class="text-xs font-bold text-amber-800">Payment Upload Pending from Resident App</div>
-                                    <p class="text-[11px] text-amber-600 mt-0.5">Payment proof can be submitted by resident after profile approval and bed allocation.</p>
+                                    <div class="text-xs font-bold text-amber-800" x-text="activeStudent.payment_status === 'VERIFIED' ? 'Payment Verified & Confirmed' : (activeStudent.payment_utr ? 'Payment Submitted (UTR: ' + activeStudent.payment_utr + ')' : 'Payment Upload Pending from Resident App')"></div>
+                                    <p class="text-[11px] text-amber-600 mt-0.5" x-text="activeStudent.payment_utr ? 'UTR Reference Attached' : 'Payment proof can be submitted by resident after profile approval and bed allocation.'"></p>
                                 </div>
                             </template>
                         </div>
@@ -249,16 +252,21 @@
                 
                 <div class="flex items-center gap-2">
                     <button type="button" @click="approveKycOnly(activeStudent)" 
+                            x-show="activeStudent.status === 'Pending Verification' || activeStudent.status === 'PENDING' || activeStudent.status === 'Pending'"
                             class="px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all">
                         <i class="fa-solid fa-user-check mr-1"></i> Step 1: Approve Profile KYC
                     </button>
 
                     <button type="button" @click="assignBedOnly(activeStudent, selectedBedId)" 
-                            class="px-4 py-2 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all">
+                            :disabled="!selectedBedId"
+                            x-show="activeStudent.status === 'KYC_APPROVED' || activeStudent.status === 'Pending Verification' || activeStudent.status === 'PENDING' || activeStudent.status === 'Pending'"
+                            :class="selectedBedId ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-sm' : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'"
+                            class="px-4 py-2 text-xs font-bold rounded-xl transition-all">
                         <i class="fa-solid fa-bed mr-1"></i> Step 2: Assign Room & Bed
                     </button>
 
                     <button type="button" @click="approveBooking(activeStudent, selectedBedId)" 
+                            x-show="activeStudent.status === 'BED_ALLOCATED' || activeStudent.payment_proof || activeStudent.status === 'KYC_APPROVED' || activeStudent.status === 'Pending Verification' || activeStudent.status === 'PENDING' || activeStudent.status === 'Pending'"
                             class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
                         <i class="fa-solid fa-key mr-1"></i> Step 3: Approve & Key Handover
                     </button>

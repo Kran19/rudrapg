@@ -36,12 +36,30 @@ class HomeDashboardScreen extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.verified_user_rounded, size: 16, color: AppColors.success),
+                            Icon(
+                              resident.status.toUpperCase() == 'APPROVED' ? Icons.verified_user_rounded : Icons.pending_actions_rounded,
+                              size: 16,
+                              color: resident.status.toUpperCase() == 'APPROVED'
+                                  ? AppColors.success
+                                  : (resident.status.toUpperCase() == 'BED_ALLOCATED'
+                                      ? AppColors.accent
+                                      : AppColors.warning),
+                            ),
                             const SizedBox(width: 4),
                             Text(
-                              'APPROVED RESIDENT',
+                              resident.status.toUpperCase() == 'APPROVED'
+                                  ? 'APPROVED RESIDENT'
+                                  : (resident.status.toUpperCase() == 'BED_ALLOCATED'
+                                      ? 'BED ALLOCATED • PAY RENT'
+                                      : (resident.status.toUpperCase() == 'KYC_APPROVED'
+                                          ? 'KYC VERIFIED'
+                                          : 'APPLICATION PENDING')),
                               style: AppTypography.caption.copyWith(
-                                color: AppColors.success,
+                                color: resident.status.toUpperCase() == 'APPROVED'
+                                    ? AppColors.success
+                                    : (resident.status.toUpperCase() == 'BED_ALLOCATED'
+                                        ? AppColors.accent
+                                        : AppColors.warning),
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.0,
                               ),
