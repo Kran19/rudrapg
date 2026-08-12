@@ -191,9 +191,20 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
     );
   }
 
+  String _clean10Digits(String text) {
+    String digits = text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 10 && digits.startsWith('91')) {
+      digits = digits.substring(2);
+    }
+    if (digits.length > 10) {
+      digits = digits.substring(digits.length - 10);
+    }
+    return digits;
+  }
+
   Future<void> _submitRegistration() async {
-    final phoneDigits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    final parentPhoneDigits = _parentPhoneController.text.replaceAll(RegExp(r'\D'), '');
+    final phoneDigits = _clean10Digits(_phoneController.text);
+    final parentPhoneDigits = _clean10Digits(_parentPhoneController.text);
     final aadhaarDigits = _aadhaarController.text.replaceAll(RegExp(r'\D'), '');
     final panCode = _panController.text.trim().toUpperCase();
 
@@ -202,7 +213,7 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
       return;
     }
     if (phoneDigits.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(phoneDigits)) {
-      _showError('Please enter a valid 10-digit Indian mobile number.');
+      _showError('Please enter a valid 10-digit student mobile number.');
       return;
     }
     if (!_emailController.text.contains('@') || !_emailController.text.contains('.')) {
@@ -222,7 +233,7 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
       return;
     }
     if (parentPhoneDigits.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(parentPhoneDigits)) {
-      _showError('Please enter a valid 10-digit parent mobile number.');
+      _showError('Please enter a valid 10-digit parent/guardian mobile number.');
       return;
     }
     if (_addressController.text.trim().length < 10) {
@@ -342,7 +353,13 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
               const SizedBox(height: AppSpacing.md),
               CustomTextField(label: 'Aadhaar Card Number', hint: '12-digit Aadhaar Number', prefixIcon: Icons.badge_outlined, keyboardType: TextInputType.number, controller: _aadhaarController),
               const SizedBox(height: AppSpacing.md),
-              CustomTextField(label: 'PAN Card Number', hint: '10-character PAN', prefixIcon: Icons.credit_card_rounded, controller: _panController),
+              CustomTextField(
+                label: 'PAN Card Number',
+                hint: '10-character PAN (e.g. ABCDE1234F)',
+                prefixIcon: Icons.credit_card_rounded,
+                controller: _panController,
+                textCapitalization: TextCapitalization.characters,
+              ),
               const SizedBox(height: AppSpacing.xxl),
 
               Text('Parent / Guardian Contact', style: AppTypography.titleLarge),
