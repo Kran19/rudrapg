@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.rudraboyspg"
-    compileSdk = 37
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
