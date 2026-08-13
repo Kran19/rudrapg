@@ -4,24 +4,24 @@
 @section('page_title', 'Student Verification Desk (Naroda Branch)')
 
 @section('content')
-<div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: (window.availableBedsData || []), lightboxOpen: false, lightboxSrc: '', lightboxTitle: '' }"
-     @open-verify-modal.window="activeStudent = $event.detail; selectedBedId = ''; verifyModalOpen = true"
+<div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: (window.availableBedsData || []), lightboxOpen: false, lightboxSrc: '', lightboxTitle: '', isEditingRoom: false }"
+     @open-verify-modal.window="activeStudent = $event.detail; selectedBedId = ''; isEditingRoom = false; verifyModalOpen = true"
      @close-verify-modal.window="verifyModalOpen = false"
      @open-lightbox.window="lightboxSrc = $event.detail.src; lightboxTitle = $event.detail.title; lightboxOpen = true">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-            <h3 class="text-lg font-bold text-slate-900">Student Booking Approval Queue</h3>
-            <p class="text-xs text-slate-500">Verify student Aadhaar/PAN documents and offline payment proofs before bed allocation.</p>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">Student Booking Approval Queue</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Verify student Aadhaar/PAN documents and offline payment proofs before bed allocation.</p>
         </div>
     </div>
 
     <!-- Tabulator Verification Table -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8 overflow-x-auto">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs mb-8 overflow-x-auto">
         <div class="flex items-center justify-between gap-4 mb-4">
             <input type="text" id="verify-search" 
-                   class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                   class="px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100" 
                    placeholder="🔍 Search applicant name, room...">
-            <button id="export-verifications-csv" class="border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2">
+            <button id="export-verifications-csv" class="border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2">
                 <i class="fa-solid fa-file-csv"></i> Export Queue CSV
             </button>
         </div>
@@ -39,7 +39,7 @@
          class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         
         <div @click.away="verifyModalOpen = false" 
-             class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden transform transition-all">
+             class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden transform transition-all">
             
             <div class="bg-slate-900 text-white p-5 flex items-center justify-between">
                 <h4 class="font-bold text-base flex items-center gap-2">
@@ -52,91 +52,96 @@
             
             <div class="p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-6">
                 <!-- Left: Student Details & Bed Assignment -->
-                <div class="md:col-span-5 space-y-4 border-r border-slate-100 pr-4">
-                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
+                <div class="md:col-span-5 space-y-4 border-r border-slate-100 dark:border-slate-700 pr-4">
+                    <h5 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fa-solid fa-id-card"></i> Personal & Contact Info
                     </h5>
                     
-                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
+                    <div class="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
                         <div class="flex justify-between">
-                            <span class="text-slate-500 font-medium">Ref Code:</span>
-                            <span class="font-mono font-bold text-slate-900" x-text="activeStudent.id"></span>
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">Ref Code:</span>
+                            <span class="font-mono font-bold text-slate-900 dark:text-slate-100" x-text="activeStudent.id"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500 font-medium">Phone:</span>
-                            <span class="font-semibold text-slate-800" x-text="activeStudent.phone"></span>
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">Phone:</span>
+                            <span class="font-semibold text-slate-800 dark:text-slate-200" x-text="activeStudent.phone"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500 font-medium">Email:</span>
-                            <span class="font-semibold text-slate-800" x-text="activeStudent.email"></span>
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">Email:</span>
+                            <span class="font-semibold text-slate-800 dark:text-slate-200" x-text="activeStudent.email"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500 font-medium">Aadhaar No:</span>
-                            <span class="font-semibold text-slate-800" x-text="activeStudent.aadhaar"></span>
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">Aadhaar No:</span>
+                            <span class="font-semibold text-slate-800 dark:text-slate-200" x-text="activeStudent.aadhaar"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500 font-medium">PAN No:</span>
-                            <span class="font-semibold text-slate-800" x-text="activeStudent.pan"></span>
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">PAN No:</span>
+                            <span class="font-semibold text-slate-800 dark:text-slate-200" x-text="activeStudent.pan"></span>
                         </div>
                     </div>
 
-                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5 pt-1">
+                    <h5 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5 pt-1">
                         <i class="fa-solid fa-people-roof"></i> Parent & Address Info
                     </h5>
-                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
+                    <div class="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
                         <div class="flex justify-between">
-                            <span class="text-slate-500 font-medium">Parent Name:</span>
-                            <span class="font-semibold text-slate-800" x-text="activeStudent.parent_name"></span>
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">Parent Name:</span>
+                            <span class="font-semibold text-slate-800 dark:text-slate-200" x-text="activeStudent.parent_name"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-500 font-medium">Parent Phone:</span>
-                            <span class="font-semibold text-slate-800" x-text="activeStudent.parent_phone"></span>
+                            <span class="text-slate-500 dark:text-slate-400 font-medium">Parent Phone:</span>
+                            <span class="font-semibold text-slate-800 dark:text-slate-200" x-text="activeStudent.parent_phone"></span>
                         </div>
                         <div>
-                            <span class="text-slate-500 font-medium block mb-0.5">Permanent Address:</span>
-                            <span class="font-normal text-slate-700 block leading-tight" x-text="activeStudent.address"></span>
+                            <span class="text-slate-500 dark:text-slate-400 font-medium block mb-0.5">Permanent Address:</span>
+                            <span class="font-normal text-slate-700 dark:text-slate-300 block leading-tight" x-text="activeStudent.address"></span>
                         </div>
                     </div>
 
-                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1.5 pt-1">
+                    <h5 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5 pt-1">
                         <i class="fa-solid fa-bed"></i> Assign Room & Bed
                     </h5>
-                    <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 space-y-2 text-xs">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Select Room & Bed:</label>
-                            <select x-model="selectedBedId" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                <option value="">Auto-allocate or Assign Bed Later</option>
+                    <div class="bg-blue-50/60 dark:bg-blue-900/30 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900 space-y-2 text-xs">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">Room & Bed Selection:</label>
+                            <button type="button" @click="isEditingRoom = !isEditingRoom" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold hover:bg-blue-200 transition-colors">
+                                <i class="fa-solid fa-pen mr-1"></i> Edit
+                            </button>
+                        </div>
+                        <div x-show="isEditingRoom">
+                            <select x-model="selectedBedId" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-slate-100">
+                                <option value="">Select Bed from Available List</option>
                                 <template x-for="bed in availableBeds" :key="bed.id">
                                     <option :value="bed.id" x-text="bed.label"></option>
                                 </template>
                             </select>
                         </div>
                         <div class="flex justify-between pt-1">
-                            <span class="text-slate-600">Current Spot:</span>
-                            <span class="font-bold text-slate-900" x-text="(!activeStudent.room_number || activeStudent.room_number === 'Pending' || activeStudent.room_number === 'Unassigned') ? 'Room Not Assigned Yet' : 'Room ' + activeStudent.room_number + ' (' + activeStudent.bed_code + ')'"></span>
+                            <span class="text-slate-600 dark:text-slate-400">Current Spot:</span>
+                            <span class="font-bold text-slate-900 dark:text-slate-100" x-text="(!activeStudent.room_number || activeStudent.room_number === 'Pending' || activeStudent.room_number === 'Unassigned') ? 'Room Not Assigned Yet' : 'Room ' + activeStudent.room_number + ' (' + activeStudent.bed_code + ')'"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-600">Monthly Rent:</span>
-                            <span class="font-bold text-blue-600" x-text="activeStudent.rent"></span>
+                            <span class="text-slate-600 dark:text-slate-400">Monthly Rent:</span>
+                            <span class="font-bold text-blue-600 dark:text-blue-400" x-text="activeStudent.rent"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-600">Security Deposit:</span>
-                            <span class="font-bold text-slate-900" x-text="activeStudent.deposit"></span>
+                            <span class="text-slate-600 dark:text-slate-400">Security Deposit:</span>
+                            <span class="font-bold text-slate-900 dark:text-slate-100" x-text="activeStudent.deposit"></span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Center/Right: Images Preview & Lightbox Triggers -->
                 <div class="md:col-span-7 space-y-4">
-                    <h5 class="text-xs font-bold text-blue-600 uppercase tracking-wider flex items-center justify-between">
+                    <h5 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center justify-between">
                         <span class="flex items-center gap-1.5"><i class="fa-solid fa-images"></i> Identity & Document Attachments</span>
                         <span class="text-[10px] text-slate-400 font-normal"><i class="fa-solid fa-magnifying-glass-plus mr-0.5"></i> Click image to zoom</span>
                     </h5>
                     
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Passport Profile Photo</label>
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
+                            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Passport Profile Photo</label>
+                            <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
                                  @click="activeStudent.profile_photo && $dispatch('open-lightbox', { src: activeStudent.profile_photo, title: 'Profile Photo - ' + activeStudent.student_name })">
                                 <template x-if="activeStudent.profile_photo">
                                     <div class="relative">
@@ -156,8 +161,8 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Aadhaar Front Image</label>
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
+                            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Aadhaar Front Image</label>
+                            <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
                                  @click="activeStudent.aadhaar_front && $dispatch('open-lightbox', { src: activeStudent.aadhaar_front, title: 'Aadhaar Front - ' + activeStudent.student_name })">
                                 <template x-if="activeStudent.aadhaar_front">
                                     <div class="relative">
@@ -177,8 +182,8 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Aadhaar Back Image</label>
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
+                            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Aadhaar Back Image</label>
+                            <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
                                  @click="activeStudent.aadhaar_back && $dispatch('open-lightbox', { src: activeStudent.aadhaar_back, title: 'Aadhaar Back - ' + activeStudent.student_name })">
                                 <template x-if="activeStudent.aadhaar_back">
                                     <div class="relative">
@@ -198,8 +203,8 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">PAN Card Attachment</label>
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
+                            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">PAN Card Attachment</label>
+                            <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
                                  @click="activeStudent.pan_card && $dispatch('open-lightbox', { src: activeStudent.pan_card, title: 'PAN Card - ' + activeStudent.student_name })">
                                 <template x-if="activeStudent.pan_card">
                                     <div class="relative">
@@ -220,22 +225,22 @@
                     </div>
 
                     <div class="pt-2">
-                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Payment Proof (Rent + Deposit Receipt)</label>
-                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-2 text-center relative group overflow-hidden">
+                        <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Payment Proof (Rent + Deposit Receipt)</label>
+                        <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center relative group overflow-hidden">
                             <template x-if="activeStudent.payment_proof">
                                 <div class="cursor-pointer" @click="$dispatch('open-lightbox', { src: activeStudent.payment_proof, title: 'Payment Receipt - ' + activeStudent.student_name })">
                                     <img :src="activeStudent.payment_proof" class="w-full h-36 object-contain rounded-lg group-hover:scale-105 transition-all">
-                                    <div class="mt-1 text-[11px] text-blue-600 font-bold"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom High-Res Payment Proof</div>
+                                    <div class="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-bold"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom High-Res Payment Proof</div>
                                     <template x-if="activeStudent.payment_utr">
-                                        <div class="mt-0.5 text-[11px] font-mono text-slate-700">UTR: <span class="font-bold" x-text="activeStudent.payment_utr"></span></div>
+                                        <div class="mt-0.5 text-[11px] font-mono text-slate-700 dark:text-slate-300">UTR: <span class="font-bold" x-text="activeStudent.payment_utr"></span></div>
                                     </template>
                                 </div>
                             </template>
                             <template x-if="!activeStudent.payment_proof">
-                                <div class="p-4 bg-amber-50/60 rounded-lg border border-amber-100 text-center">
+                                <div class="p-4 bg-amber-50/60 dark:bg-amber-900/30 rounded-lg border border-amber-100 dark:border-amber-900 text-center">
                                     <i class="fa-solid fa-clock text-amber-500 text-lg mb-1"></i>
-                                    <div class="text-xs font-bold text-amber-800" x-text="activeStudent.payment_status === 'VERIFIED' ? 'Payment Verified & Confirmed' : (activeStudent.payment_utr ? 'Payment Submitted (UTR: ' + activeStudent.payment_utr + ')' : 'Payment Upload Pending from Resident App')"></div>
-                                    <p class="text-[11px] text-amber-600 mt-0.5" x-text="activeStudent.payment_utr ? 'UTR Reference Attached' : 'Payment proof can be submitted by resident after profile approval and bed allocation.'"></p>
+                                    <div class="text-xs font-bold text-amber-800 dark:text-amber-200" x-text="activeStudent.payment_status === 'VERIFIED' ? 'Payment Verified & Confirmed' : (activeStudent.payment_utr ? 'Payment Submitted (UTR: ' + activeStudent.payment_utr + ')' : 'Payment Upload Pending from Resident App')"></div>
+                                    <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5" x-text="activeStudent.payment_utr ? 'UTR Reference Attached' : 'Payment proof can be submitted by resident after profile approval and bed allocation.'"></p>
                                 </div>
                             </template>
                         </div>
@@ -244,37 +249,34 @@
             </div>
 
             <!-- Footer Actions with Sequential Step Triggers -->
-            <div x-show="activeStudent && activeStudent.status !== 'Approved' && activeStudent.status !== 'APPROVED'" class="p-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div x-show="activeStudent && activeStudent.status !== 'Approved' && activeStudent.status !== 'APPROVED'" class="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                 <button type="button" @click="rejectBooking(activeStudent)" 
-                        class="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors">
+                        class="px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 border border-rose-200 dark:border-rose-900 rounded-xl transition-colors">
                     <i class="fa-solid fa-xmark mr-1"></i> Reject Application
                 </button>
                 
                 <div class="flex items-center gap-2">
                     <button type="button" @click="approveKycOnly(activeStudent)" 
-                            x-show="activeStudent.status === 'Pending Verification' || activeStudent.status === 'PENDING' || activeStudent.status === 'Pending'"
-                            class="px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all">
+                            class="px-4 py-2 text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-900 rounded-xl transition-all">
                         <i class="fa-solid fa-user-check mr-1"></i> Step 1: Approve Profile KYC
                     </button>
 
                     <button type="button" @click="assignBedOnly(activeStudent, selectedBedId)" 
                             :disabled="!selectedBedId"
-                            x-show="activeStudent.status === 'KYC_APPROVED' || activeStudent.status === 'Pending Verification' || activeStudent.status === 'PENDING' || activeStudent.status === 'Pending'"
-                            :class="selectedBedId ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-sm' : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'"
+                            :class="selectedBedId ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-600'"
                             class="px-4 py-2 text-xs font-bold rounded-xl transition-all">
                         <i class="fa-solid fa-bed mr-1"></i> Step 2: Assign Room & Bed
                     </button>
 
                     <button type="button" @click="approveBooking(activeStudent, selectedBedId)" 
-                            x-show="activeStudent.status === 'BED_ALLOCATED' || activeStudent.payment_proof || activeStudent.status === 'KYC_APPROVED' || activeStudent.status === 'Pending Verification' || activeStudent.status === 'PENDING' || activeStudent.status === 'Pending'"
                             class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
                         <i class="fa-solid fa-key mr-1"></i> Step 3: Approve & Key Handover
                     </button>
                 </div>
             </div>
-            <div x-show="activeStudent && (activeStudent.status === 'Approved' || activeStudent.status === 'APPROVED')" class="p-4 bg-emerald-50 border-t border-emerald-100 flex items-center justify-between">
-                <span class="text-xs font-bold text-emerald-700"><i class="fa-solid fa-circle-check mr-1"></i> Application Fully Approved & Key Handed Over</span>
-                <button type="button" @click="verifyModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl">Close</button>
+            <div x-show="activeStudent && (activeStudent.status === 'Approved' || activeStudent.status === 'APPROVED')" class="p-4 bg-emerald-50 dark:bg-emerald-900/30 border-t border-emerald-100 dark:border-emerald-900 flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Application Fully Approved & Key Handed Over</span>
+                <button type="button" @click="verifyModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">Close</button>
             </div>
         </div>
     </div>
@@ -305,16 +307,15 @@
 
     var table = new Tabulator("#verifications-table", {
         data: queueData,
-        layout: "fitDataFill",
-        pagination: "local",
-        paginationSize: 10,
+        layout: "fitColumns",
+
         placeholder: "No Booking Verification Requests Pending",
         columns: [
             {title: "Booking ID", field: "id", minWidth: 150, formatter: function(cell){
-                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs font-mono'>" + cell.getValue() + "</code>";
+                return "<code class='bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded text-xs font-mono border border-slate-200 dark:border-slate-700'>" + cell.getValue() + "</code>";
             }},
             {title: "Student Name", field: "student_name", minWidth: 160, formatter: function(cell){
-                return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
+                return "<strong class='text-slate-900 dark:text-slate-100'>" + cell.getValue() + "</strong>";
             }},
             {title: "Phone", field: "phone", minWidth: 130},
             {title: "Requested Bed", field: "bed_code", minWidth: 160, formatter: function(cell){
@@ -330,14 +331,14 @@
                 if (!val || val === "Pending Room Allocation" || val === "₹0") {
                     return "<span class='text-slate-400 italic text-xs'>Pending Allocation</span>";
                 }
-                return "<strong class='text-slate-900'>" + val + "</strong>";
+                return "<strong class='text-slate-900 dark:text-slate-100'>" + val + "</strong>";
             }},
             {title: "Deposit", field: "deposit", minWidth: 140, formatter: function(cell){
                 var val = cell.getValue();
                 if (!val || val === "Pending Room Allocation" || val === "₹0") {
                     return "<span class='text-slate-400 italic text-xs'>Pending Allocation</span>";
                 }
-                return "<strong class='text-slate-900'>" + val + "</strong>";
+                return "<strong class='text-slate-900 dark:text-slate-100'>" + val + "</strong>";
             }},
             {title: "Date", field: "date", minWidth: 120},
             {title: "Status", field: "status", minWidth: 160, formatter: function(cell){
@@ -412,7 +413,7 @@
 
     function assignBedOnly(student, selectedBedId) {
         if (!selectedBedId) {
-            toastr.warning("Please select a Room & Bed from the dropdown first.");
+            toastr.warning("Please select a Room & Bed from the dropdown.");
             return;
         }
         Swal.fire({
@@ -432,7 +433,9 @@
                         "Content-Type": "application/json",
                         "Accept": "application/json"
                     },
-                    body: JSON.stringify({ bed_id: selectedBedId })
+                    body: JSON.stringify({ 
+                        bed_id: selectedBedId
+                    })
                 })
                 .then(res => res.json())
                 .then(data => {
@@ -469,7 +472,9 @@
                         "Content-Type": "application/json",
                         "Accept": "application/json"
                     },
-                    body: JSON.stringify({ bed_id: selectedBedId || null })
+                    body: JSON.stringify({ 
+                        bed_id: selectedBedId || null
+                    })
                 })
                 .then(res => res.json())
                 .then(data => {

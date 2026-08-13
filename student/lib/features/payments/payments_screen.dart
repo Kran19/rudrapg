@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -70,7 +71,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     try {
       final formData = FormData.fromMap({
         'utr_number': utr,
-        'screenshot_path': await MultipartFile.fromFile(_proofImage!.path),
+        'screenshot_path': MultipartFile.fromBytes(await _proofImage!.readAsBytes(), filename: 'payment_proof.jpg', contentType: MediaType('image', 'jpeg')),
       });
 
       await ref.read(studentRepositoryProvider).submitPaymentProof(formData);

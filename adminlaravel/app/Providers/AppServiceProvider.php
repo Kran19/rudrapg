@@ -19,6 +19,55 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
+            $notifications = [];
+
+            // Get pending registration requests
+            $pendingRegistrations = \App\Models\RegistrationRequest::with(['student', 'branch'])
+                ->where('status', 'pending')
+                ->latest()
+                ->take(5)
+                ->get();
+
+            foreach ($pendingRegistrations as $reg) {
+                $notifications[] = [
+                    'title' => 'New QR Registration',
+                    'time' => $reg->created_at->diffForHumans(),
+                    'message' => ($reg->student->full_name ?? 'A student') . ' submitted KYC documents for ' . ($reg->branch->name ?? 'a branch') . '.',
+                    'created_at' => $reg->created_at,
+                    'link' => route('sub_admin.verifications'),
+                ];
+            }
+
+            // Get pending payment proofs
+            $pendingPayments = \App\Models\PaymentProof::with(['payment.student'])
+                ->where('status', 'pending')
+                ->latest()
+                ->take(5)
+                ->get();
+
+            foreach ($pendingPayments as $proof) {
+                $payment = $proof->payment;
+                $notifications[] = [
+                    'title' => 'Payment UTR Proof',
+                    'time' => $proof->created_at->diffForHumans(),
+                    'message' => 'UPI payment ₹' . number_format($payment->amount ?? 0, 2) . ' proof uploaded by ' . ($payment->student->full_name ?? 'a student') . '.',
+                    'created_at' => $proof->created_at,
+                    'link' => '#',
+                ];
+            }
+
+            // Sort notifications by created_at descending
+            usort($notifications, function ($a, $b) {
+                return $b['created_at'] <=> $a['created_at'];
+            });
+
+            // Limit to top 5 recent notifications overall
+            $notifications = array_slice($notifications, 0, 5);
+
+            $view->with('systemNotifications', $notifications);
+            $view->with('pendingRegistrationCount', \App\Models\RegistrationRequest::where('status', 'PENDING')->count());
+            $view->with('pendingPaymentCount', \App\Models\PaymentProof::where('status', 'PENDING')->count());
+        });
     }
 }

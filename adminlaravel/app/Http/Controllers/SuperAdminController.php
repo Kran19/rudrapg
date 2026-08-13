@@ -252,7 +252,24 @@ class SuperAdminController extends Controller
 
     public function students()
     {
-        $studentsData = Student::with(['branch', 'room', 'bed'])->latest()->get()->map(function ($student) {
+        $studentsData = Student::with(['branch', 'room', 'bed', 'documents'])->latest()->get()->map(function ($student) {
+            $profilePhotoDoc = $student->documents->firstWhere('doc_type', 'PROFILE_PHOTO');
+            $aadhaarFrontDoc = $student->documents->firstWhere('doc_type', 'AADHAAR_FRONT');
+            
+            $formatUrl = function (?string $path) {
+                if (!$path) return null;
+                if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
+                if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+                $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+                    return asset('storage/' . $cleanPath);
+                }
+                if (str_starts_with($cleanPath, 'uploads/')) {
+                    return asset('storage/' . $cleanPath);
+                }
+                return null;
+            };
+
             return [
                 'id' => $student->app_reference ?? ('RES-'.str_pad($student->id, 4, '0', STR_PAD_LEFT)),
                 'full_name' => $student->full_name,
@@ -260,9 +277,11 @@ class SuperAdminController extends Controller
                 'branch_name' => $student->branch ? $student->branch->name : 'N/A',
                 'room_bed' => ($student->room ? 'Room '.$student->room->room_number : 'Unassigned').($student->bed ? ' ('.$student->bed->bed_code.')' : ''),
                 'joining_date' => $student->joining_date ? $student->joining_date->format('d M Y') : 'N/A',
-                'kyc_status' => $student->kyc_status ?? 'PENDING',
+                'kyc_status' => (isset($student->kyc_status) && $student->kyc_status === 'APPROVED') ? 'VERIFIED' : ($student->kyc_status ?? 'PENDING'),
                 'rent_status' => $student->rent_status ?? 'PENDING',
                 'status' => $student->status ?? 'PENDING',
+                'profile_photo' => $formatUrl($profilePhotoDoc?->file_path),
+                'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path),
             ];
         });
 

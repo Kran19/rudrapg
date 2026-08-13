@@ -85,7 +85,7 @@ class SuperAdminApiController extends Controller
     }
 
     public function toggleSubAdminStatus(int $id): JsonResponse
-    {
+    {https://127.0.0.1:62352/static/artifacts/2a564fd6-03f0-4fcb-9674-bb3706cbcc5b/.user_uploaded/media_1786622593202.png?csrf=9b203db7-016b-45bb-9684-6291131663ef
         $user = $this->superAdminService->toggleSubAdminStatus($id);
 
         return response()->json([

@@ -108,7 +108,13 @@
         }
 
         .dark .tabulator-row {
+            background-color: #0F172A !important;
             border-bottom-color: #1E293B !important;
+            color: #F8FAFC !important;
+        }
+
+        .dark .tabulator-row.tabulator-row-even {
+            background-color: #162032 !important;
         }
 
         .tabulator-row:hover {
@@ -122,6 +128,10 @@
         .tabulator-cell {
             padding: 14px 16px !important;
             vertical-align: middle !important;
+        }
+
+        .dark .tabulator-cell {
+            color: #F8FAFC !important;
         }
 
         .tabulator-footer {
@@ -141,6 +151,15 @@
             margin: 0 2px !important;
             border: 1px solid #CBD5E1 !important;
             font-weight: 500;
+        }
+
+        .dark .tabulator-page {
+            color: #F8FAFC !important;
+            border-color: #334155 !important;
+        }
+
+        .dark .tabulator-page:not(.active):hover {
+            background-color: #1E293B !important;
         }
 
         .tabulator-page.active {
@@ -241,15 +260,22 @@
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-user-check w-5 text-center"></i> Verification Desk
                     </span>
-                    <span class="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">3</span>
+                    @if(isset($pendingRegistrationCount) && $pendingRegistrationCount > 0)
+                        <span class="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingRegistrationCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('sub_admin.bed_map') }}" 
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.bed_map') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <i class="fa-solid fa-bed w-5 text-center"></i> Bed Allocation Grid
                 </a>
                 <a href="{{ route('sub_admin.rent_ledger') }}" 
-                   class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.rent_ledger') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
-                    <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i> Rent Collection Dues
+                   class="flex items-center justify-between px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.rent_ledger') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i> Rent Collection Dues
+                    </span>
+                    @if(isset($pendingPaymentCount) && $pendingPaymentCount > 0)
+                        <span class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingPaymentCount }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('sub_admin.electricity_audit') }}" 
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.electricity_audit') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
@@ -352,7 +378,9 @@
                     <button @click="notificationOpen = !notificationOpen" @click.away="notificationOpen = false"
                             class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative">
                         <i class="fa-solid fa-bell text-sm sm:text-base"></i>
-                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
+                        @if(isset($systemNotifications) && count($systemNotifications) > 0)
+                            <span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ count($systemNotifications) }}</span>
+                        @endif
                     </button>
 
                     <!-- Notifications Drawer -->
@@ -366,23 +394,26 @@
                          class="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50">
                         <div class="px-4 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                             <span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">System Alerts</span>
-                            <span class="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full">3 New</span>
+                            @if(isset($systemNotifications) && count($systemNotifications) > 0)
+                                <span class="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-full">{{ count($systemNotifications) }} New</span>
+                            @endif
                         </div>
                         <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/60">
-                            <a href="#" class="p-3 block hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
-                                <div class="flex items-center justify-between text-xs mb-1">
-                                    <span class="font-semibold text-slate-900 dark:text-white">New QR Registration</span>
-                                    <span class="text-[10px] text-slate-400">2m ago</span>
+                            @if(isset($systemNotifications) && count($systemNotifications) > 0)
+                                @foreach($systemNotifications as $notification)
+                                    <a href="{{ $notification['link'] }}" class="p-3 block hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
+                                        <div class="flex items-center justify-between text-xs mb-1">
+                                            <span class="font-semibold text-slate-900 dark:text-white">{{ $notification['title'] }}</span>
+                                            <span class="text-[10px] text-slate-400">{{ $notification['time'] }}</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ $notification['message'] }}</p>
+                                    </a>
+                                @endforeach
+                            @else
+                                <div class="p-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                                    No new notifications.
                                 </div>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">Rahul Sharma submitted KYC documents for Naroda Branch.</p>
-                            </a>
-                            <a href="#" class="p-3 block hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors">
-                                <div class="flex items-center justify-between text-xs mb-1">
-                                    <span class="font-semibold text-slate-900 dark:text-white">Payment UTR Proof</span>
-                                    <span class="text-[10px] text-slate-400">15m ago</span>
-                                </div>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">UPI payment ₹6,500 proof uploaded by Room 101-B.</p>
-                            </a>
+                            @endif
                         </div>
                     </div>
                 </div>

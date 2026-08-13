@@ -156,6 +156,7 @@ class SubAdminController extends Controller
     public function assignBedOnly(Request $request, $id)
     {
         $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+        
         $selectedBedId = $request->input('bed_id');
 
         if (!$selectedBedId) {
@@ -224,6 +225,7 @@ class SubAdminController extends Controller
                 ]);
 
                 $selectedBedId = $request->input('bed_id');
+
                 if (!$selectedBedId && !$student->bed_id) {
                     $availableBed = Bed::where('status', 'AVAILABLE')->first();
                     if ($availableBed) {

@@ -6,11 +6,11 @@
 @section('content')
 <!-- Key Metric Cards Grid -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-    <div class="bg-white rounded-2xl p-6 border-l-4 border-l-blue-600 border-t border-r border-b border-slate-200 shadow-xs">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border-l-4 border-l-blue-600 border-t border-r border-b border-slate-200 dark:border-slate-700 shadow-xs">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Branch Occupancy</p>
-                <h3 class="text-2xl font-extrabold text-slate-900 mt-2">{{ $branchInfo['occupied_beds'] }} / {{ $branchInfo['total_beds'] }}</h3>
+                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Branch Occupancy</p>
+                <h3 class="text-2xl font-extrabold text-slate-900 dark:text-white mt-2">{{ $branchInfo['occupied_beds'] }} / {{ $branchInfo['total_beds'] }}</h3>
             </div>
             <div class="bg-blue-50 text-blue-600 p-3.5 rounded-2xl">
                 <i class="fa-solid fa-bed text-xl"></i>
@@ -21,10 +21,10 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-6 border-l-4 border-l-amber-500 border-t border-r border-b border-slate-200 shadow-xs">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border-l-4 border-l-amber-500 border-t border-r border-b border-slate-200 dark:border-slate-700 shadow-xs">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Verifications</p>
+                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Verifications</p>
                 <h3 class="text-2xl font-extrabold text-amber-600 mt-2">{{ $branchInfo['pending_verifications'] }}</h3>
             </div>
             <div class="bg-amber-50 text-amber-600 p-3.5 rounded-2xl">
@@ -36,10 +36,10 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-6 border-l-4 border-l-rose-500 border-t border-r border-b border-slate-200 shadow-xs">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border-l-4 border-l-rose-500 border-t border-r border-b border-slate-200 dark:border-slate-700 shadow-xs">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Overdue Rent Dues</p>
+                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Overdue Rent Dues</p>
                 <h3 class="text-2xl font-extrabold text-rose-600 mt-2">{{ $branchInfo['overdue_rents'] }}</h3>
             </div>
             <div class="bg-rose-50 text-rose-600 p-3.5 rounded-2xl">
@@ -51,10 +51,10 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-6 border-l-4 border-l-cyan-500 border-t border-r border-b border-slate-200 shadow-xs">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border-l-4 border-l-cyan-500 border-t border-r border-b border-slate-200 dark:border-slate-700 shadow-xs">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Open Complaints</p>
+                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Open Complaints</p>
                 <h3 class="text-2xl font-extrabold text-cyan-600 mt-2">{{ $branchInfo['open_complaints'] }}</h3>
             </div>
             <div class="bg-cyan-50 text-cyan-600 p-3.5 rounded-2xl">
@@ -68,9 +68,9 @@
 </div>
 
 <!-- Tabulator Verification Preview Table -->
-<div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8">
+<div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs mb-8">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <i class="fa-solid fa-clipboard-check text-blue-600"></i> Pending Student Verification Queue
         </h3>
         <a href="{{ route('sub_admin.verifications') }}" 
@@ -90,15 +90,14 @@
         data: queueData,
         layout: "fitColumns",
         responsiveLayout: "collapse",
-        pagination: "local",
-        paginationSize: 5,
+
         placeholder: "No Verification Requests Pending",
         columns: [
             {title: "Booking ID", field: "id", width: 140, formatter: function(cell){
-                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs'>" + cell.getValue() + "</code>";
+                return "<code class='bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded text-xs'>" + cell.getValue() + "</code>";
             }},
             {title: "Student Name", field: "student_name", formatter: function(cell){
-                return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
+                return "<strong class='text-slate-900 dark:text-slate-100'>" + cell.getValue() + "</strong>";
             }},
             {title: "Phone", field: "phone"},
             {title: "Allocated Spot", field: "room", formatter: function(cell){

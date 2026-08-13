@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -70,7 +71,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
     try {
       final formData = FormData.fromMap({
         'current_reading': reading,
-        'meter_photo_path': await MultipartFile.fromFile(_meterPhoto!.path),
+        'meter_photo_path': MultipartFile.fromBytes(await _meterPhoto!.readAsBytes(), filename: 'meter_photo.jpg', contentType: MediaType('image', 'jpeg')),
       });
 
       await ref.read(studentRepositoryProvider).submitElectricityReading(formData);

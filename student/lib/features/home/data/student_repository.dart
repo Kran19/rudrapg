@@ -138,13 +138,17 @@ class StudentRepository {
     }
   }
 
-  Future<void> register(FormData formData) async {
+  Future<String> register(FormData formData) async {
     try {
       final response = await _dio.post('/student/register', data: formData);
       if (response.statusCode != 201) {
         throw Exception('Failed to register');
       }
+      return response.data['data']['app_reference'] ?? 'REG-UNKNOWN';
     } catch (e) {
+      if (e is DioException) {
+        rethrow;
+      }
       throw Exception('Error registering student: $e');
     }
   }

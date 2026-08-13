@@ -8,8 +8,8 @@
      @close-notice-modal.window="noticeModalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-            <h3 class="text-lg font-bold text-slate-900">Branch Complaints & Announcements</h3>
-            <p class="text-xs text-slate-500">Track student maintenance service tickets and publish branch announcement notices.</p>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">Branch Complaints & Announcements</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Track student maintenance service tickets and publish branch announcement notices.</p>
         </div>
         <button @click="noticeModalOpen = true" 
                 class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
@@ -18,16 +18,16 @@
     </div>
 
     <!-- Tabulator Complaints Table -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs mb-8 overflow-x-auto">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs mb-8 overflow-x-auto">
         <div class="flex items-center justify-between gap-4 mb-4">
-            <h4 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h4 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <i class="fa-solid fa-headset text-blue-600"></i> Active Maintenance Tickets (Tabulator.js)
             </h4>
             <div class="flex items-center gap-2">
                 <input type="text" id="ticket-search" 
-                       class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       class="px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100" 
                        placeholder="🔍 Search ticket title...">
-                <button id="export-tickets-csv" class="border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-2">
+                <button id="export-tickets-csv" class="border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold px-4 py-2 rounded-xl transition-all flex items-center gap-2">
                     <i class="fa-solid fa-file-csv"></i> Export CSV
                 </button>
             </div>
@@ -46,7 +46,7 @@
          class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         
         <div @click.away="noticeModalOpen = false" 
-             class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden transform transition-all">
+             class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-md overflow-hidden transform transition-all">
             <div class="bg-slate-900 text-white p-5 flex items-center justify-between">
                 <h4 class="font-bold text-base flex items-center gap-2">
                     <i class="fa-solid fa-bullhorn text-blue-400"></i> Broadcast Branch Notice
@@ -59,16 +59,16 @@
             <form id="broadcast-notice-form" class="p-6 space-y-4">
                 @csrf
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Notice Title</label>
-                    <input type="text" name="title" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. Water Tank Cleaning Schedule">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Notice Title</label>
+                    <input type="text" name="title" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" placeholder="e.g. Water Tank Cleaning Schedule">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Notice Details</label>
-                    <textarea name="content" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" rows="3" placeholder="Enter instructions for residents..."></textarea>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Notice Details</label>
+                    <textarea name="content" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" rows="3" placeholder="Enter instructions for residents..."></textarea>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Priority Category</label>
-                    <select name="category" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Priority Category</label>
+                    <select name="category" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
                         <option value="Important Announcement">Important Announcement</option>
                         <option value="Maintenance Notice">Maintenance Notice</option>
                         <option value="Rent Due Notice">Rent Due Notice</option>
@@ -77,11 +77,11 @@
                 <div class="flex items-center gap-2">
                     <input type="hidden" name="is_important" value="0">
                     <input type="checkbox" name="is_important" value="1" checked id="impChk" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                    <label for="impChk" class="text-xs font-semibold text-slate-700">Mark as High Priority Push Notification</label>
+                    <label for="impChk" class="text-xs font-semibold text-slate-700 dark:text-slate-300">Mark as High Priority Push Notification</label>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" @click="noticeModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" @click="noticeModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
                     <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Broadcast Notice</button>
                 </div>
             </form>
@@ -96,20 +96,19 @@
 
     var table = new Tabulator("#complaints-table", {
         data: ticketsData,
-        layout: "fitDataFill",
-        pagination: "local",
-        paginationSize: 10,
+        layout: "fitColumns",
+
         placeholder: "No Active Maintenance Tickets",
         columns: [
             {title: "Ticket No", field: "ticket", minWidth: 130, formatter: function(cell){
-                return "<code class='bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-xs font-mono'>" + cell.getValue() + "</code>";
+                return "<code class='bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded text-xs font-mono'>" + cell.getValue() + "</code>";
             }},
             {title: "Student Name", field: "student", minWidth: 160, formatter: function(cell){
-                return "<strong class='text-slate-900'>" + cell.getValue() + "</strong>";
+                return "<strong class='text-slate-900 dark:text-slate-100'>" + cell.getValue() + "</strong>";
             }},
             {title: "Room No", field: "room", minWidth: 100},
             {title: "Category", field: "category", minWidth: 120, formatter: function(cell){
-                return '<span class="bg-slate-100 text-slate-700 text-xs font-medium px-2.5 py-1 rounded-md">' + cell.getValue() + '</span>';
+                return '<span class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium px-2.5 py-1 rounded-md">' + cell.getValue() + '</span>';
             }},
             {title: "Issue Title", field: "title", minWidth: 180},
             {title: "Priority", field: "priority", minWidth: 110, formatter: function(cell){

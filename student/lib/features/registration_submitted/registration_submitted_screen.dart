@@ -7,7 +7,9 @@ import '../../core/widgets/custom_card.dart';
 import '../login/login_screen.dart';
 
 class RegistrationSubmittedScreen extends StatelessWidget {
-  const RegistrationSubmittedScreen({super.key});
+  final String appReference;
+  
+  const RegistrationSubmittedScreen({super.key, required this.appReference});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +54,7 @@ class RegistrationSubmittedScreen extends StatelessWidget {
                   children: [
                     _buildSummaryRow(
                       label: 'Application Reference:',
-                      value: 'REG-2026-8812',
+                      value: appReference,
                       isBold: true,
                     ),
                     const Divider(height: 24),

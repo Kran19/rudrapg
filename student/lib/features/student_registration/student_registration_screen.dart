@@ -1,6 +1,7 @@
 
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +20,14 @@ import 'package:flutter/foundation.dart';
 class IndianPhoneFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    String digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    String text = newValue.text;
+    if (text.startsWith('+91 ')) {
+      text = text.substring(4);
+    } else if (text.startsWith('+91')) {
+      text = text.substring(3);
+    }
+    
+    String digits = text.replaceAll(RegExp(r'\D'), '');
     if (digits.startsWith('91') && digits.length > 10) {
       digits = digits.substring(2);
     }
@@ -257,21 +265,33 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
         'current_address': _addressController.text.trim(),
       });
 
-      if (_profilePhoto != null) formData.files.add(MapEntry('profile_photo', await MultipartFile.fromFile(_profilePhoto!.path)));
-      if (_aadhaarFront != null) formData.files.add(MapEntry('aadhaar_front', await MultipartFile.fromFile(_aadhaarFront!.path)));
-      if (_aadhaarBack != null) formData.files.add(MapEntry('aadhaar_back', await MultipartFile.fromFile(_aadhaarBack!.path)));
-      if (_panCard != null) formData.files.add(MapEntry('pan_card', await MultipartFile.fromFile(_panCard!.path)));
+      if (_profilePhoto != null) formData.files.add(MapEntry('profile_photo', MultipartFile.fromBytes(await _profilePhoto!.readAsBytes(), filename: 'profile_photo.jpg', contentType: MediaType('image', 'jpeg'))));
+      if (_aadhaarFront != null) formData.files.add(MapEntry('aadhaar_front', MultipartFile.fromBytes(await _aadhaarFront!.readAsBytes(), filename: 'aadhaar_front.jpg', contentType: MediaType('image', 'jpeg'))));
+      if (_aadhaarBack != null) formData.files.add(MapEntry('aadhaar_back', MultipartFile.fromBytes(await _aadhaarBack!.readAsBytes(), filename: 'aadhaar_back.jpg', contentType: MediaType('image', 'jpeg'))));
+      if (_panCard != null) formData.files.add(MapEntry('pan_card', MultipartFile.fromBytes(await _panCard!.readAsBytes(), filename: 'pan_card.jpg', contentType: MediaType('image', 'jpeg'))));
 
       final repo = ref.read(studentRepositoryProvider);
-      await repo.register(formData);
+      final appReference = await repo.register(formData);
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const RegistrationSubmittedScreen()),
+          MaterialPageRoute(builder: (context) => RegistrationSubmittedScreen(appReference: appReference)),
         );
       }
     } catch (e) {
-      _showError('Registration Failed: ${e is DioException ? e.response?.data['message'] ?? e.message : e}');
+      String errorMsg = e.toString();
+      if (e is DioException && e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map && data['errors'] != null) {
+          final errors = data['errors'] as Map<String, dynamic>;
+          errorMsg = errors.values.first[0].toString();
+        } else if (data is Map && data['message'] != null) {
+          errorMsg = data['message'].toString();
+        } else {
+          errorMsg = e.message ?? 'Unknown error';
+        }
+      }
+      _showError('Registration Failed: $errorMsg');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
