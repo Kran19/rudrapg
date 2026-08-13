@@ -11,8 +11,9 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 final apiClientProvider = Provider<Dio>((ref) {
   final prefs = ref.read(sharedPreferencesProvider);
   
-  // Use 10.0.2.2 if testing on Android emulator, otherwise localhost for web/desktop
-  String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  // Set this to your live server URL so the mobile app can connect to it.
+  // Use 'http://127.0.0.1:8000/api/v1' only if testing locally on Web/Desktop.
+  String baseUrl = 'https://emperorsmartsolutions.com/rudrapgwebsite/api/v1';
   
   // NOTE: If you are running locally and want to test on the emulator, uncomment this block:
   /*
