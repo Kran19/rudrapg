@@ -249,7 +249,7 @@
             </div>
 
             <!-- Footer Actions with Sequential Step Triggers -->
-            <div x-show="activeStudent && activeStudent.status !== 'Approved' && activeStudent.status !== 'APPROVED'" class="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div x-show="activeStudent" class="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                 <button type="button" @click="rejectBooking(activeStudent)" 
                         class="px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 border border-rose-200 dark:border-rose-900 rounded-xl transition-colors">
                     <i class="fa-solid fa-xmark mr-1"></i> Reject Application
@@ -273,10 +273,6 @@
                         <i class="fa-solid fa-key mr-1"></i> Step 3: Approve & Key Handover
                     </button>
                 </div>
-            </div>
-            <div x-show="activeStudent && (activeStudent.status === 'Approved' || activeStudent.status === 'APPROVED')" class="p-4 bg-emerald-50 dark:bg-emerald-900/30 border-t border-emerald-100 dark:border-emerald-900 flex items-center justify-between">
-                <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Application Fully Approved & Key Handed Over</span>
-                <button type="button" @click="verifyModalOpen = false" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">Close</button>
             </div>
         </div>
     </div>
@@ -353,16 +349,10 @@
                 return '<span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-clock"></i> Pending Audit</span>';
             }},
             {title: "Actions", field: "id", minWidth: 130, formatter: function(cell){
-                var status = cell.getRow().getData().status;
-                if (status === "Approved" || status === "APPROVED") {
-                    return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Active</span>';
-                }
-                return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xs flex items-center gap-1"><i class="fa-solid fa-file-contract"></i> Audit</button>';
+                return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-xs flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                if (data.status !== "Approved" && data.status !== "APPROVED") {
-                    window.dispatchEvent(new CustomEvent('open-verify-modal', { detail: data }));
-                }
+                window.dispatchEvent(new CustomEvent('open-verify-modal', { detail: data }));
             }},
         ]
     });

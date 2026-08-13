@@ -59,8 +59,14 @@ class StudentApiController extends Controller
 
     public function uploadPaymentProof(UploadPaymentProofRequest $request): JsonResponse
     {
+        $data = $request->validated();
+        
+        if ($request->hasFile('screenshot_path')) {
+            $data['screenshot_path'] = $request->file('screenshot_path')->store('uploads/proofs', 'public');
+        }
+
         $student = $this->studentService->getProfile($request->user());
-        $payment = $this->studentService->uploadPaymentProof($student, $request->validated());
+        $payment = $this->studentService->uploadPaymentProof($student, $data);
 
         return response()->json([
             'status' => 'success',

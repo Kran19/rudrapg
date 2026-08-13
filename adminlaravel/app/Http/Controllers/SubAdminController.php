@@ -81,9 +81,6 @@ class SubAdminController extends Controller
                     if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
                         return asset('storage/' . $cleanPath);
                     }
-                    if (str_starts_with($cleanPath, 'uploads/')) {
-                        return asset('storage/' . $cleanPath);
-                    }
                     return null;
                 };
 

@@ -17,6 +17,7 @@ class UploadPaymentProofRequest extends FormRequest
             'utr_number' => ['required', 'string', 'max:50'],
             'amount' => ['nullable', 'numeric'],
             'payment_type' => ['nullable', 'string', 'in:RENT,DEPOSIT,ELECTRICITY'],
+            'screenshot_path' => ['nullable', 'image', 'max:10240'],
         ];
     }
 }
