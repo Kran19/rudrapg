@@ -17,40 +17,6 @@ import '../registration_submitted/registration_submitted_screen.dart';
 import '../home/data/student_repository.dart';
 import 'package:flutter/foundation.dart';
 
-class IndianPhoneFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    String text = newValue.text;
-    if (text.startsWith('+91 ')) {
-      text = text.substring(4);
-    } else if (text.startsWith('+91')) {
-      text = text.substring(3);
-    }
-    
-    String digits = text.replaceAll(RegExp(r'\D'), '');
-    if (digits.startsWith('91') && digits.length > 10) {
-      digits = digits.substring(2);
-    }
-    if (digits.length > 10) {
-      digits = digits.substring(0, 10);
-    }
-
-    String formatted = '';
-    if (digits.isNotEmpty) {
-      formatted = '+91 ';
-      if (digits.length <= 5) {
-        formatted += digits;
-      } else {
-        formatted += '${digits.substring(0, 5)} ${digits.substring(5)}';
-      }
-    }
-
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-  }
-}
 
 class StudentRegistrationScreen extends ConsumerStatefulWidget {
   const StudentRegistrationScreen({super.key});
@@ -199,20 +165,10 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
     );
   }
 
-  String _clean10Digits(String text) {
-    String digits = text.replaceAll(RegExp(r'\D'), '');
-    if (digits.length > 10 && digits.startsWith('91')) {
-      digits = digits.substring(2);
-    }
-    if (digits.length > 10) {
-      digits = digits.substring(digits.length - 10);
-    }
-    return digits;
-  }
 
   Future<void> _submitRegistration() async {
-    final phoneDigits = _clean10Digits(_phoneController.text);
-    final parentPhoneDigits = _clean10Digits(_parentPhoneController.text);
+    final phoneDigits = _phoneController.text.trim();
+    final parentPhoneDigits = _parentPhoneController.text.trim();
     final aadhaarDigits = _aadhaarController.text.replaceAll(RegExp(r'\D'), '');
     final panCode = _panController.text.trim().toUpperCase();
 
@@ -359,11 +315,10 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
               const SizedBox(height: AppSpacing.md),
               CustomTextField(
                 label: 'Mobile Number',
-                hint: '+91 XXXXX XXXXX',
+                hint: 'Enter 10-digit mobile number',
                 prefixIcon: Icons.phone_android_rounded,
                 keyboardType: TextInputType.phone,
                 controller: _phoneController,
-                inputFormatters: [IndianPhoneFormatter()],
               ),
               const SizedBox(height: AppSpacing.md),
               CustomTextField(label: 'Email Address', hint: 'name@domain.com', prefixIcon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, controller: _emailController),
@@ -388,11 +343,10 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
               const SizedBox(height: AppSpacing.md),
               CustomTextField(
                 label: 'Parent / Guardian Phone',
-                hint: '+91 XXXXX XXXXX',
+                hint: 'Enter 10-digit mobile number',
                 prefixIcon: Icons.phone_callback_rounded,
                 keyboardType: TextInputType.phone,
                 controller: _parentPhoneController,
-                inputFormatters: [IndianPhoneFormatter()],
               ),
               const SizedBox(height: AppSpacing.md),
               CustomTextField(label: 'Permanent Address', hint: 'House No, Street, City, Pincode', prefixIcon: Icons.location_on_outlined, maxLines: 2, controller: _addressController),
