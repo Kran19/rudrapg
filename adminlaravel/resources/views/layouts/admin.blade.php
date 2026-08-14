@@ -285,6 +285,12 @@
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.complaints') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <i class="fa-solid fa-headset w-5 text-center"></i> Complaints & Notices
                 </a>
+                <form action="{{ route('logout') }}" method="POST" class="w-full pt-1.5 mt-1.5 border-t border-slate-800/60">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-rose-400 hover:text-white hover:bg-rose-900/30 transition-all duration-200">
+                        <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout Account
+                    </button>
+                </form>
             @else
                 <!-- Super Admin Menu -->
                 <a href="{{ route('super_admin.dashboard') }}" 
@@ -315,6 +321,12 @@
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.settings') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <i class="fa-solid fa-sliders w-5 text-center"></i> Audit Logs & Settings
                 </a>
+                <form action="{{ route('logout') }}" method="POST" class="w-full pt-1.5 mt-1.5 border-t border-slate-800/60">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-rose-400 hover:text-white hover:bg-rose-900/30 transition-all duration-200">
+                        <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout Account
+                    </button>
+                </form>
             @endif
         </nav>
         
@@ -479,7 +491,7 @@
         </header>
 
         <!-- Dynamic Body Page Content -->
-        <main class="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto">
+        <main class="flex-1 p-4 lg:p-8 w-full mx-auto">
             @yield('content')
         </main>
     </div>

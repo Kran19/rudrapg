@@ -97,6 +97,148 @@ class SuperAdminController extends Controller
         return redirect()->back()->with('success', 'PG Branch created successfully.');
     }
 
+    public function updateRoom(Request $request, $id)
+    {
+        $room = Room::findOrFail($id);
+
+        $validated = $request->validate([
+            'branch_id' => ['required', 'exists:branches,id'],
+            'room_number' => ['required', 'string'],
+            'floor_number' => ['required', 'integer', 'min:1'],
+            'sharing_type' => ['required', 'string'],
+            'is_ac' => ['required', 'boolean'],
+            'rent' => ['required', 'numeric', 'min:0'],
+            'deposit' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        DB::transaction(function () use ($room, $validated) {
+            $room->update([
+                'branch_id' => $validated['branch_id'],
+                'room_number' => $validated['room_number'],
+                'floor_number' => $validated['floor_number'],
+                'sharing_type' => $validated['sharing_type'],
+                'is_ac' => $validated['is_ac'],
+            ]);
+
+            // Update all available beds' rent and deposit
+            Bed::where('room_id', $room->id)
+                ->where('status', 'AVAILABLE')
+                ->update([
+                    'monthly_rent' => $validated['rent'],
+                    'security_deposit' => $validated['deposit'],
+                ]);
+        });
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Updated Room '.$room->room_number,
+            'module' => 'ROOMS',
+            'record_id' => $room->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Room updated successfully.',
+        ]);
+    }
+
+    public function destroyRoom($id)
+    {
+        $room = Room::findOrFail($id);
+        
+        DB::transaction(function () use ($room) {
+            $room->beds()->delete();
+            $room->delete();
+        });
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Deleted Room '.$room->room_number,
+            'module' => 'ROOMS',
+            'record_id' => $room->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Room deleted successfully.',
+        ]);
+    }
+
+    public function updateBranch(Request $request, $id)
+    {
+        $branch = Branch::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string'],
+            'address' => ['required', 'string'],
+            'city' => ['required', 'string'],
+            'phone' => ['required', 'string'],
+            'email' => ['required', 'email'],
+            'manager_name' => ['required', 'string'],
+            'manager_phone' => ['required', 'string'],
+            'electricity_unit_rate' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $branch->update($validated);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Updated PG Branch: '.$branch->name,
+            'module' => 'BRANCH',
+            'record_id' => $branch->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'PG Branch updated successfully.',
+            'data' => $branch,
+        ]);
+    }
+
+    public function toggleBranchStatus(Request $request, $id)
+    {
+        $branch = Branch::findOrFail($id);
+        $newStatus = $branch->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        
+        $branch->update(['status' => $newStatus]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Toggled PG Branch Status: '.$branch->name.' to '.$newStatus,
+            'module' => 'BRANCH',
+            'record_id' => $branch->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Branch status updated to ' . $newStatus,
+            'status_val' => $newStatus,
+        ]);
+    }
+
+    public function destroyBranch($id)
+    {
+        $branch = Branch::findOrFail($id);
+        $branch->delete();
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Deleted PG Branch: '.$branch->name,
+            'module' => 'BRANCH',
+            'record_id' => $branch->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'PG Branch deleted successfully.',
+        ]);
+    }
+
     public function subAdmins()
     {
         $subAdminsData = User::where('role', 'SUB_ADMIN')->with('branches')->get()->map(function ($user) {
@@ -106,8 +248,11 @@ class SuperAdminController extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone ?? 'N/A',
                 'assigned_branches' => $user->branches->pluck('name')->toArray(),
-                'status' => $user->status ?? 'Active',
+                'status' => $user->status == 'ACTIVE' ? 'Active' : ($user->status == 'INACTIVE' ? 'Inactive' : ($user->status ?? 'Active')),
+                'raw_status' => $user->status ?? 'ACTIVE',
+                'branch_ids' => $user->branches->pluck('id')->toArray(),
                 'created_at' => $user->created_at ? $user->created_at->format('d M Y') : 'N/A',
+                'db_id' => $user->id,
             ];
         });
 
@@ -155,7 +300,10 @@ class SuperAdminController extends Controller
             'phone' => $user->phone,
             'assigned_branches' => $user->branches->pluck('name')->toArray(),
             'status' => 'Active',
+            'raw_status' => 'ACTIVE',
+            'branch_ids' => $user->branches->pluck('id')->toArray(),
             'created_at' => $user->created_at->format('d M Y'),
+            'db_id' => $user->id,
         ];
 
         if ($request->wantsJson() || $request->ajax()) {
@@ -167,6 +315,104 @@ class SuperAdminController extends Controller
         }
 
         return redirect()->back()->with('success', 'Sub Admin account created successfully.');
+    }
+
+    public function updateSubAdmin(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$id],
+            'phone' => ['required', 'string', 'max:20'],
+            'password' => ['nullable', 'string', 'min:6'],
+            'branches' => ['required', 'array', 'min:1'],
+            'branches.*' => ['exists:branches,id'],
+        ]);
+
+        DB::transaction(function () use ($user, $validated) {
+            $user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+            ]);
+
+            if (!empty($validated['password'])) {
+                $user->update([
+                    'password' => Hash::make($validated['password']),
+                ]);
+            }
+
+            $user->branches()->sync($validated['branches']);
+        });
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Updated Sub Admin: '.$user->email,
+            'module' => 'USERS',
+            'record_id' => $user->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        $responseData = [
+            'id' => 'SA-'.str_pad($user->id, 4, '0', STR_PAD_LEFT),
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'assigned_branches' => $user->branches->pluck('name')->toArray(),
+            'status' => $user->status == 'ACTIVE' ? 'Active' : ($user->status == 'INACTIVE' ? 'Inactive' : ($user->status ?? 'Active')),
+            'raw_status' => $user->status ?? 'ACTIVE',
+            'branch_ids' => $user->branches->pluck('id')->toArray(),
+            'created_at' => $user->created_at->format('d M Y'),
+            'db_id' => $user->id,
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Sub Admin account updated successfully.',
+            'data' => $responseData,
+        ]);
+    }
+
+    public function toggleSubAdminStatus(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $newStatus = $user->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        
+        $user->update(['status' => $newStatus]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Toggled Sub Admin Status: '.$user->email.' to '.$newStatus,
+            'module' => 'USERS',
+            'record_id' => $user->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Sub Admin status updated to ' . $newStatus,
+            'status_val' => $newStatus,
+        ]);
+    }
+
+    public function destroySubAdmin($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Deleted Sub Admin: '.$user->email,
+            'module' => 'USERS',
+            'record_id' => $user->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Sub Admin account deleted successfully.',
+        ]);
     }
 
     public function roomsMaster()
@@ -188,6 +434,8 @@ class SuperAdminController extends Controller
                 'occupied_beds' => $occupiedBeds,
                 'available_beds' => $availableBeds,
                 'status' => $availableBeds == 0 ? 'Full' : 'Available',
+                'branch_id' => $room->branch_id,
+                'max_beds' => $room->max_beds,
             ];
         })->toArray();
 
@@ -279,10 +527,72 @@ class SuperAdminController extends Controller
                 'status' => $student->status ?? 'PENDING',
                 'profile_photo' => $formatUrl($profilePhotoDoc?->file_path),
                 'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path),
+                'db_id' => $student->id,
+                'branch_id' => $student->branch_id,
+                'raw_joining_date' => $student->joining_date ? $student->joining_date->format('Y-m-d') : '',
+                'raw_kyc_status' => $student->kyc_status ?? 'PENDING',
+                'raw_rent_status' => $student->rent_status ?? 'PENDING',
+                'raw_status' => $student->status ?? 'PENDING',
             ];
         });
 
-        return view('super_admin.students', ['students' => $studentsData]);
+        $allBranches = Branch::all();
+
+        return view('super_admin.students', ['students' => $studentsData, 'allBranches' => $allBranches]);
+    }
+
+    public function updateStudent(Request $request, $id)
+    {
+        $student = Student::findOrFail($id);
+
+        $validated = $request->validate([
+            'full_name' => ['required', 'string'],
+            'phone' => ['required', 'string'],
+            'branch_id' => ['required', 'exists:branches,id'],
+            'kyc_status' => ['required', 'string'],
+            'rent_status' => ['required', 'string'],
+            'joining_date' => ['nullable', 'date'],
+        ]);
+
+        $student->update($validated);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Updated Student: '.$student->full_name,
+            'module' => 'STUDENT',
+            'record_id' => $student->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Student record updated successfully.',
+        ]);
+    }
+
+    public function destroyStudent($id)
+    {
+        $student = Student::findOrFail($id);
+        
+        DB::transaction(function () use ($student) {
+            if ($student->user) {
+                $student->user->delete();
+            }
+            $student->delete();
+        });
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Deleted Student: '.$student->full_name,
+            'module' => 'STUDENT',
+            'record_id' => $student->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Student record deleted successfully.',
+        ]);
     }
 
     public function finance()
@@ -332,16 +642,31 @@ class SuperAdminController extends Controller
             ];
         });
 
-        $transactionsData = Payment::with(['student', 'branch', 'proof'])->latest()->get()->map(function ($payment) {
+        $formatUrl = function (?string $path) {
+            if (!$path) return null;
+            if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+            $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+                return asset('storage/' . $cleanPath);
+            }
+            return null;
+        };
+
+        $transactionsData = Payment::with(['student', 'branch', 'proof'])->latest()->get()->map(function ($payment) use ($formatUrl) {
             return [
+                'id' => $payment->id,
                 'tx_reference' => $payment->tx_reference,
                 'student_name' => $payment->student ? $payment->student->full_name : 'Resident',
                 'branch_name' => $payment->branch ? $payment->branch->name : 'N/A',
                 'payment_type' => $payment->payment_type,
+                'amount_val' => $payment->amount,
                 'amount' => '₹'.number_format($payment->amount),
                 'payment_mode' => $payment->payment_mode ?? 'UPI',
                 'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
+                'proof_image' => $payment->proof ? $formatUrl($payment->proof->screenshot_path) : null,
                 'date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : 'N/A',
+                'raw_date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d') : '',
                 'status' => $payment->status,
             ];
         });
@@ -349,9 +674,85 @@ class SuperAdminController extends Controller
         return view('super_admin.finance', compact('financeSummary', 'managerCashLedger'), ['transactions' => $transactionsData]);
     }
 
+    public function updateTransaction(Request $request, $id)
+    {
+        $payment = Payment::findOrFail($id);
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0'],
+            'due_date' => ['nullable', 'date'],
+            'payment_mode' => ['required', 'string'],
+            'utr' => ['nullable', 'string'],
+            'status' => ['required', 'string', 'in:PENDING,PAID,VERIFIED'],
+        ]);
+
+        DB::transaction(function () use ($payment, $validated) {
+            $payment->update([
+                'amount' => $validated['amount'],
+                'due_date' => $validated['due_date'],
+                'payment_mode' => $validated['payment_mode'],
+                'status' => $validated['status'],
+                'paid_at' => ($validated['status'] === 'VERIFIED' || $validated['status'] === 'PAID') ? ($payment->paid_at ?? now()) : null,
+            ]);
+
+            if ($payment->proof) {
+                $payment->proof->update([
+                    'utr_number' => $validated['utr'] ?? 'N/A',
+                    'status' => $validated['status'] === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
+                ]);
+            } else if ($validated['utr']) {
+                PaymentProof::create([
+                    'payment_id' => $payment->id,
+                    'utr_number' => $validated['utr'],
+                    'screenshot_path' => 'uploads/proofs/cash_receipt.png',
+                    'status' => $validated['status'] === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
+                    'verified_by' => $validated['status'] === 'VERIFIED' ? Auth::id() : null,
+                ]);
+            }
+
+            if ($student = $payment->student) {
+                $student->update([
+                    'rent_status' => $validated['status'] === 'VERIFIED' ? 'PAID' : 'PENDING',
+                ]);
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Updated Payment ID: '.$payment->id,
+            'module' => 'FINANCE',
+            'record_id' => $payment->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Transaction record updated successfully.',
+        ]);
+    }
+
+    public function destroyTransaction($id)
+    {
+        $payment = Payment::findOrFail($id);
+        $payment->delete();
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Deleted Payment ID: '.$payment->id,
+            'module' => 'FINANCE',
+            'record_id' => $payment->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Transaction record deleted successfully.',
+        ]);
+    }
+
     public function settings()
     {
-        $auditLogs = AuditLog::with('user')->latest()->take(50)->get()->map(function ($log) {
+        $auditLogs = AuditLog::with('user')->latest()->take(200)->get()->map(function ($log) {
             return [
                 'id' => 'LOG-'.str_pad($log->id, 4, '0', STR_PAD_LEFT),
                 'timestamp' => $log->created_at ? $log->created_at->format('d M Y H:i:s') : 'N/A',

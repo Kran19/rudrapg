@@ -304,6 +304,10 @@
     var table = new Tabulator("#verifications-table", {
         data: queueData,
         layout: "fitColumns",
+        pagination: "local",
+        paginationSize: 10,
+        paginationSizeSelector: [10, 20, 50, 100],
+        paginationCounter: "rows",
 
         placeholder: "No Booking Verification Requests Pending",
         columns: [

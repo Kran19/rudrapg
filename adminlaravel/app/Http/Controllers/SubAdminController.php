@@ -339,8 +339,11 @@ class SubAdminController extends Controller
                 'student_name' => $payment->student ? $payment->student->full_name : 'Resident',
                 'room' => $payment->student && $payment->student->room ? $payment->student->room->room_number.' ('.($payment->student->bed ? $payment->student->bed->bed_code : 'Unassigned').')' : 'Unassigned',
                 'rent' => '₹'.number_format($payment->amount),
+                'amount' => $payment->amount,
                 'due_date' => $payment->due_date ? $payment->due_date->format('d M Y') : 'N/A',
+                'raw_due_date' => $payment->due_date ? $payment->due_date->toDateString() : '',
                 'status' => $payment->status == 'VERIFIED' ? 'Paid' : ($payment->status == 'PENDING' ? 'Pending Verification' : $payment->status),
+                'raw_status' => $payment->status,
                 'payment_mode' => $payment->payment_mode ?? 'UPI Transfer',
                 'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
             ];
@@ -436,6 +439,63 @@ class SubAdminController extends Controller
         ]);
     }
 
+    public function updatePayment(Request $request, $id)
+    {
+        $payment = Payment::findOrFail($id);
+
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0'],
+            'due_date' => ['nullable', 'date'],
+            'payment_mode' => ['required', 'string'],
+            'utr' => ['nullable', 'string'],
+            'status' => ['required', 'string', 'in:PENDING,PAID,VERIFIED'],
+        ]);
+
+        DB::transaction(function () use ($payment, $validated) {
+            $payment->update([
+                'amount' => $validated['amount'],
+                'due_date' => $validated['due_date'],
+                'payment_mode' => $validated['payment_mode'],
+                'status' => $validated['status'],
+                'paid_at' => ($validated['status'] === 'VERIFIED' || $validated['status'] === 'PAID') ? ($payment->paid_at ?? now()) : null,
+            ]);
+
+            if ($payment->proof) {
+                $payment->proof->update([
+                    'utr_number' => $validated['utr'],
+                    'status' => $validated['status'] === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
+                ]);
+            } else if ($validated['utr']) {
+                PaymentProof::create([
+                    'payment_id' => $payment->id,
+                    'utr_number' => $validated['utr'],
+                    'screenshot_path' => 'uploads/proofs/cash_receipt.png',
+                    'status' => $validated['status'] === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
+                    'verified_by' => $validated['status'] === 'VERIFIED' ? Auth::id() : null,
+                ]);
+            }
+
+            if ($student = $payment->student) {
+                $student->update([
+                    'rent_status' => $validated['status'] === 'VERIFIED' ? 'PAID' : 'PENDING',
+                ]);
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Updated Payment ID: '.$payment->id.' (₹'.$validated['amount'].')',
+            'module' => 'FINANCE',
+            'record_id' => $payment->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Payment updated successfully!',
+        ]);
+    }
+
     public function electricityAudit()
     {
         $readingsData = ElectricityReading::with(['student', 'room', 'branch'])->latest()->get()->map(function ($reading) {
@@ -448,10 +508,12 @@ class SubAdminController extends Controller
                 'curr_reading' => $reading->current_reading,
                 'units' => $reading->units_consumed,
                 'rate' => '₹'.number_format($reading->unit_rate, 2),
+                'raw_rate' => $reading->unit_rate,
                 'total' => '₹'.number_format($reading->total_amount),
                 'photo_url' => 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80',
                 'date' => $reading->created_at ? $reading->created_at->format('d M Y') : 'N/A',
-                'status' => $reading->status == 'APPROVED' ? 'Approved' : 'Pending Audit',
+                'status' => $reading->status == 'APPROVED' ? 'Approved' : ($reading->status == 'REJECTED' ? 'Rejected' : 'Pending Audit'),
+                'raw_status' => $reading->status,
             ];
         });
 
@@ -504,6 +566,44 @@ class SubAdminController extends Controller
         ]);
     }
 
+    public function updateElectricityReading(Request $request, $id)
+    {
+        $reading = ElectricityReading::findOrFail($id);
+
+        $validated = $request->validate([
+            'previous_reading' => ['required', 'integer', 'min:0'],
+            'current_reading' => ['required', 'integer', 'gte:previous_reading'],
+            'unit_rate' => ['required', 'numeric', 'min:0'],
+            'status' => ['required', 'string', 'in:PENDING,APPROVED,REJECTED'],
+        ]);
+
+        $unitsConsumed = $validated['current_reading'] - $validated['previous_reading'];
+        $totalAmount = $unitsConsumed * $validated['unit_rate'];
+
+        $reading->update([
+            'previous_reading' => $validated['previous_reading'],
+            'current_reading' => $validated['current_reading'],
+            'units_consumed' => $unitsConsumed,
+            'unit_rate' => $validated['unit_rate'],
+            'total_amount' => $totalAmount,
+            'status' => $validated['status'],
+            'audited_by' => ($validated['status'] !== 'PENDING') ? Auth::id() : null,
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Updated Electricity Reading ID: '.$reading->id.' ('.$unitsConsumed.' Units)',
+            'module' => 'ELECTRICITY',
+            'record_id' => $reading->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Electricity reading updated successfully!',
+        ]);
+    }
+
     public function complaints()
     {
         $ticketsData = Complaint::with(['student', 'room', 'branch'])->latest()->get()->map(function ($complaint) {
@@ -516,10 +616,61 @@ class SubAdminController extends Controller
                 'priority' => ucfirst(strtolower($complaint->priority)),
                 'date' => $complaint->created_at ? $complaint->created_at->format('d M Y') : 'N/A',
                 'status' => $complaint->status == 'RESOLVED' ? 'Resolved' : ($complaint->status == 'IN_PROGRESS' ? 'In Progress' : 'Open'),
+                'db_id' => $complaint->id,
+                'raw_status' => $complaint->status,
+                'raw_priority' => $complaint->priority,
+                'description' => $complaint->description,
             ];
         });
 
         return view('sub_admin.complaints', ['tickets' => $ticketsData]);
+    }
+
+    public function updateComplaint(Request $request, $id)
+    {
+        $complaint = Complaint::findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:OPEN,IN_PROGRESS,RESOLVED'],
+            'priority' => ['required', 'string', 'in:LOW,MEDIUM,HIGH'],
+        ]);
+
+        $complaint->update([
+            'status' => $validated['status'],
+            'priority' => $validated['priority'],
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Updated Complaint Status: '.$complaint->ticket_number.' to '.$validated['status'],
+            'module' => 'COMPLAINT',
+            'record_id' => $complaint->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Ticket updated successfully!',
+        ]);
+    }
+
+    public function destroyComplaint($id)
+    {
+        $complaint = Complaint::findOrFail($id);
+        $complaint->delete();
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Deleted Complaint Ticket: '.$complaint->ticket_number,
+            'module' => 'COMPLAINT',
+            'record_id' => $complaint->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Ticket deleted successfully.',
+        ]);
     }
 
     public function broadcastNotice(Request $request)
@@ -554,6 +705,25 @@ class SubAdminController extends Controller
             'status' => 'success',
             'message' => 'Notice broadcasted to Flutter Student Mobile App!',
             'data' => $announcement,
+        ]);
+    }
+
+    public function destroyPayment($id)
+    {
+        $payment = Payment::findOrFail($id);
+        $payment->delete();
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Deleted Payment ID: '.$payment->id,
+            'module' => 'FINANCE',
+            'record_id' => $payment->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Payment deleted successfully.',
         ]);
     }
 }

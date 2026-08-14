@@ -4,7 +4,10 @@
 @section('page_title', 'Master Student Directory (All Branches)')
 
 @section('content')
-<div x-data="{ lightboxOpen: false, lightboxSrc: '', lightboxTitle: '' }" @open-lightbox.window="lightboxSrc = $event.detail.src; lightboxTitle = $event.detail.title; lightboxOpen = true">
+<div x-data="{ lightboxOpen: false, lightboxSrc: '', lightboxTitle: '', editStudentModalOpen: false, editForm: { db_id: '', full_name: '', phone: '', branch_id: '', raw_joining_date: '', raw_kyc_status: '', raw_rent_status: '' } }"
+     @open-lightbox.window="lightboxSrc = $event.detail.src; lightboxTitle = $event.detail.title; lightboxOpen = true"
+     @open-edit-student-modal.window="editForm = { ...$event.detail }; editStudentModalOpen = true"
+     @close-edit-student-modal.window="editStudentModalOpen = false">
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div>
         <h3 class="text-lg font-bold text-slate-900">Global Resident Student Directory</h3>
@@ -56,6 +59,82 @@
             <img :src="lightboxSrc" class="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl transition-transform hover:scale-125 cursor-zoom-in">
         </div>
     </div>
+
+    <!-- Pure Tailwind Modal: Edit Student Record -->
+    <div x-show="editStudentModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="editStudentModalOpen = false" 
+             class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="bg-slate-900 text-white p-5 flex items-center justify-between">
+                <h4 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-users text-amber-400"></i> Edit Student Record: <span x-text="editForm.full_name"></span>
+                </h4>
+                <button @click="editStudentModalOpen = false" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="edit-student-form" class="p-6 space-y-4">
+                @csrf
+                <input type="hidden" name="db_id" x-model="editForm.db_id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Full Name</label>
+                        <input type="text" name="full_name" required x-model="editForm.full_name" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Phone Number</label>
+                        <input type="text" name="phone" required x-model="editForm.phone" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Assigned PG Branch</label>
+                        <select name="branch_id" required x-model="editForm.branch_id" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            @foreach($allBranches as $branch)
+                                <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Joining Date</label>
+                        <input type="date" name="joining_date" x-model="editForm.raw_joining_date" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">KYC Status</label>
+                        <select name="kyc_status" required x-model="editForm.raw_kyc_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="PENDING">PENDING</option>
+                            <option value="APPROVED">APPROVED</option>
+                            <option value="REJECTED">REJECTED</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Rent Status</label>
+                        <select name="rent_status" required x-model="editForm.raw_rent_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="PENDING">PENDING</option>
+                            <option value="PAID">PAID</option>
+                            <option value="OVERDUE">OVERDUE</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" @click="editStudentModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -66,6 +145,10 @@
     var table = new Tabulator("#students-table", {
         data: studentData,
         layout: "fitColumns",
+        pagination: "local",
+        paginationSize: 10,
+        paginationSizeSelector: [10, 20, 50, 100],
+        paginationCounter: "rows",
 
         placeholder: "No Resident Students Found",
         columns: [
@@ -91,14 +174,21 @@
                 if (cell.getValue() == "PENDING" || cell.getValue() == "Pending") return '<span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
                 return '<span class="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Overdue</span>';
             }},
-            {title: "Actions", field: "id", minWidth: 120, formatter: function(cell){
-                return '<button class="bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"><i class="fa-solid fa-id-card mr-1"></i> View KYC</button>';
+            {title: "Actions", field: "id", minWidth: 180, formatter: function(cell){
+                return '<div class="flex gap-1.5">' +
+                       '  <button class="bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold px-2 py-1.5 rounded-lg transition-colors view-kyc-btn"><i class="fa-solid fa-id-card font-bold"></i> KYC</button>' +
+                       '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2 py-1.5 rounded-lg shadow-sm edit-student-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
+                       '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                if(data.profile_photo || data.aadhaar_front) {
-                    window.dispatchEvent(new CustomEvent('open-lightbox', { detail: { src: data.profile_photo || data.aadhaar_front, title: 'KYC Docs for ' + data.full_name } }));
-                } else {
-                    toastr.info("No KYC images uploaded for this student yet.");
+                if (e.target.classList.contains('view-kyc-btn') || e.target.closest('.view-kyc-btn')) {
+                    if(data.profile_photo || data.aadhaar_front) {
+                        window.dispatchEvent(new CustomEvent('open-lightbox', { detail: { src: data.profile_photo || data.aadhaar_front, title: 'KYC Docs for ' + data.full_name } }));
+                    } else {
+                        toastr.info("No KYC images uploaded for this student yet.");
+                    }
+                } else if (e.target.classList.contains('edit-student-btn') || e.target.closest('.edit-student-btn')) {
+                    window.dispatchEvent(new CustomEvent('open-edit-student-modal', { detail: data }));
                 }
             }},
         ]
@@ -126,6 +216,34 @@
 
     document.getElementById("export-students-csv").addEventListener("click", function(){
         table.download("csv", "students_directory.csv");
+    });
+
+    document.getElementById("edit-student-form").addEventListener("submit", function(e){
+        e.preventDefault();
+        var formData = new FormData(this);
+        var id = this.querySelector('input[name="db_id"]').value;
+
+        fetch("/super-admin/students/" + id + "/update", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                toastr.success(data.message);
+                window.dispatchEvent(new CustomEvent('close-edit-student-modal'));
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                toastr.error(data.message || "Failed to update student.");
+            }
+        })
+        .catch(err => {
+            toastr.error("An error occurred during submission.");
+        });
     });
 </script>
 @endsection

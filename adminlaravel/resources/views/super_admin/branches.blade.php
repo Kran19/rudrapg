@@ -4,9 +4,11 @@
 @section('page_title', 'PG Branch Directory & QR Generator')
 
 @section('content')
-<div x-data="{ addBranchModalOpen: false, qrModalOpen: false, qrBranchName: '', qrBranchCode: '' }"
+<div x-data="{ addBranchModalOpen: false, editBranchModalOpen: false, qrModalOpen: false, qrBranchName: '', qrBranchCode: '', editForm: { id: '', name: '', city: '', address: '', phone: '', email: '', electricity_unit_rate: 10.0, manager_name: '', manager_phone: '' } }"
      @open-qr-modal.window="qrBranchName = $event.detail.name; qrBranchCode = $event.detail.code; qrModalOpen = true"
-     @close-branch-modal.window="addBranchModalOpen = false">
+     @open-edit-branch-modal.window="editForm = { ...$event.detail }; editBranchModalOpen = true"
+     @close-branch-modal.window="addBranchModalOpen = false"
+     @close-edit-branch-modal.window="editBranchModalOpen = false">
     <!-- Header Controls -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -106,6 +108,82 @@
         </div>
     </div>
 
+    <!-- Pure Tailwind Modal: Edit Branch -->
+    <div x-show="editBranchModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="editBranchModalOpen = false" 
+             class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="bg-slate-900 text-white p-5 flex items-center justify-between">
+                <h4 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-building text-amber-400"></i> Edit PG Branch: <span x-text="editForm.name"></span>
+                </h4>
+                <button @click="editBranchModalOpen = false" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="edit-branch-form" class="p-6 space-y-4">
+                @csrf
+                <input type="hidden" name="id" x-model="editForm.id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Branch Code (Read Only)</label>
+                        <input type="text" name="code" readonly x-model="editForm.code" class="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-xl text-sm focus:outline-none cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Branch Name</label>
+                        <input type="text" name="name" required x-model="editForm.name" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">City</label>
+                    <input type="text" name="city" required x-model="editForm.city" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Full Physical Address</label>
+                    <textarea name="address" required x-model="editForm.address" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" rows="2"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Branch Phone</label>
+                        <input type="text" name="phone" required x-model="editForm.phone" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Branch Email</label>
+                        <input type="email" name="email" required x-model="editForm.email" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Unit Tariff (₹)</label>
+                        <input type="number" step="0.5" name="electricity_unit_rate" required x-model="editForm.electricity_unit_rate" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Manager Name</label>
+                        <input type="text" name="manager_name" required x-model="editForm.manager_name" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Manager Phone</label>
+                        <input type="text" name="manager_phone" required x-model="editForm.manager_phone" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" @click="editBranchModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Pure Tailwind Modal: QR Code Generator -->
     <div x-show="qrModalOpen" 
          x-transition:enter="transition ease-out duration-200"
@@ -168,6 +246,10 @@
         data: branchData,
         layout: "fitColumns",
         responsiveLayout: "collapse",
+        pagination: "local",
+        paginationSize: 10,
+        paginationSizeSelector: [10, 20, 50, 100],
+        paginationCounter: "rows",
 
         placeholder: "No PG Branches Found",
         columns: [
@@ -188,8 +270,27 @@
                 var rowData = cell.getRow().getData();
                 window.dispatchEvent(new CustomEvent('open-qr-modal', { detail: rowData }));
             }},
-            {title: "Status", field: "status", width: 100, formatter: function(cell){
-                return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Active</span>';
+            {title: "Status", field: "status", width: 120, hozAlign: "center", formatter: function(cell){
+                var val = cell.getValue();
+                var checked = (val === 'ACTIVE' || val === 'active') ? 'checked' : '';
+                var id = cell.getRow().getData().id;
+                return '<label class="relative inline-flex items-center cursor-pointer mt-1">' +
+                       '  <input type="checkbox" class="sr-only peer status-toggle" data-id="' + id + '" ' + checked + '>' +
+                       '  <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[\'\'] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>' +
+                       '</label>';
+            }, cellClick: function(e, cell){
+                if(e.target.classList.contains('status-toggle') || e.target.closest('.status-toggle')){
+                    var data = cell.getRow().getData();
+                    toggleBranchStatus(data.id, cell);
+                }
+            }},
+            {title: "Actions", field: "id", width: 120, formatter: function(cell){
+                return '<button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-branch-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
+            }, cellClick: function(e, cell){
+                var data = cell.getRow().getData();
+                if (e.target.classList.contains('edit-branch-btn') || e.target.closest('.edit-branch-btn')) {
+                    window.dispatchEvent(new CustomEvent('open-edit-branch-modal', { detail: data }));
+                }
             }},
         ]
     });
@@ -217,10 +318,9 @@
         .then(res => res.json())
         .then(data => {
             if (data.status === "success") {
-                table.addData([data.data], true);
                 toastr.success(data.message);
                 window.dispatchEvent(new CustomEvent('close-branch-modal'));
-                this.reset();
+                setTimeout(() => window.location.reload(), 1000);
             } else {
                 toastr.error(data.message || "Failed to create Branch.");
             }
@@ -229,5 +329,55 @@
             toastr.error("An error occurred during submission.");
         });
     });
+
+    document.getElementById("edit-branch-form").addEventListener("submit", function(e){
+        e.preventDefault();
+        var formData = new FormData(this);
+        var id = this.querySelector('input[name="id"]').value;
+
+        fetch("/super-admin/branches/" + id + "/update", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                toastr.success(data.message);
+                window.dispatchEvent(new CustomEvent('close-edit-branch-modal'));
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                toastr.error(data.message || "Failed to update branch.");
+            }
+        })
+        .catch(err => {
+            toastr.error("An error occurred during submission.");
+        });
+    });
+
+    function toggleBranchStatus(id, cell) {
+        fetch("/super-admin/branches/" + id + "/toggle-status", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                toastr.success(data.message);
+                cell.setValue(data.status_val);
+            } else {
+                toastr.error(data.message || "Failed to update status.");
+            }
+        })
+        .catch(err => {
+            toastr.error("An error occurred while updating status.");
+        });
+    }
 </script>
 @endsection
