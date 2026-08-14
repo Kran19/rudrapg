@@ -1,31 +1,34 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 
 // Provide the SharedPreferences instance
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError();
 });
 
+const String _prodBaseUrl = 'https://emperorsmartsolutions.com/rudrapgwebsite/api/v1';
+const String _localBaseUrl = 'http://127.0.0.1:8000/api/v1';
+
 // Provide the Dio API client
 final apiClientProvider = Provider<Dio>((ref) {
   final prefs = ref.read(sharedPreferencesProvider);
   
-  // Set this to your live server URL so the mobile app can connect to it.
-  // Use 'http://127.0.0.1:8000/api/v1' only if testing locally on Web/Desktop.
-  String baseUrl = 'https://emperorsmartsolutions.com/rudrapgwebsite/api/v1';
+  // Production-Ready URL Resolution:
+  // 1. Default to the production server.
+  String baseUrl = _prodBaseUrl;
   
-  // NOTE: If you are running locally and want to test on the emulator, uncomment this block:
-  /*
-  baseUrl = 'http://127.0.0.1:8000/api/v1';
-  try {
-    if (Platform.isAndroid) {
-      baseUrl = 'http://10.0.2.2:8000/api/v1';
-    }
-  } catch (e) {
-    // Platform.isAndroid throws on web
+  // 2. If debug testing locally on Chrome (Web), point to local server.
+  if (kDebugMode && kIsWeb) {
+    baseUrl = _localBaseUrl;
   }
-  */
+  
+  // 3. Allow build-time override via --dart-define=API_URL=...
+  const envBaseUrl = String.fromEnvironment('API_URL');
+  if (envBaseUrl.isNotEmpty) {
+    baseUrl = envBaseUrl;
+  }
 
   final dio = Dio(BaseOptions(
     baseUrl: baseUrl,
