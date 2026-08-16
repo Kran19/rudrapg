@@ -4,7 +4,7 @@
 @section('page_title', 'Monthly Electricity Meter Reading Audit')
 
 @section('content')
-<div x-data="{ auditModalOpen: false, editModalOpen: false, activeReading: {}, editForm: { id: '', student: '', room: '', prev_reading: 0, curr_reading: 0, raw_rate: 0, raw_status: '' } }"
+<div x-data="{ auditModalOpen: false, editModalOpen: false, lightboxOpen: false, lightboxSrc: '', lightboxTitle: '', activeReading: {}, editForm: { id: '', student: '', room: '', prev_reading: 0, curr_reading: 0, raw_rate: 0, raw_status: '' } }"
      @open-audit-modal.window="activeReading = $event.detail; auditModalOpen = true"
      @close-audit-modal.window="auditModalOpen = false"
      @open-edit-modal.window="editForm = { ...$event.detail }; editModalOpen = true"
@@ -27,6 +27,23 @@
             </button>
         </div>
         <div id="electricity-table"></div>
+    </div>
+
+    <!-- Fullscreen Image Lightbox Zoom Modal -->
+    <div x-show="lightboxOpen" style="display: none;"
+         x-transition
+         class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[60] flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl flex justify-between items-center text-white mb-3">
+            <h3 class="text-sm font-bold flex items-center gap-2">
+                <i class="fa-solid fa-magnifying-glass-plus text-blue-400"></i> <span x-text="lightboxTitle"></span>
+            </h3>
+            <button @click="lightboxOpen = false" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-700">
+                <i class="fa-solid fa-xmark mr-1"></i> Close Lightbox (Esc)
+            </button>
+        </div>
+        <div class="relative max-w-4xl max-h-[85vh] flex items-center justify-center overflow-auto rounded-2xl border border-slate-800 bg-slate-900/50 p-2">
+            <img :src="lightboxSrc" class="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl transition-transform hover:scale-125 cursor-zoom-in">
+        </div>
     </div>
 
     <!-- Pure Tailwind Modal: Meter Audit -->
@@ -84,8 +101,10 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Physical Meter Photo Attachment</label>
-                    <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center">
-                        <img :src="activeReading.photo_url" class="w-full h-44 object-contain rounded-lg">
+                    <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center relative group cursor-pointer overflow-hidden"
+                         @click="activeReading.photo_url && (lightboxSrc = activeReading.photo_url, lightboxTitle = 'Meter Reading Photo - Room ' + activeReading.room, lightboxOpen = true)">
+                        <img :src="activeReading.photo_url" class="w-full h-44 object-contain rounded-lg group-hover:scale-105 transition-all">
+                        <div class="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-bold"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom High-Res Meter Photo</div>
                     </div>
                 </div>
 

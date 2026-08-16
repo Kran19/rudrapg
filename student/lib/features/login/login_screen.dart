@@ -6,8 +6,8 @@ import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_card.dart';
 import '../../core/widgets/custom_text_field.dart';
+import '../qr_scanner/qr_scanner_gate_screen.dart';
 import '../main_layout/main_layout_screen.dart';
-import '../welcome/welcome_screen.dart';
 import '../auth/presentation/auth_notifier.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -23,20 +23,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
-  Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
+  void dispose() {
+    _mobileController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
-      if (next.status == AuthStatus.error && next.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red),
-        );
-      } else if (next.status == AuthStatus.authenticated) {
+  void _handleLogin() {
+    final phone = _mobileController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter phone number and password'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    ref.read(authNotifierProvider.notifier).login(phone, password).then((_) {
+      if (!mounted) return;
+      final state = ref.read(authNotifierProvider);
+      if (state.status == AuthStatus.authenticated) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const MainLayoutScreen()),
         );
+      } else if (state.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.errorMessage!),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isLoading = authState.status == AuthStatus.loading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -47,80 +75,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppSpacing.xxl),
-              // App Branding Logo Container
+              // Brand Logo Icon
               Center(
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: AppSpacing.softShadow,
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.apartment_rounded,
-                      size: 42,
-                      color: AppColors.accent,
-                    ),
+                  child: const Icon(
+                    Icons.apartment_rounded,
+                    size: 48,
+                    color: AppColors.primary,
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Title
               Center(
-                child: Column(
-                  children: [
-                    Text('RUDRA GROUP PG', style: AppTypography.displayMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      'RESIDENT COMPANION PORTAL',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.secondary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Resident Portal Login',
+                  style: AppTypography.displayMedium,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Center(
+                child: Text(
+                  'Enter your credentials to access your room, payments & electricity meter audits.',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodySmall,
                 ),
               ),
               const SizedBox(height: AppSpacing.xxxl),
 
-              // Login Form Card
-              Text('Resident Login', style: AppTypography.titleLarge),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Enter your registered mobile number & password to access your resident dashboard.',
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-
+              // Mobile Input
               CustomTextField(
-                label: 'Mobile Number',
-                hint: 'Enter 10-digit mobile number',
-                prefixIcon: Icons.phone_android_rounded,
-                keyboardType: TextInputType.phone,
+                label: 'Registered Mobile Number',
+                hint: 'e.g. 9876543210',
                 controller: _mobileController,
+                keyboardType: TextInputType.phone,
+                prefixIcon: Icons.phone_android_rounded,
               ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.lg),
 
+              // Password Input
               CustomTextField(
                 label: 'Password',
-                hint: 'Enter password',
-                prefixIcon: Icons.lock_outline_rounded,
-                obscureText: _obscurePassword,
+                hint: '••••••••',
                 controller: _passwordController,
+                obscureText: _obscurePassword,
+                prefixIcon: Icons.lock_outline_rounded,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                     color: AppColors.textSecondary,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
+              const SizedBox(height: AppSpacing.sm),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -145,17 +159,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               // Login Action Button
               CustomButton(
-                text: authState.status == AuthStatus.loading ? 'Logging in...' : 'Log In to Resident Portal',
-                icon: authState.status == AuthStatus.loading ? Icons.hourglass_empty : Icons.login_rounded,
-                isLoading: authState.status == AuthStatus.loading,
-                onPressed: () {
-                  if (authState.status != AuthStatus.loading) {
-                    ref.read(authNotifierProvider.notifier).login(
-                      _mobileController.text.trim(),
-                      _passwordController.text.trim(),
-                    );
-                  }
-                },
+                text: isLoading ? 'Signing In...' : 'Sign In to Portal',
+                icon: isLoading ? Icons.hourglass_empty : Icons.login_rounded,
+                isLoading: isLoading,
+                onPressed: isLoading ? () {} : _handleLogin,
               ),
               const SizedBox(height: AppSpacing.xxl),
 
@@ -163,7 +170,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               CustomCard(
                 onTap: () {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                    MaterialPageRoute(builder: (context) => const QRScannerGateScreen()),
                   );
                 },
                 backgroundColor: AppColors.secondary.withValues(alpha: 0.05),

@@ -84,9 +84,15 @@ class SubAdminController extends Controller
                     return null;
                 };
 
+                $isKycApproved = $student && ($student->kyc_status === 'APPROVED' || $student->status === 'KYC_APPROVED' || $student->status === 'BED_ALLOCATED' || $student->status === 'APPROVED');
+                $isBedAssigned = $student && !is_null($student->bed_id);
+                $isPaymentSubmitted = ($paymentProof !== null) || ($latestPayment && $latestPayment->status === 'PENDING') || ($student && $student->rent_status === 'UNDER_VERIFICATION');
+                $isPaymentDone = ($latestPayment && ($latestPayment->status === 'VERIFIED' || $latestPayment->status === 'PAID')) || ($student && $student->rent_status === 'PAID');
+
                 return [
                     'id' => $req->app_reference,
                     'db_id' => $req->id,
+                    'student_id' => $student ? $student->id : null,
                     'student_name' => $student ? $student->full_name : 'Applicant',
                     'phone' => $student ? $student->phone : 'N/A',
                     'email' => $student ? ($student->email ?? 'N/A') : 'N/A',
@@ -102,6 +108,14 @@ class SubAdminController extends Controller
                     'deposit' => $student && $student->bed ? '₹'.number_format($student->bed->security_deposit) : 'Pending Room Allocation',
                     'date' => $req->created_at ? $req->created_at->format('d M Y') : 'N/A',
                     'status' => $req->status == 'PENDING' ? 'Pending Verification' : $req->status,
+                    'kyc_status' => $student ? $student->kyc_status : 'PENDING',
+                    'rent_status' => $student ? $student->rent_status : 'NOT_APPLICABLE',
+                    'deposit_status' => $student ? $student->deposit_status : 'NOT_APPLICABLE',
+                    'student_status' => $student ? $student->status : 'PENDING_APPROVAL',
+                    'is_kyc_approved' => $isKycApproved,
+                    'is_bed_assigned' => $isBedAssigned,
+                    'is_payment_submitted' => $isPaymentSubmitted,
+                    'is_payment_done' => $isPaymentDone,
                     'profile_photo' => $formatUrl($profilePhotoDoc?->file_path),
                     'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path),
                     'aadhaar_back' => $formatUrl($aadhaarBackDoc?->file_path),
@@ -146,7 +160,7 @@ class SubAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Student KYC Profile Approved! You can now assign a room & bed.',
+            'message' => 'Step 1 Complete: Student KYC Profile Approved! Step 2 (Room & Bed Allocation) is now unlocked.',
         ]);
     }
 
@@ -154,39 +168,45 @@ class SubAdminController extends Controller
     {
         $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
         
+        $student = $requestRecord->student;
+        if (!$student || ($student->kyc_status !== 'APPROVED' && $student->status !== 'KYC_APPROVED' && $student->status !== 'BED_ALLOCATED' && $student->status !== 'APPROVED')) {
+            return response()->json(['status' => 'error', 'message' => 'Cannot assign Bed. Complete Step 1 (KYC Document Verification) first.'], 422);
+        }
+
         $selectedBedId = $request->input('bed_id');
 
         if (!$selectedBedId) {
-            return response()->json(['status' => 'error', 'message' => 'Please select a Room & Bed to allocate.'], 422);
+            return response()->json(['status' => 'error', 'message' => 'Please select an available Room & Bed from the dropdown.'], 422);
         }
 
         $bed = Bed::find($selectedBedId);
-        if (!$bed || $bed->status !== 'AVAILABLE') {
+        if (!$bed || ($bed->status !== 'AVAILABLE' && $bed->id !== $student->bed_id)) {
             return response()->json(['status' => 'error', 'message' => 'Selected bed is no longer available.'], 422);
         }
 
-        DB::transaction(function () use ($requestRecord, $bed) {
+        DB::transaction(function () use ($requestRecord, $bed, $student) {
             $requestRecord->update(['status' => 'BED_ALLOCATED', 'processed_by' => Auth::id()]);
-            if ($student = $requestRecord->student) {
-                $student->update([
-                    'room_id' => $bed->room_id,
-                    'bed_id' => $bed->id,
-                    'status' => 'BED_ALLOCATED',
-                ]);
-                $bed->update(['status' => 'RESERVED']);
+            
+            $student->update([
+                'room_id' => $bed->room_id,
+                'bed_id' => $bed->id,
+                'rent_status' => 'DUE',
+                'deposit_status' => 'DUE',
+                'status' => 'BED_ALLOCATED',
+            ]);
+            $bed->update(['status' => 'RESERVED']);
 
-                RoomAllocation::create([
-                    'branch_id' => $student->branch_id,
-                    'student_id' => $student->id,
-                    'room_id' => $bed->room_id,
-                    'bed_id' => $bed->id,
-                    'start_date' => now()->toDateString(),
-                    'monthly_rent' => $bed->monthly_rent,
-                    'security_deposit' => $bed->security_deposit,
-                    'status' => 'ACTIVE',
-                    'allocated_by' => Auth::id(),
-                ]);
-            }
+            RoomAllocation::create([
+                'branch_id' => $student->branch_id,
+                'student_id' => $student->id,
+                'room_id' => $bed->room_id,
+                'bed_id' => $bed->id,
+                'start_date' => now()->toDateString(),
+                'monthly_rent' => $bed->monthly_rent,
+                'security_deposit' => $bed->security_deposit,
+                'status' => 'ACTIVE',
+                'allocated_by' => Auth::id(),
+            ]);
         });
 
         AuditLog::create([
@@ -199,7 +219,7 @@ class SubAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Room & Bed assigned successfully! Payment notice sent to resident app.',
+            'message' => 'Step 2 Complete: Bed '.$bed->bed_code.' allocated! Rent & Deposit payment unlocked in resident app.',
         ]);
     }
 
@@ -209,56 +229,84 @@ class SubAdminController extends Controller
             ->orWhere('id', $id)
             ->firstOrFail();
 
-        DB::transaction(function () use ($requestRecord, $request) {
+        $student = $requestRecord->student;
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Applicant profile not found.'], 404);
+        }
+
+        // Auto-assign first available bed if not yet allocated
+        $selectedBedId = $request->input('bed_id') ?? $student->bed_id;
+        if (!$selectedBedId) {
+            $availableBed = Bed::where('status', 'AVAILABLE')->first();
+            if ($availableBed) {
+                $selectedBedId = $availableBed->id;
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'No available beds in branch. Please assign a bed first.'], 422);
+            }
+        }
+
+        $bed = Bed::find($selectedBedId);
+
+        DB::transaction(function () use ($requestRecord, $student, $bed) {
             $requestRecord->update([
                 'status' => 'APPROVED',
                 'processed_by' => Auth::id(),
             ]);
 
-            if ($student = $requestRecord->student) {
+            if ($bed) {
+                $bed->update(['status' => 'OCCUPIED']);
                 $student->update([
-                    'status' => 'APPROVED',
-                    'kyc_status' => 'VERIFIED',
+                    'room_id' => $bed->room_id,
+                    'bed_id' => $bed->id,
                 ]);
 
-                $selectedBedId = $request->input('bed_id');
+                RoomAllocation::firstOrCreate(
+                    ['student_id' => $student->id, 'bed_id' => $bed->id],
+                    [
+                        'branch_id' => $student->branch_id,
+                        'room_id' => $bed->room_id,
+                        'start_date' => now()->toDateString(),
+                        'monthly_rent' => $bed->monthly_rent,
+                        'security_deposit' => $bed->security_deposit,
+                        'status' => 'ACTIVE',
+                        'allocated_by' => Auth::id(),
+                    ]
+                );
+            }
 
-                if (!$selectedBedId && !$student->bed_id) {
-                    $availableBed = Bed::where('status', 'AVAILABLE')->first();
-                    if ($availableBed) {
-                        $selectedBedId = $availableBed->id;
-                    }
+            $student->update([
+                'status' => 'APPROVED',
+                'kyc_status' => 'APPROVED',
+                'rent_status' => 'PAID',
+                'deposit_status' => 'PAID',
+            ]);
+
+            // If pending payment proof exists, mark it verified
+            $latestPayment = Payment::where('student_id', $student->id)->latest()->first();
+            if ($latestPayment) {
+                $latestPayment->update(['status' => 'VERIFIED', 'paid_at' => now()]);
+                if ($latestPayment->proof) {
+                    $latestPayment->proof->update(['status' => 'VERIFIED', 'verified_by' => Auth::id()]);
                 }
-
-                if ($selectedBedId) {
-                    $bed = Bed::find($selectedBedId);
-                    if ($bed) {
-                        $student->update([
-                            'room_id' => $bed->room_id,
-                            'bed_id' => $bed->id,
-                        ]);
-                        $bed->update(['status' => 'OCCUPIED']);
-
-                        RoomAllocation::firstOrCreate(
-                            ['student_id' => $student->id, 'bed_id' => $bed->id],
-                            [
-                                'branch_id' => $student->branch_id,
-                                'room_id' => $bed->room_id,
-                                'start_date' => now()->toDateString(),
-                                'monthly_rent' => $bed->monthly_rent,
-                                'security_deposit' => $bed->security_deposit,
-                                'status' => 'ACTIVE',
-                                'allocated_by' => Auth::id(),
-                            ]
-                        );
-                    }
-                }
+            } else {
+                // Generate initial admission receipt
+                $payment = Payment::create([
+                    'student_id' => $student->id,
+                    'branch_id' => $student->branch_id,
+                    'tx_reference' => 'PAY-'.date('Y').'-'.rand(1000, 9999),
+                    'payment_type' => 'RENT_AND_DEPOSIT',
+                    'amount' => ($bed ? ($bed->monthly_rent + $bed->security_deposit) : 16500.00),
+                    'payment_mode' => 'UPI',
+                    'payment_date' => now()->toDateString(),
+                    'status' => 'VERIFIED',
+                    'paid_at' => now(),
+                ]);
             }
         });
 
         AuditLog::create([
             'user_id' => Auth::id(),
-            'action' => 'Approved Verification & Key Handover: '.$id,
+            'action' => 'Completed Step 3 Admission Approval & Key Handover for: '.$id,
             'module' => 'VERIFICATION',
             'record_id' => $requestRecord->id,
             'ip_address' => request()->ip(),
@@ -266,7 +314,7 @@ class SubAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Student booking approved successfully.',
+            'message' => 'Step 3 Complete: Resident Admission Approved & Key Handover Confirmed!',
         ]);
     }
 
@@ -498,7 +546,23 @@ class SubAdminController extends Controller
 
     public function electricityAudit()
     {
-        $readingsData = ElectricityReading::with(['student', 'room', 'branch'])->latest()->get()->map(function ($reading) {
+        $formatUrl = function (?string $path) {
+            if (!$path) return null;
+            if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+            $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+                return asset('storage/' . $cleanPath);
+            }
+            return null;
+        };
+
+        $readingsData = ElectricityReading::with(['student', 'room', 'branch'])->latest()->get()->map(function ($reading) use ($formatUrl) {
+            $photo = $formatUrl($reading->meter_photo_path);
+            if (!$photo) {
+                $photo = 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80';
+            }
+
             return [
                 'id' => $reading->id,
                 'code' => 'E-2026-'.str_pad($reading->id, 3, '0', STR_PAD_LEFT),
@@ -510,7 +574,7 @@ class SubAdminController extends Controller
                 'rate' => '₹'.number_format($reading->unit_rate, 2),
                 'raw_rate' => $reading->unit_rate,
                 'total' => '₹'.number_format($reading->total_amount),
-                'photo_url' => 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80',
+                'photo_url' => $photo,
                 'date' => $reading->created_at ? $reading->created_at->format('d M Y') : 'N/A',
                 'status' => $reading->status == 'APPROVED' ? 'Approved' : ($reading->status == 'REJECTED' ? 'Rejected' : 'Pending Audit'),
                 'raw_status' => $reading->status,

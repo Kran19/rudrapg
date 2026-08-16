@@ -128,9 +128,12 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
-                    <button type="button" @click="editStudentModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" @click="deleteStudent(editForm.db_id)" class="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md flex items-center gap-1.5"><i class="fa-solid fa-trash"></i> Delete Student</button>
+                    <div class="flex items-center gap-3">
+                        <button type="button" @click="editStudentModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
+                        <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -174,10 +177,11 @@
                 if (cell.getValue() == "PENDING" || cell.getValue() == "Pending") return '<span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
                 return '<span class="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Overdue</span>';
             }},
-            {title: "Actions", field: "id", minWidth: 180, formatter: function(cell){
+            {title: "Actions", field: "id", minWidth: 220, formatter: function(cell){
                 return '<div class="flex gap-1.5">' +
                        '  <button class="bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold px-2 py-1.5 rounded-lg transition-colors view-kyc-btn"><i class="fa-solid fa-id-card font-bold"></i> KYC</button>' +
                        '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2 py-1.5 rounded-lg shadow-sm edit-student-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
+                       '  <button class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2 py-1.5 rounded-lg shadow-sm delete-student-btn"><i class="fa-solid fa-trash"></i> Delete</button>' +
                        '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
@@ -189,6 +193,8 @@
                     }
                 } else if (e.target.classList.contains('edit-student-btn') || e.target.closest('.edit-student-btn')) {
                     window.dispatchEvent(new CustomEvent('open-edit-student-modal', { detail: data }));
+                } else if (e.target.classList.contains('delete-student-btn') || e.target.closest('.delete-student-btn')) {
+                    deleteStudent(data.db_id);
                 }
             }},
         ]
@@ -245,5 +251,39 @@
             toastr.error("An error occurred during submission.");
         });
     });
+
+    function deleteStudent(id) {
+        Swal.fire({
+            title: 'Delete Student Record?',
+            text: 'This will remove the resident profile and release their assigned bed allocation.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            confirmButtonText: 'Yes, Delete Resident'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("/super-admin/students/" + id, {
+                    method: "DELETE",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        toastr.success(data.message);
+                        window.dispatchEvent(new CustomEvent('close-edit-student-modal'));
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to delete student.");
+                    }
+                })
+                .catch(err => {
+                    toastr.error("An error occurred during deletion.");
+                });
+            }
+        });
+    }
 </script>
 @endsection

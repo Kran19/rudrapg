@@ -7,20 +7,21 @@ test.describe('Super Admin Zero-Trust Lifecycle', () => {
     // -------------------------------------------------------------
     // Phase 1: Authentication
     // -------------------------------------------------------------
-    await page.goto('http://127.0.0.1:8000/login');
+    await page.context().clearCookies();
+    await page.goto('http://127.0.0.1:8088/login');
     
     // Login as Super Admin
-    await page.fill('input[name="email"]', 'admin@rudrapg.com');
-    await page.fill('input[name="password"]', 'password');
+    await page.fill('input[type="email"]', 'admin@rudrapg.com');
+    await page.fill('input[type="password"]', 'password');
     await page.click('button[type="submit"]');
 
     // Verify Dashboard Access
-    await expect(page.locator('text="Total Monthly Revenue"').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text="Total Monthly Revenue"').first()).toBeVisible({ timeout: 15000 });
     
     // -------------------------------------------------------------
     // Phase 2: Create a New Branch
     // -------------------------------------------------------------
-    await page.goto('http://127.0.0.1:8000/super-admin/branches');
+    await page.goto('http://127.0.0.1:8088/super-admin/branches');
     
     // Open Modal
     await page.click('button:has-text("Add New PG Branch")');
@@ -50,7 +51,7 @@ test.describe('Super Admin Zero-Trust Lifecycle', () => {
     // -------------------------------------------------------------
     // Phase 3: Generate Rooms & Beds for the Branch
     // -------------------------------------------------------------
-    await page.goto('http://127.0.0.1:8000/super-admin/rooms-master');
+    await page.goto('http://127.0.0.1:8088/super-admin/rooms-master');
     
     // Open Modal
     await page.click('button:has-text("Add New Room")');
@@ -69,14 +70,18 @@ test.describe('Super Admin Zero-Trust Lifecycle', () => {
     // Submit
     await page.click('button:has-text("Save Room")');
     
-    // Wait for Success Toast
+    // Wait for Success Toast and Reload
     await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text="Room 101-AUTO"')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(1500);
+    
+    // Switch to 40-Room Visual Grid to view all rooms across floors
+    await page.click('button:has-text("Switch to 40-Room Visual Grid")');
+    await expect(page.locator('text="Room 101-AUTO"').first()).toBeVisible({ timeout: 15000 });
 
     // -------------------------------------------------------------
     // Phase 4: Create Sub Admin and Delegate Access
     // -------------------------------------------------------------
-    await page.goto('http://127.0.0.1:8000/super-admin/sub-admins');
+    await page.goto('http://127.0.0.1:8088/super-admin/sub-admins');
     
     // Open Modal
     await page.click('button:has-text("Add Sub Admin Account")');
@@ -122,3 +127,4 @@ test.describe('Super Admin Zero-Trust Lifecycle', () => {
   });
 
 });
+

@@ -148,10 +148,12 @@
                         @endforeach
                     </div>
                 </div>
- 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
-                    <button type="button" @click="editModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" @click="deleteSubAdmin(editForm.db_id)" class="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md flex items-center gap-1.5"><i class="fa-solid fa-trash"></i> Delete Account</button>
+                    <div class="flex items-center gap-3">
+                        <button type="button" @click="editModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
+                        <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -187,7 +189,7 @@
                 });
                 return html || '<span class="text-slate-400 text-xs">None</span>';
             }},
-            {title: "Status", field: "status", width: 120, hozAlign: "center", formatter: function(cell){
+            {title: "Status", field: "status", minWidth: 110, hozAlign: "center", formatter: function(cell){
                 var val = cell.getRow().getData().raw_status;
                 var checked = (val === 'ACTIVE' || val === 'active') ? 'checked' : '';
                 var id = cell.getRow().getData().db_id;
@@ -202,12 +204,17 @@
                 }
             }},
             {title: "Created Date", field: "created_at", minWidth: 130},
-            {title: "Actions", field: "db_id", width: 120, formatter: function(cell){
-                return '<button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-subadmin-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
+            {title: "Actions", field: "db_id", minWidth: 180, formatter: function(cell){
+                return '<div class="flex gap-1.5">' +
+                       '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-subadmin-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
+                       '  <button class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 delete-subadmin-btn"><i class="fa-solid fa-trash"></i> Delete</button>' +
+                       '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 if (e.target.classList.contains('edit-subadmin-btn') || e.target.closest('.edit-subadmin-btn')) {
                     window.dispatchEvent(new CustomEvent('open-edit-subadmin-modal', { detail: data }));
+                } else if (e.target.classList.contains('delete-subadmin-btn') || e.target.closest('.delete-subadmin-btn')) {
+                    deleteSubAdmin(data.db_id);
                 }
             }},
         ]
@@ -297,6 +304,40 @@
         })
         .catch(err => {
             toastr.error("An error occurred while updating status.");
+        });
+    }
+
+    function deleteSubAdmin(id) {
+        Swal.fire({
+            title: 'Delete Sub Admin Account?',
+            text: 'This will revoke all administrative branch privileges for this user.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            confirmButtonText: 'Yes, Delete Account'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("/super-admin/sub-admins/" + id, {
+                    method: "DELETE",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        toastr.success(data.message);
+                        window.dispatchEvent(new CustomEvent('close-edit-subadmin-modal'));
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to delete Sub Admin.");
+                    }
+                })
+                .catch(err => {
+                    toastr.error("An error occurred during deletion.");
+                });
+            }
         });
     }
 </script>

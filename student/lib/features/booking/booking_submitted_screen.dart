@@ -6,6 +6,6 @@ class BookingSubmittedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const RegistrationSubmittedScreen();
+    return const RegistrationSubmittedScreen(appReference: 'REG-2026-0001');
   }
 }

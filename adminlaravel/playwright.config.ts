@@ -14,7 +14,7 @@ export default defineConfig({
   reporter: [['html', { outputFolder: 'QA/reports' }]],
   outputDir: 'QA/raw-evidence', // Traces, videos, screenshots will end up here
   use: {
-    baseURL: 'http://127.0.0.1:8000',
+    baseURL: 'http://127.0.0.1:8088',
     trace: 'on',
     video: 'on',
     screenshot: 'on',
@@ -31,9 +31,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'php artisan serve',
-    url: 'http://127.0.0.1:8000',
-    reuseExistingServer: !process.env.CI,
+    command: '"C:\\xampp\\php\\php.exe" artisan serve --port=8088',
+    url: 'http://127.0.0.1:8088',
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
 });

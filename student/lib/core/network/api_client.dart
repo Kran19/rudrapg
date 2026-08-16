@@ -9,7 +9,7 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 });
 
 const String _prodBaseUrl = 'https://emperorsmartsolutions.com/rudrapgwebsite/api/v1';
-const String _localBaseUrl = 'http://127.0.0.1:8000/api/v1';
+const String _localBaseUrl = 'http://127.0.0.1:8088/api/v1';
 
 // Provide the Dio API client
 final apiClientProvider = Provider<Dio>((ref) {

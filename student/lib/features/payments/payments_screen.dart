@@ -78,12 +78,18 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
 
       if (mounted) {
         Navigator.pop(context); // close modal
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment proof submitted for verification.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: AppColors.success,
+            content: Text('Payment proof submitted successfully! Branch manager will audit and verify your receipt.'),
+          ),
+        );
         _utrController.clear();
         setState(() {
           _proofImage = null;
         });
         ref.invalidate(paymentHistoryProvider);
+        ref.invalidate(studentProfileProvider);
       }
     } catch (e) {
       if (mounted) {
@@ -119,105 +125,137 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             children: [
               // Pending Dues Summary Header Card
               profileAsync.when(
-                data: (resident) => Column(
-                  children: [
-                    CustomCard(
-                      backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.all(AppSpacing.xl),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                data: (resident) {
+                  final bool isRoomSet = resident.isRoomAssigned;
+                  final bool isPaid = resident.isPaid;
+                  final bool isSubmitted = resident.isPaymentSubmitted;
+                  final double totalDue = (isRoomSet && !isPaid)
+                      ? (resident.monthlyRent + resident.securityDeposit)
+                      : 0.0;
+
+                  final String badgeText = !isRoomSet
+                      ? 'AWAITING BED ALLOCATION'
+                      : (isPaid
+                          ? '✓ ALL DUES CLEARED'
+                          : (isSubmitted
+                              ? 'UNDER AUDIT ⏳'
+                              : '! DUES PENDING'));
+
+                  final Color badgeColor = !isRoomSet
+                      ? Colors.white70
+                      : (isPaid
+                          ? AppColors.success
+                          : (isSubmitted
+                              ? AppColors.accent
+                              : AppColors.warning));
+
+                  final String subtitleText = !isRoomSet
+                      ? 'Your room & bed have not been assigned yet. Dues will be calculated once sub-admin allocates your bed.'
+                      : (isPaid
+                          ? 'All rent and security deposit dues are completely cleared.'
+                          : (isSubmitted
+                              ? 'Your payment proof has been submitted and is currently being audited by the branch manager.'
+                              : 'Initial admission payment: Rent ₹${resident.monthlyRent.toInt()} + Deposit ₹${resident.securityDeposit.toInt()}.'));
+
+                  return Column(
+                    children: [
+                      CustomCard(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.all(AppSpacing.xl),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'TOTAL OUTSTANDING DUES',
+                                  style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: badgeColor.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    badgeText,
+                                    style: AppTypography.badge.copyWith(color: badgeColor),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              isPaid ? '₹0.00' : (isRoomSet ? '₹${totalDue.toInt()}' : '₹0.00'),
+                              style: AppTypography.displayLarge.copyWith(color: Colors.white),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              subtitleText,
+                              style: AppTypography.bodySmall.copyWith(color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+
+                      // Breakout Categories Grid
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Dues Breakdown', style: AppTypography.titleLarge),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'TOTAL OUTSTANDING DUES',
-                                style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  resident.rentStatus.toUpperCase() == 'UNPAID' ? '! DUES PENDING' : '✓ NO DUES PENDING',
-                                  style: AppTypography.badge.copyWith(
-                                      color: resident.rentStatus.toUpperCase() == 'UNPAID' ? AppColors.warning : AppColors.success),
-                                ),
-                              ),
-                            ],
+                          Expanded(
+                            child: _buildBreakdownCard(
+                              title: 'Monthly Rent',
+                              amount: isRoomSet ? '₹${resident.monthlyRent.toInt()}' : 'Pending',
+                              status: isPaid ? 'Paid' : (isSubmitted ? 'Verifying' : (isRoomSet ? 'Due' : 'Not Set')),
+                              color: isPaid ? AppColors.success : (isSubmitted ? AppColors.accent : (isRoomSet ? AppColors.warning : Colors.grey)),
+                              icon: Icons.home_rounded,
+                            ),
                           ),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            resident.rentStatus.toUpperCase() == 'UNPAID' ? '₹${resident.monthlyRent.toInt()}' : '₹0.00',
-                            style: AppTypography.displayLarge.copyWith(color: Colors.white),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Current rent of ₹${resident.monthlyRent.toInt()} is ${resident.rentStatus}. Deposit: ₹${resident.securityDeposit.toInt()}.',
-                            style: AppTypography.bodySmall.copyWith(color: Colors.white70),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: _buildBreakdownCard(
+                              title: 'Security Deposit',
+                              amount: isRoomSet ? '₹${resident.securityDeposit.toInt()}' : 'Pending',
+                              status: isPaid ? 'Paid' : (isSubmitted ? 'Verifying' : (isRoomSet ? 'Due' : 'Not Set')),
+                              color: isPaid ? AppColors.success : (isSubmitted ? AppColors.accent : (isRoomSet ? AppColors.warning : Colors.grey)),
+                              icon: Icons.security_rounded,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-
-                    // Breakout Categories Grid
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Dues Breakdown', style: AppTypography.titleLarge),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildBreakdownCard(
-                            title: 'Monthly Rent',
-                            amount: '₹${resident.monthlyRent.toInt()}',
-                            status: resident.rentStatus,
-                            color: resident.rentStatus.toUpperCase() == 'UNPAID' ? AppColors.warning : AppColors.success,
-                            icon: Icons.home_rounded,
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildBreakdownCard(
+                              title: 'Electricity Meter',
+                              amount: 'As Consumed',
+                              status: 'Meter Audit',
+                              color: AppColors.secondary,
+                              icon: Icons.bolt_rounded,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: _buildBreakdownCard(
-                            title: 'Security Deposit',
-                            amount: '₹${resident.securityDeposit.toInt()}',
-                            status: resident.depositStatus,
-                            color: AppColors.accent,
-                            icon: Icons.security_rounded,
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: _buildBreakdownCard(
+                              title: 'Payable Today',
+                              amount: isPaid ? '₹0.00' : (isRoomSet ? '₹${totalDue.toInt()}' : '₹0.00'),
+                              status: isPaid ? 'Clear' : (isSubmitted ? 'Auditing' : (isRoomSet ? 'Payable' : 'Pending')),
+                              color: isPaid ? AppColors.success : (isSubmitted ? AppColors.accent : (isRoomSet ? AppColors.warning : Colors.grey)),
+                              icon: Icons.check_circle_rounded,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildBreakdownCard(
-                            title: 'Electricity Charges',
-                            amount: 'N/A',
-                            status: 'Unknown',
-                            color: AppColors.secondary,
-                            icon: Icons.bolt_rounded,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: _buildBreakdownCard(
-                            title: 'Pending Amount',
-                            amount: resident.rentStatus.toUpperCase() == 'UNPAID' ? '₹${resident.monthlyRent.toInt()}' : '₹0',
-                            status: resident.rentStatus.toUpperCase() == 'UNPAID' ? 'Due' : 'Clear',
-                            color: resident.rentStatus.toUpperCase() == 'UNPAID' ? AppColors.warning : AppColors.success,
-                            icon: Icons.check_circle_rounded,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => const SizedBox(),
               ),

@@ -34,7 +34,7 @@ class StudentService
 
             $appRef = 'REG-'.date('Y').'-'.rand(1000, 9999);
 
-            // Create Student Record
+            // Create Student Record (Rent and Deposit are NOT_APPLICABLE until Bed is Assigned)
             $student = Student::create([
                 'user_id' => $user->id,
                 'branch_id' => $branch->id,
@@ -49,8 +49,8 @@ class StudentService
                 'emergency_contact' => $data['parent_phone'],
                 'current_address' => $data['current_address'],
                 'kyc_status' => 'PENDING',
-                'rent_status' => 'DUE',
-                'deposit_status' => 'PENDING',
+                'rent_status' => 'NOT_APPLICABLE',
+                'deposit_status' => 'NOT_APPLICABLE',
                 'status' => 'PENDING_APPROVAL',
             ]);
 
@@ -96,8 +96,8 @@ class StudentService
                 'student_id' => $student->id,
                 'branch_id' => $student->branch_id,
                 'tx_reference' => $txRef,
-                'payment_type' => $data['payment_type'] ?? 'RENT',
-                'amount' => $data['amount'] ?? 6500.00,
+                'payment_type' => $data['payment_type'] ?? 'RENT_AND_DEPOSIT',
+                'amount' => $data['amount'] ?? ($student->bed ? ($student->bed->monthly_rent + $student->bed->security_deposit) : 6500.00),
                 'payment_mode' => 'UPI',
                 'payment_date' => now()->toDateString(),
                 'status' => 'PENDING',
@@ -108,6 +108,12 @@ class StudentService
                 'utr_number' => $data['utr_number'],
                 'screenshot_path' => $data['screenshot_path'] ?? 'uploads/proofs/proof.png',
                 'status' => 'PENDING',
+            ]);
+
+            // Update student status to UNDER_VERIFICATION so they know payment is being audited
+            $student->update([
+                'rent_status' => 'UNDER_VERIFICATION',
+                'deposit_status' => 'UNDER_VERIFICATION',
             ]);
 
             return $payment;

@@ -49,6 +49,27 @@
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
+
+            <!-- Sequential Step Progression Stepper Bar -->
+            <div class="px-6 py-2.5 bg-slate-100 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-semibold">
+                <div class="flex items-center gap-1.5" :class="activeStudent.is_kyc_approved ? 'text-emerald-600 dark:text-emerald-400' : 'text-blue-600 dark:text-blue-400'">
+                    <i class="fa-solid" :class="activeStudent.is_kyc_approved ? 'fa-circle-check text-emerald-500' : 'fa-circle-dot text-blue-500'"></i>
+                    <span>Step 1: KYC Audit</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded" :class="activeStudent.is_kyc_approved ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'" x-text="activeStudent.is_kyc_approved ? 'Approved' : 'Pending'"></span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                <div class="flex items-center gap-1.5" :class="activeStudent.is_bed_assigned ? 'text-emerald-600 dark:text-emerald-400' : (activeStudent.is_kyc_approved ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400')">
+                    <i class="fa-solid" :class="activeStudent.is_bed_assigned ? 'fa-circle-check text-emerald-500' : (activeStudent.is_kyc_approved ? 'fa-circle-dot text-amber-500' : 'fa-lock text-slate-400')"></i>
+                    <span>Step 2: Room & Bed</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded" :class="activeStudent.is_bed_assigned ? 'bg-emerald-100 text-emerald-700' : (activeStudent.is_kyc_approved ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-500')" x-text="activeStudent.is_bed_assigned ? ('Room ' + activeStudent.room_number) : (activeStudent.is_kyc_approved ? 'Ready to Assign' : 'Locked')"></span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+                <div class="flex items-center gap-1.5" :class="activeStudent.is_payment_done ? 'text-emerald-600 dark:text-emerald-400' : (activeStudent.is_bed_assigned ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400')">
+                    <i class="fa-solid" :class="activeStudent.is_payment_done ? 'fa-circle-check text-emerald-500' : (activeStudent.is_bed_assigned ? 'fa-circle-dot text-purple-500' : 'fa-lock text-slate-400')"></i>
+                    <span>Step 3: Handover & Active</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded" :class="activeStudent.is_payment_done ? 'bg-emerald-100 text-emerald-700' : (activeStudent.is_bed_assigned ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-500')" x-text="activeStudent.is_payment_done ? 'Complete' : (activeStudent.is_bed_assigned ? 'Ready for Handover' : 'Locked')"></span>
+                </div>
+            </div>
             
             <div class="p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-6">
                 <!-- Left: Student Details & Bed Assignment -->
@@ -98,43 +119,57 @@
                         </div>
                     </div>
 
+                    <!-- Step 2 Room & Bed Allocation Section -->
                     <h5 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5 pt-1">
-                        <i class="fa-solid fa-bed"></i> Assign Room & Bed
+                        <i class="fa-solid fa-bed"></i> Step 2: Assign Room & Bed
                     </h5>
-                    <div class="bg-blue-50/60 dark:bg-blue-900/30 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900 space-y-2 text-xs">
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">Room & Bed Selection:</label>
-                            <button type="button" @click="isEditingRoom = !isEditingRoom" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold hover:bg-blue-200 transition-colors">
-                                <i class="fa-solid fa-pen mr-1"></i> Edit
-                            </button>
+
+                    <!-- If KYC is not approved, show lock -->
+                    <template x-if="!activeStudent.is_kyc_approved">
+                        <div class="p-3.5 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-center text-xs space-y-1.5">
+                            <i class="fa-solid fa-lock text-slate-400 text-lg"></i>
+                            <div class="font-bold text-slate-700 dark:text-slate-300">Room & Bed Allocation Locked</div>
+                            <p class="text-slate-500 dark:text-slate-400 text-[11px]">Audit and approve Student KYC documents (Step 1) to unlock bed allocation.</p>
                         </div>
-                        <div x-show="isEditingRoom">
-                            <select x-model="selectedBedId" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-slate-100">
-                                <option value="">Select Bed from Available List</option>
-                                <template x-for="bed in availableBeds" :key="bed.id">
-                                    <option :value="bed.id" x-text="bed.label"></option>
-                                </template>
-                            </select>
+                    </template>
+
+                    <!-- If KYC is approved, show allocation controls -->
+                    <template x-if="activeStudent.is_kyc_approved">
+                        <div class="bg-blue-50/60 dark:bg-blue-900/30 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900 space-y-2 text-xs">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">Select Available Bed:</label>
+                                <button type="button" @click="isEditingRoom = !isEditingRoom" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold hover:bg-blue-200 transition-colors">
+                                    <i class="fa-solid fa-pen mr-1"></i> <span x-text="activeStudent.is_bed_assigned ? 'Change Bed' : 'Choose Bed'"></span>
+                                </button>
+                            </div>
+                            <div x-show="isEditingRoom || !activeStudent.is_bed_assigned">
+                                <select x-model="selectedBedId" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-slate-100">
+                                    <option value="">Select Bed from Available List</option>
+                                    <template x-for="bed in availableBeds" :key="bed.id">
+                                        <option :value="bed.id" x-text="bed.label"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="flex justify-between pt-1">
+                                <span class="text-slate-600 dark:text-slate-400">Allocated Spot:</span>
+                                <span class="font-bold text-slate-900 dark:text-slate-100" x-text="(!activeStudent.room_number || activeStudent.room_number === 'Pending' || activeStudent.room_number === 'Unassigned') ? 'Room Not Assigned Yet' : 'Room ' + activeStudent.room_number + ' (' + activeStudent.bed_code + ')'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600 dark:text-slate-400">Monthly Rent:</span>
+                                <span class="font-bold text-blue-600 dark:text-blue-400" x-text="activeStudent.rent"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600 dark:text-slate-400">Security Deposit:</span>
+                                <span class="font-bold text-slate-900 dark:text-slate-100" x-text="activeStudent.deposit"></span>
+                            </div>
                         </div>
-                        <div class="flex justify-between pt-1">
-                            <span class="text-slate-600 dark:text-slate-400">Current Spot:</span>
-                            <span class="font-bold text-slate-900 dark:text-slate-100" x-text="(!activeStudent.room_number || activeStudent.room_number === 'Pending' || activeStudent.room_number === 'Unassigned') ? 'Room Not Assigned Yet' : 'Room ' + activeStudent.room_number + ' (' + activeStudent.bed_code + ')'"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-600 dark:text-slate-400">Monthly Rent:</span>
-                            <span class="font-bold text-blue-600 dark:text-blue-400" x-text="activeStudent.rent"></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-600 dark:text-slate-400">Security Deposit:</span>
-                            <span class="font-bold text-slate-900 dark:text-slate-100" x-text="activeStudent.deposit"></span>
-                        </div>
-                    </div>
+                    </template>
                 </div>
 
                 <!-- Center/Right: Images Preview & Lightbox Triggers -->
                 <div class="md:col-span-7 space-y-4">
                     <h5 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center justify-between">
-                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-images"></i> Identity & Document Attachments</span>
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-images"></i> Step 1: KYC Document Attachments</span>
                         <span class="text-[10px] text-slate-400 font-normal"><i class="fa-solid fa-magnifying-glass-plus mr-0.5"></i> Click image to zoom</span>
                     </h5>
                     
@@ -224,26 +259,40 @@
                         </div>
                     </div>
 
+                    <!-- Step 3 Payment Proof Section -->
                     <div class="pt-2">
-                        <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">Payment Proof (Rent + Deposit Receipt)</label>
-                        <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center relative group overflow-hidden">
-                            <template x-if="activeStudent.payment_proof">
-                                <div class="cursor-pointer" @click="$dispatch('open-lightbox', { src: activeStudent.payment_proof, title: 'Payment Receipt - ' + activeStudent.student_name })">
-                                    <img :src="activeStudent.payment_proof" class="w-full h-36 object-contain rounded-lg group-hover:scale-105 transition-all">
-                                    <div class="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-bold"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom High-Res Payment Proof</div>
-                                    <template x-if="activeStudent.payment_utr">
-                                        <div class="mt-0.5 text-[11px] font-mono text-slate-700 dark:text-slate-300">UTR: <span class="font-bold" x-text="activeStudent.payment_utr"></span></div>
-                                    </template>
-                                </div>
-                            </template>
-                            <template x-if="!activeStudent.payment_proof">
-                                <div class="p-4 bg-amber-50/60 dark:bg-amber-900/30 rounded-lg border border-amber-100 dark:border-amber-900 text-center">
-                                    <i class="fa-solid fa-clock text-amber-500 text-lg mb-1"></i>
-                                    <div class="text-xs font-bold text-amber-800 dark:text-amber-200" x-text="activeStudent.payment_status === 'VERIFIED' ? 'Payment Verified & Confirmed' : (activeStudent.payment_utr ? 'Payment Submitted (UTR: ' + activeStudent.payment_utr + ')' : 'Payment Upload Pending from Resident App')"></div>
-                                    <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5" x-text="activeStudent.payment_utr ? 'UTR Reference Attached' : 'Payment proof can be submitted by resident after profile approval and bed allocation.'"></p>
-                                </div>
-                            </template>
-                        </div>
+                        <label class="block text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">
+                            <i class="fa-solid fa-receipt mr-1"></i> Step 3: Payment Verification (Rent & Security Deposit)
+                        </label>
+
+                        <template x-if="!activeStudent.is_bed_assigned">
+                            <div class="p-4 bg-slate-100 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-center text-xs space-y-1">
+                                <i class="fa-solid fa-lock text-slate-400 text-lg"></i>
+                                <div class="font-bold text-slate-700 dark:text-slate-300">Payment Audit Locked</div>
+                                <p class="text-slate-500 dark:text-slate-400 text-[11px]">Rent and Deposit will be calculated automatically once Step 2 (Bed Allocation) is completed.</p>
+                            </div>
+                        </template>
+
+                        <template x-if="activeStudent.is_bed_assigned">
+                            <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-center relative group overflow-hidden">
+                                <template x-if="activeStudent.payment_proof">
+                                    <div class="cursor-pointer" @click="$dispatch('open-lightbox', { src: activeStudent.payment_proof, title: 'Payment Receipt - ' + activeStudent.student_name })">
+                                        <img :src="activeStudent.payment_proof" class="w-full h-36 object-contain rounded-lg group-hover:scale-105 transition-all">
+                                        <div class="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-bold"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom Payment Proof</div>
+                                        <template x-if="activeStudent.payment_utr">
+                                            <div class="mt-0.5 text-[11px] font-mono text-slate-700 dark:text-slate-300">UTR: <span class="font-bold" x-text="activeStudent.payment_utr"></span></div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="!activeStudent.payment_proof">
+                                    <div class="p-3 bg-amber-50/60 dark:bg-amber-900/30 rounded-lg border border-amber-100 dark:border-amber-900 text-center">
+                                        <i class="fa-solid fa-clock text-amber-500 text-lg mb-1"></i>
+                                        <div class="text-xs font-bold text-amber-800 dark:text-amber-200" x-text="activeStudent.payment_status === 'VERIFIED' ? 'Payment Verified & Confirmed' : (activeStudent.payment_utr ? 'Payment Submitted (UTR: ' + activeStudent.payment_utr + ')' : 'Payment Upload Pending from Resident App')"></div>
+                                        <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5" x-text="activeStudent.payment_utr ? 'UTR Reference Attached' : 'Resident has been notified to submit rent & deposit payment proof in app.'"></p>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -256,21 +305,31 @@
                 </button>
                 
                 <div class="flex items-center gap-2">
+                    <!-- Step 1 Trigger -->
                     <button type="button" @click="approveKycOnly(activeStudent)" 
-                            class="px-4 py-2 text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-900 rounded-xl transition-all">
-                        <i class="fa-solid fa-user-check mr-1"></i> Step 1: Approve Profile KYC
+                            :disabled="activeStudent.is_kyc_approved"
+                            :class="activeStudent.is_kyc_approved ? 'bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 border-blue-200 cursor-pointer shadow-xs'"
+                            class="px-4 py-2 text-xs font-bold border rounded-xl transition-all">
+                        <i class="fa-solid" :class="activeStudent.is_kyc_approved ? 'fa-check text-emerald-600' : 'fa-user-check text-blue-600'"></i>
+                        <span x-text="activeStudent.is_kyc_approved ? 'Step 1: KYC Approved ✓' : 'Step 1: Approve Profile KYC'"></span>
                     </button>
 
+                    <!-- Step 2 Trigger -->
                     <button type="button" @click="assignBedOnly(activeStudent, selectedBedId)" 
-                            :disabled="!selectedBedId"
-                            :class="selectedBedId ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-600'"
+                            :disabled="!activeStudent.is_kyc_approved || (!selectedBedId && !activeStudent.is_bed_assigned)"
+                            :class="(!activeStudent.is_kyc_approved) ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700' : (activeStudent.is_bed_assigned ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-200 cursor-pointer' : (selectedBedId ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-sm' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'))"
                             class="px-4 py-2 text-xs font-bold rounded-xl transition-all">
-                        <i class="fa-solid fa-bed mr-1"></i> Step 2: Assign Room & Bed
+                        <i class="fa-solid" :class="(!activeStudent.is_kyc_approved) ? 'fa-lock' : (activeStudent.is_bed_assigned ? 'fa-bed' : 'fa-bed')"></i>
+                        <span x-text="(!activeStudent.is_kyc_approved) ? 'Step 2: Locked (KYC First)' : (activeStudent.is_bed_assigned ? ('Step 2: Assigned (Room ' + activeStudent.room_number + ')') : 'Step 2: Assign Room & Bed')"></span>
                     </button>
 
+                    <!-- Step 3 Trigger -->
                     <button type="button" @click="approveBooking(activeStudent, selectedBedId)" 
-                            class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
-                        <i class="fa-solid fa-key mr-1"></i> Step 3: Approve & Key Handover
+                            :disabled="!activeStudent.is_bed_assigned"
+                            :class="(!activeStudent.is_bed_assigned) ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md cursor-pointer'"
+                            class="px-5 py-2 text-xs font-bold rounded-xl transition-all">
+                        <i class="fa-solid" :class="(!activeStudent.is_bed_assigned) ? 'fa-lock' : 'fa-key'"></i>
+                        <span x-text="(!activeStudent.is_bed_assigned) ? 'Step 3: Locked (Assign Bed First)' : 'Step 3: Approve & Key Handover'"></span>
                     </button>
                 </div>
             </div>
@@ -341,19 +400,22 @@
                 return "<strong class='text-slate-900 dark:text-slate-100'>" + val + "</strong>";
             }},
             {title: "Date", field: "date", minWidth: 120},
-            {title: "Status", field: "status", minWidth: 160, formatter: function(cell){
+            {title: "Status", field: "status", minWidth: 180, formatter: function(cell){
                 var val = cell.getValue();
-                if (val === "Approved" || val === "APPROVED") {
-                    return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check"></i> Approved</span>';
-                } else if (val === "KYC_APPROVED") {
-                    return '<span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-user-check"></i> KYC Approved</span>';
-                } else if (val === "BED_ALLOCATED") {
-                    return '<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-bed"></i> Bed Assigned</span>';
+                var row = cell.getRow().getData();
+                if (row.is_payment_done || val === "Approved" || val === "APPROVED") {
+                    return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-circle-check"></i> Complete & Active</span>';
+                } else if (row.is_payment_submitted) {
+                    return '<span class="bg-purple-100 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-receipt"></i> Step 3: Payment Auditing</span>';
+                } else if (row.is_bed_assigned || val === "BED_ALLOCATED") {
+                    return '<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-bed"></i> Step 3: Bed Set • Pay Rent</span>';
+                } else if (row.is_kyc_approved || val === "KYC_APPROVED") {
+                    return '<span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-user-check"></i> Step 2: KYC Done • Pick Bed</span>';
                 }
-                return '<span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-clock"></i> Pending Audit</span>';
+                return '<span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-full"><i class="fa-solid fa-clock"></i> Step 1: KYC Pending</span>';
             }},
             {title: "Actions", field: "id", minWidth: 130, formatter: function(cell){
-                return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-xs flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
+                return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-1.5 rounded-lg shadow-xs flex items-center gap-1 audit-btn"><i class="fa-solid fa-clipboard-check"></i> Audit</button>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 window.dispatchEvent(new CustomEvent('open-verify-modal', { detail: data }));

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,7 +18,8 @@ import 'package:flutter/foundation.dart';
 
 
 class StudentRegistrationScreen extends ConsumerStatefulWidget {
-  const StudentRegistrationScreen({super.key});
+  final Map<String, dynamic>? verifiedBranch;
+  const StudentRegistrationScreen({super.key, this.verifiedBranch});
 
   @override
   ConsumerState<StudentRegistrationScreen> createState() => _StudentRegistrationScreenState();
@@ -208,8 +208,9 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
     setState(() => _isLoading = true);
     
     try {
+      final branchCode = widget.verifiedBranch?['code']?.toString() ?? 'PG-NRD-01';
       final formData = FormData.fromMap({
-        'branch_code': 'PG-NRD-01',
+        'branch_code': branchCode,
         'full_name': _fullNameController.text.trim(),
         'phone': phoneDigits,
         'email': _emailController.text.trim(),
@@ -255,6 +256,10 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
 
   @override
   Widget build(BuildContext context) {
+    final bName = widget.verifiedBranch?['name']?.toString() ?? 'Naroda Main Branch';
+    final bCode = widget.verifiedBranch?['code']?.toString() ?? 'PG-NRD-01';
+    final bAddress = widget.verifiedBranch?['address']?.toString() ?? '102, Main Highway Road, Naroda';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -294,13 +299,13 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'BRANCH LOCKED',
+                              'VERIFIED BRANCH QR LOCKED',
                               style: AppTypography.caption.copyWith(color: AppColors.accent, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text('Naroda Branch (PG-NRD-01)', style: AppTypography.titleMedium.copyWith(color: Colors.white)),
-                          Text('102, Main Highway Road, Naroda', style: AppTypography.bodySmall.copyWith(color: Colors.white70)),
+                          Text('$bName ($bCode)', style: AppTypography.titleMedium.copyWith(color: Colors.white)),
+                          Text(bAddress, style: AppTypography.bodySmall.copyWith(color: Colors.white70)),
                         ],
                       ),
                     ),

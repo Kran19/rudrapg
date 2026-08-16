@@ -166,9 +166,12 @@
                     </select>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
-                    <button type="button" @click="editTxModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" @click="deleteTransaction(editForm.id)" class="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md flex items-center gap-1.5"><i class="fa-solid fa-trash"></i> Delete Entry</button>
+                    <div class="flex items-center gap-3">
+                        <button type="button" @click="editTxModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
+                        <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -221,12 +224,17 @@
                     ? '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Verified</span>' 
                     : '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
             }},
-            {title: "Actions", field: "id", minWidth: 120, formatter: function(cell){
-                return '<button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-tx-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
+            {title: "Actions", field: "id", minWidth: 180, formatter: function(cell){
+                return '<div class="flex gap-1.5">' +
+                       '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-tx-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
+                       '  <button class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 delete-tx-btn"><i class="fa-solid fa-trash"></i> Delete</button>' +
+                       '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 if (e.target.classList.contains('edit-tx-btn') || e.target.closest('.edit-tx-btn')) {
                     window.dispatchEvent(new CustomEvent('open-edit-tx-modal', { detail: data }));
+                } else if (e.target.classList.contains('delete-tx-btn') || e.target.closest('.delete-tx-btn')) {
+                    deleteTransaction(data.id);
                 }
             }},
         ]
@@ -263,5 +271,39 @@
             toastr.error("An error occurred during submission.");
         });
     });
+
+    function deleteTransaction(id) {
+        Swal.fire({
+            title: 'Delete Financial Transaction?',
+            text: 'This will permanently remove this transaction from the financial ledger.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            confirmButtonText: 'Yes, Delete Transaction'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch("/super-admin/finance/" + id, {
+                    method: "DELETE",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        toastr.success(data.message);
+                        window.dispatchEvent(new CustomEvent('close-edit-tx-modal'));
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to delete transaction.");
+                    }
+                })
+                .catch(err => {
+                    toastr.error("An error occurred during deletion.");
+                });
+            }
+        });
+    }
 </script>
 @endsection
