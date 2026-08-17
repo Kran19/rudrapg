@@ -9,7 +9,8 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 });
 
 const String _prodBaseUrl = 'https://emperorsmartsolutions.com/rudrapgwebsite/api/v1';
-const String _localBaseUrl = 'http://127.0.0.1:8088/api/v1';
+const String _localBaseUrl = 'http://127.0.0.1:8000/api/v1';
+const String _emulatorBaseUrl = 'http://10.0.2.2:8000/api/v1';
 
 // Provide the Dio API client
 final apiClientProvider = Provider<Dio>((ref) {
@@ -19,9 +20,16 @@ final apiClientProvider = Provider<Dio>((ref) {
   // 1. Default to the production server.
   String baseUrl = _prodBaseUrl;
   
-  // 2. If debug testing locally on Chrome (Web), point to local server.
-  if (kDebugMode && kIsWeb) {
-    baseUrl = _localBaseUrl;
+  // 2. In debug mode, default to local development.
+  if (kDebugMode) {
+    if (kIsWeb) {
+      baseUrl = _localBaseUrl;
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      // Android emulator maps 10.0.2.2 to host's localhost
+      baseUrl = _emulatorBaseUrl;
+    } else {
+      baseUrl = _localBaseUrl;
+    }
   }
   
   // 3. Allow build-time override via --dart-define=API_URL=...
