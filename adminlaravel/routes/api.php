@@ -30,6 +30,39 @@ Route::prefix('v1')->group(function () {
         ]);
     });
 
+    // Secure Deploy Route for Hostinger Code Sync
+    Route::get('/sys-deploy', function (\Illuminate\Http\Request $request) {
+        $secret = 'rudra_secure_deploy_2026';
+        if ($request->query('key') !== $secret) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
+        }
+        
+        $output = [];
+        
+        // Try git pull
+        if (function_exists('exec')) {
+            exec('git pull origin main 2>&1', $output);
+        } else {
+            $output[] = 'exec() is disabled. Cannot run git pull.';
+        }
+        
+        // Clear caches and run migrations using Laravel API
+        try {
+            \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+            $output[] = 'Artisan optimize:clear: ' . trim(\Illuminate\Support\Facades\Artisan::output());
+            
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $output[] = 'Artisan migrate --force: ' . trim(\Illuminate\Support\Facades\Artisan::output());
+        } catch (\Exception $e) {
+            $output[] = 'Artisan error: ' . $e->getMessage();
+        }
+        
+        return response()->json([
+            'status' => 'success',
+            'output' => $output
+        ]);
+    });
+
     // Protected Routes (Sanctum Auth)
     Route::middleware('auth:sanctum')->group(function () {
 
