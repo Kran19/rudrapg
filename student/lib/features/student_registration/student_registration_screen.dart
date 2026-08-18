@@ -205,6 +205,23 @@ class _StudentRegistrationScreenState extends ConsumerState<StudentRegistrationS
       return;
     }
 
+    if (_profilePhoto == null) {
+      _showError('Please upload your Student Profile Passport Photo.');
+      return;
+    }
+    if (_aadhaarFront == null) {
+      _showError('Please upload your Aadhaar Card (Front) image.');
+      return;
+    }
+    if (_aadhaarBack == null) {
+      _showError('Please upload your Aadhaar Card (Back) image.');
+      return;
+    }
+    if (_panCard == null) {
+      _showError('Please upload your PAN Card Attachment.');
+      return;
+    }
+
     setState(() => _isLoading = true);
     
     try {

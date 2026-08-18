@@ -19,7 +19,7 @@ class SupportScreen extends ConsumerStatefulWidget {
 class _SupportScreenState extends ConsumerState<SupportScreen> {
   final _descController = TextEditingController();
   final _subjectController = TextEditingController();
-  String _category = 'Plumbing';
+  String _category = 'PLUMBING';
   bool _isSubmitting = false;
 
   @override
@@ -163,20 +163,20 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                     Text('Select Category', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
-                      initialValue: 'Plumbing',
+                      initialValue: 'PLUMBING',
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'Plumbing', child: Text('Plumbing & Geyser')),
-                        DropdownMenuItem(value: 'Electrical', child: Text('Electrical & Lights')),
-                        DropdownMenuItem(value: 'Wi-Fi', child: Text('Wi-Fi & Internet')),
-                        DropdownMenuItem(value: 'Cleaning', child: Text('Room Housekeeping')),
+                        DropdownMenuItem(value: 'PLUMBING', child: Text('Plumbing & Geyser')),
+                        DropdownMenuItem(value: 'ELECTRICAL', child: Text('Electrical & Lights')),
+                        DropdownMenuItem(value: 'WIFI', child: Text('Wi-Fi & Internet')),
+                        DropdownMenuItem(value: 'CLEANING', child: Text('Room Housekeeping')),
                       ],
                       onChanged: (val) {
                         setState(() {
-                          _category = val ?? 'Plumbing';
+                          _category = val ?? 'PLUMBING';
                         });
                       },
                     ),
@@ -209,6 +209,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
               Text('My Tickets', style: AppTypography.titleLarge),
               const SizedBox(height: AppSpacing.md),
               historyAsync.when(
+                skipLoadingOnRefresh: true,
                 data: (history) {
                   if (history.isEmpty) {
                     return const Text('No tickets raised.');
@@ -220,6 +221,28 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                     separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
                     itemBuilder: (context, index) {
                       final item = history[index];
+                      final String rawStatus = item['status'] ?? 'PENDING';
+                      final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'Resolved';
+                      final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'In Progress';
+                      
+                      Color statusBgColor;
+                      Color statusTextColor;
+                      String statusLabel;
+
+                      if (isResolved) {
+                        statusBgColor = AppColors.success.withValues(alpha: 0.1);
+                        statusTextColor = AppColors.success;
+                        statusLabel = 'SOLVED';
+                      } else if (isInProgress) {
+                        statusBgColor = AppColors.info.withValues(alpha: 0.1);
+                        statusTextColor = AppColors.info;
+                        statusLabel = 'IN PROGRESS';
+                      } else {
+                        statusBgColor = AppColors.warning.withValues(alpha: 0.1);
+                        statusTextColor = AppColors.warning;
+                        statusLabel = 'PENDING';
+                      }
+
                       return CustomCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,12 +254,12 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.accent.withValues(alpha: 0.1),
+                                    color: statusBgColor,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
-                                    item['status'] ?? 'PENDING',
-                                    style: AppTypography.caption.copyWith(color: AppColors.accent, fontWeight: FontWeight.bold),
+                                    statusLabel,
+                                    style: AppTypography.caption.copyWith(color: statusTextColor, fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ],
@@ -245,6 +268,43 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                             Text(item['subject'] ?? '', style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
                             Text(item['description'] ?? '', style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
+                            if (item['resolution_remarks'] != null && (item['resolution_remarks'] as String).trim().isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: isResolved 
+                                      ? AppColors.success.withValues(alpha: 0.05)
+                                      : AppColors.info.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isResolved 
+                                        ? AppColors.success.withValues(alpha: 0.15)
+                                        : AppColors.info.withValues(alpha: 0.15),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isResolved ? 'Resolution Result / Remarks:' : 'Admin Update:',
+                                      style: AppTypography.caption.copyWith(
+                                        color: isResolved ? AppColors.success : AppColors.info,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      item['resolution_remarks'] ?? '',
+                                      style: AppTypography.bodySmall.copyWith(
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       );

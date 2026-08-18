@@ -4,7 +4,7 @@
 @section('page_title', 'Complaints Desk & Branch Announcement Notices')
 
 @section('content')
-<div x-data="{ noticeModalOpen: false, editTicketModalOpen: false, editForm: { db_id: '', ticket: '', student: '', room: '', category: '', title: '', description: '', raw_status: '', raw_priority: '' } }"
+<div x-data="{ noticeModalOpen: false, editTicketModalOpen: false, editForm: { db_id: '', ticket: '', student: '', room: '', category: '', title: '', description: '', raw_status: '', raw_priority: '', resolution_remarks: '' } }"
      @open-edit-ticket-modal.window="editForm = { ...$event.detail }; editTicketModalOpen = true"
      @close-edit-ticket-modal.window="editTicketModalOpen = false"
      @close-notice-modal.window="noticeModalOpen = false">
@@ -151,6 +151,10 @@
                         </select>
                     </div>
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Resolution Remarks / Result</label>
+                    <textarea name="resolution_remarks" x-model="editForm.resolution_remarks" rows="2" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" placeholder="Provide details on how this issue was resolved..."></textarea>
+                </div>
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
                     <button type="button" @click="editTicketModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
@@ -166,7 +170,7 @@
 <script>
     var ticketsData = @json($tickets);
 
-    var table = new Tabulator("#complaints-table", {
+    var table = new Tabulator("#tickets-table", {
         data: ticketsData,
         layout: "fitColumns",
         pagination: "local",
@@ -176,41 +180,40 @@
 
         placeholder: "No Active Maintenance Tickets",
         columns: [
-            {title: "Ticket No", field: "ticket", minWidth: 130, formatter: function(cell){
+            {title: "Ticket No", field: "ticket", minWidth: 120, formatter: function(cell){
                 return "<code class='bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded text-xs font-mono'>" + cell.getValue() + "</code>";
             }},
-            {title: "Student Name", field: "student", minWidth: 160, formatter: function(cell){
+            {title: "Student Name", field: "student", minWidth: 140, formatter: function(cell){
                 return "<strong class='text-slate-900 dark:text-slate-100'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Room No", field: "room", minWidth: 100},
-            {title: "Category", field: "category", minWidth: 120, formatter: function(cell){
+            {title: "Room No", field: "room", minWidth: 90},
+            {title: "Category", field: "category", minWidth: 110, formatter: function(cell){
                 return '<span class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium px-2.5 py-1 rounded-md">' + cell.getValue() + '</span>';
             }},
-            {title: "Issue Title", field: "title", minWidth: 180},
-            {title: "Priority", field: "priority", minWidth: 110, formatter: function(cell){
+            {title: "Complain", field: "title", minWidth: 150},
+            {title: "Reason", field: "description", minWidth: 200, formatter: function(cell){
+                return '<span class="text-xs text-slate-600 dark:text-slate-400 font-normal line-clamp-2">' + cell.getValue() + '</span>';
+            }},
+            {title: "Priority", field: "priority", minWidth: 100, formatter: function(cell){
                 var p = cell.getValue();
                 if(p === 'High') return '<span class="bg-rose-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">High</span>';
                 if(p === 'Medium') return '<span class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">Medium</span>';
                 return '<span class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">Low</span>';
             }},
-            {title: "Created Date", field: "date", minWidth: 120},
-            {title: "Status", field: "status", minWidth: 120, formatter: function(cell){
+            {title: "Created Date", field: "date", minWidth: 110},
+            {title: "Status", field: "status", minWidth: 100, formatter: function(cell){
                 var s = cell.getValue();
-                if(s === 'Resolved') return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Resolved</span>';
-                if(s === 'In Progress') return '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">In Progress</span>';
-                return '<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-full">Open</span>';
+                if(s === 'Resolved' || s === 'RESOLVED' || s === 'Solved') return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Solved</span>';
+                return '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
             }},
-            {title: "Actions", field: "db_id", minWidth: 180, formatter: function(cell){
+            {title: "Actions", field: "db_id", minWidth: 90, formatter: function(cell){
                 return '<div class="flex gap-2">' +
-                       '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-ticket-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
-                       '  <button class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 delete-ticket-btn"><i class="fa-solid fa-trash"></i> Delete</button>' +
+                       '  <button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-ticket-btn"><i class="fa-solid fa-eye"></i> View</button>' +
                        '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 if (e.target.classList.contains('edit-ticket-btn') || e.target.closest('.edit-ticket-btn')) {
                     window.dispatchEvent(new CustomEvent('open-edit-ticket-modal', { detail: data }));
-                } else if (e.target.classList.contains('delete-ticket-btn') || e.target.closest('.delete-ticket-btn')) {
-                    deleteTicket(data.db_id, cell.getRow());
                 }
             }},
         ]
@@ -311,5 +314,24 @@
             }
         });
     }
+
+    // Auto-refresh complaints data every 10 seconds without page reload
+    function refreshComplaintsTable() {
+        fetch("{{ route('sub_admin.complaints_data') }}", {
+            headers: {
+                "Accept": "application/json"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            table.setData(data);
+        })
+        .catch(err => {
+            console.debug('Failed to auto-refresh complaints:', err);
+        });
+    }
+
+    // Sync complaints table every 10 seconds
+    setInterval(refreshComplaintsTable, 10000);
 </script>
 @endsection

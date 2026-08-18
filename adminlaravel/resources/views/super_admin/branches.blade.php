@@ -276,17 +276,14 @@
                     toggleBranchStatus(data.id, cell);
                 }
             }},
-            {title: "Actions", field: "id", minWidth: 180, formatter: function(cell){
+            {title: "Actions", field: "id", minWidth: 100, formatter: function(cell){
                 return '<div class="flex gap-1.5">' +
                        '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-branch-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
-                       '  <button class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 delete-branch-btn"><i class="fa-solid fa-trash"></i> Delete</button>' +
                        '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 if (e.target.classList.contains('edit-branch-btn') || e.target.closest('.edit-branch-btn')) {
                     window.dispatchEvent(new CustomEvent('open-edit-branch-modal', { detail: data }));
-                } else if (e.target.classList.contains('delete-branch-btn') || e.target.closest('.delete-branch-btn')) {
-                    deleteBranch(data.id);
                 }
             }},
         ]

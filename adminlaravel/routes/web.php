@@ -20,6 +20,7 @@ Route::get('/download-app', [WebAuthController::class, 'downloadApp'])->name('do
 // Super Admin Protected Routes
 Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('super_admin.')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/sidebar-counts', [SuperAdminController::class, 'getSidebarCounts'])->name('sidebar_counts');
     
     Route::get('/branches', [SuperAdminController::class, 'branches'])->name('branches');
     Route::post('/branches', [SuperAdminController::class, 'storeBranch'])->name('branches.store');
@@ -44,6 +45,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('su
     
     Route::get('/finance', [SuperAdminController::class, 'finance'])->name('finance');
     Route::post('/finance/{id}/update', [SuperAdminController::class, 'updateTransaction'])->name('finance.update');
+    Route::post('/finance/{id}/toggle-status', [SuperAdminController::class, 'toggleTransactionStatus'])->name('finance.toggle_status');
     Route::delete('/finance/{id}', [SuperAdminController::class, 'destroyTransaction'])->name('finance.destroy');
     
     Route::get('/settings', [SuperAdminController::class, 'settings'])->name('settings');
@@ -52,6 +54,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('su
 // Sub Admin Protected Routes (Accessible by Sub Admin and Super Admin)
 Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->name('sub_admin.')->group(function () {
     Route::get('/dashboard', [SubAdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/sidebar-counts', [SubAdminController::class, 'getSidebarCounts'])->name('sidebar_counts');
     
     Route::get('/verifications', [SubAdminController::class, 'verifications'])->name('verifications');
     Route::post('/verifications/{id}/approve-kyc', [SubAdminController::class, 'approveKycOnly'])->name('verifications.approve_kyc');
@@ -64,6 +67,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::get('/rent-ledger', [SubAdminController::class, 'rentLedger'])->name('rent_ledger');
     Route::post('/rent-ledger/cash-payment', [SubAdminController::class, 'recordCashPayment'])->name('rent_ledger.cash_payment');
     Route::post('/rent-ledger/{id}/verify', [SubAdminController::class, 'verifyPayment'])->name('rent_ledger.verify');
+    Route::post('/rent-ledger/{id}/reject', [SubAdminController::class, 'rejectPayment'])->name('rent_ledger.reject');
     Route::post('/rent-ledger/{id}/update', [SubAdminController::class, 'updatePayment'])->name('rent_ledger.update');
     Route::delete('/rent-ledger/{id}', [SubAdminController::class, 'destroyPayment'])->name('rent_ledger.destroy');
     
@@ -76,4 +80,5 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::post('/complaints/broadcast-notice', [SubAdminController::class, 'broadcastNotice'])->name('complaints.broadcast_notice');
     Route::post('/complaints/{id}/update', [SubAdminController::class, 'updateComplaint'])->name('complaints.update');
     Route::delete('/complaints/{id}', [SubAdminController::class, 'destroyComplaint'])->name('complaints.destroy');
+    Route::get('/complaints-data', [SubAdminController::class, 'getComplaintsData'])->name('complaints_data');
 });

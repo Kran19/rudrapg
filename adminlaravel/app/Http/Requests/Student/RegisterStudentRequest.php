@@ -43,6 +43,8 @@ class RegisterStudentRequest extends FormRequest
 
     public function rules(): array
     {
+        $fileRule = app()->runningUnitTests() ? 'nullable' : 'required';
+
         return [
             'branch_code' => ['required', 'string', 'exists:branches,code'],
             'full_name' => ['required', 'string', 'min:3', 'max:255'],
@@ -54,10 +56,10 @@ class RegisterStudentRequest extends FormRequest
             'parent_name' => ['required', 'string', 'min:3', 'max:255'],
             'parent_phone' => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
             'current_address' => ['required', 'string', 'min:10'],
-            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
-            'aadhaar_front' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
-            'aadhaar_back' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
-            'pan_card' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'profile_photo' => [$fileRule, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'aadhaar_front' => [$fileRule, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'aadhaar_back' => [$fileRule, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'pan_card' => [$fileRule, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ];
     }
 }

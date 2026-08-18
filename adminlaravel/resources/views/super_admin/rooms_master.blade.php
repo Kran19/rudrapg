@@ -284,17 +284,14 @@
             {title: "Status", field: "status", minWidth: 110, formatter: function(cell){
                 return cell.getValue() == "Full" ? '<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-full">FULL</span>' : '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Available</span>';
             }},
-            {title: "Actions", field: "id", minWidth: 180, formatter: function(cell){
+            {title: "Actions", field: "id", minWidth: 100, formatter: function(cell){
                 return '<div class="flex gap-1.5">' +
                        '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-room-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
-                       '  <button class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 delete-room-btn"><i class="fa-solid fa-trash"></i> Delete</button>' +
                        '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 if (e.target.classList.contains('edit-room-btn') || e.target.closest('.edit-room-btn')) {
                     window.dispatchEvent(new CustomEvent('open-edit-room-modal', { detail: data }));
-                } else if (e.target.classList.contains('delete-room-btn') || e.target.closest('.delete-room-btn')) {
-                    deleteRoom(data.id);
                 }
             }},
         ]

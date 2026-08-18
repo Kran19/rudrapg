@@ -503,16 +503,27 @@ class SuperAdminController extends Controller
         $studentsData = Student::with(['branch', 'room', 'bed', 'documents'])->latest()->get()->map(function ($student) {
             $profilePhotoDoc = $student->documents->firstWhere('doc_type', 'PROFILE_PHOTO');
             $aadhaarFrontDoc = $student->documents->firstWhere('doc_type', 'AADHAAR_FRONT');
+            $aadhaarBackDoc = $student->documents->firstWhere('doc_type', 'AADHAAR_BACK');
+            $panCardDoc = $student->documents->firstWhere('doc_type', 'PAN_CARD');
             
-            $formatUrl = function (?string $path) {
-                if (!$path) return null;
-                if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
+            $formatUrl = function (?string $path, string $docType) {
+                if (!$path || str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) {
+                    if ($docType === 'PROFILE_PHOTO') return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
+                    if ($docType === 'AADHAAR_FRONT' || $docType === 'AADHAAR_BACK') return 'https://images.unsplash.com/photo-1554774853-d1d68e2bd6ec?auto=format&fit=crop&q=80&w=600';
+                    return 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=600';
+                }
                 if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
                 $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
                 if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
                     return asset('storage/' . $cleanPath);
                 }
-                return null;
+                // Fallback for seed mock files
+                if (str_starts_with($path, 'uploads/')) {
+                    return asset('storage/' . $cleanPath);
+                }
+                if ($docType === 'PROFILE_PHOTO') return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
+                if ($docType === 'AADHAAR_FRONT' || $docType === 'AADHAAR_BACK') return 'https://images.unsplash.com/photo-1554774853-d1d68e2bd6ec?auto=format&fit=crop&q=80&w=600';
+                return 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=600';
             };
 
             return [
@@ -525,8 +536,10 @@ class SuperAdminController extends Controller
                 'kyc_status' => (isset($student->kyc_status) && $student->kyc_status === 'APPROVED') ? 'VERIFIED' : ($student->kyc_status ?? 'PENDING'),
                 'rent_status' => $student->rent_status ?? 'PENDING',
                 'status' => $student->status ?? 'PENDING',
-                'profile_photo' => $formatUrl($profilePhotoDoc?->file_path),
-                'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path),
+                'profile_photo' => $formatUrl($profilePhotoDoc?->file_path, 'PROFILE_PHOTO'),
+                'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path, 'AADHAAR_FRONT'),
+                'aadhaar_back' => $formatUrl($aadhaarBackDoc?->file_path, 'AADHAAR_BACK'),
+                'pan_card' => $formatUrl($panCardDoc?->file_path, 'PAN_CARD'),
                 'db_id' => $student->id,
                 'branch_id' => $student->branch_id,
                 'raw_joining_date' => $student->joining_date ? $student->joining_date->format('Y-m-d') : '',
@@ -659,15 +672,16 @@ class SuperAdminController extends Controller
                 'tx_reference' => $payment->tx_reference,
                 'student_name' => $payment->student ? $payment->student->full_name : 'Resident',
                 'branch_name' => $payment->branch ? $payment->branch->name : 'N/A',
-                'payment_type' => $payment->payment_type,
+                'payment_type' => str_replace('_', ' ', ucwords(strtolower($payment->payment_type))),
                 'amount_val' => $payment->amount,
                 'amount' => '₹'.number_format($payment->amount),
                 'payment_mode' => $payment->payment_mode ?? 'UPI',
-                'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
+                'utr' => $payment->payment_mode === 'CASH' ? 'N/A' : ($payment->proof ? $payment->proof->utr_number : 'N/A'),
                 'proof_image' => $payment->proof ? $formatUrl($payment->proof->screenshot_path) : null,
                 'date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : 'N/A',
                 'raw_date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d') : '',
                 'status' => $payment->status,
+                'verified_at' => (($payment->status === 'VERIFIED' || $payment->status === 'PAID') && $payment->paid_at) ? $payment->paid_at->format('d M Y, h:i A') : 'N/A',
             ];
         });
 
@@ -750,6 +764,56 @@ class SuperAdminController extends Controller
         ]);
     }
 
+    public function toggleTransactionStatus(Request $request, $id)
+    {
+        $payment = Payment::findOrFail($id);
+        
+        $oldStatus = $payment->status;
+        
+        if ($oldStatus === 'PENDING') {
+            $newStatus = 'VERIFIED';
+        } elseif ($oldStatus === 'VERIFIED' || $oldStatus === 'PAID') {
+            $newStatus = 'REJECTED';
+        } else {
+            $newStatus = 'PENDING';
+        }
+
+        DB::transaction(function () use ($payment, $newStatus) {
+            $payment->update([
+                'status' => $newStatus,
+                'paid_at' => ($newStatus === 'VERIFIED') ? ($payment->paid_at ?? now()) : null,
+            ]);
+
+            if ($payment->proof) {
+                $payment->proof->update([
+                    'status' => $newStatus,
+                    'verified_by' => $newStatus === 'VERIFIED' ? auth()->id() : null,
+                ]);
+            }
+
+            if ($student = $payment->student) {
+                $student->update([
+                    'rent_status' => $newStatus === 'VERIFIED' ? 'PAID' : 'DUE',
+                ]);
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Toggled Payment ID: '.$payment->id.' status from '.$oldStatus.' to '.$newStatus,
+            'module' => 'FINANCE',
+            'record_id' => $payment->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Status updated to ' . $newStatus,
+            'new_status' => $newStatus,
+            'verified_at' => $newStatus === 'VERIFIED' ? now()->format('d M Y, h:i A') : 'N/A'
+        ]);
+    }
+
     public function settings()
     {
         $auditLogs = AuditLog::with('user')->latest()->take(200)->get()->map(function ($log) {
@@ -764,5 +828,14 @@ class SuperAdminController extends Controller
         });
 
         return view('super_admin.settings', compact('auditLogs'));
+    }
+
+    public function getSidebarCounts()
+    {
+        return response()->json([
+            'pending_registrations' => \App\Models\RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->count(),
+            'pending_payments' => \App\Models\PaymentProof::whereIn('status', ['PENDING', 'pending'])->count(),
+            'pending_complaints' => \App\Models\Complaint::whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])->count(),
+        ]);
     }
 }

@@ -153,10 +153,10 @@ class StudentService
             'student_id' => $student->id,
             'room_id' => $student->room_id,
             'ticket_number' => $ticket,
-            'category' => $data['category'],
+            'category' => strtoupper(str_replace('-', '', $data['category'])),
             'subject' => $data['subject'],
             'description' => $data['description'],
-            'priority' => $data['priority'] ?? 'MEDIUM',
+            'priority' => strtoupper($data['priority'] ?? 'MEDIUM'),
             'status' => 'PENDING',
         ]);
     }

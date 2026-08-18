@@ -204,17 +204,14 @@
                 }
             }},
             {title: "Created Date", field: "created_at", minWidth: 130},
-            {title: "Actions", field: "db_id", minWidth: 180, formatter: function(cell){
+            {title: "Actions", field: "db_id", minWidth: 100, formatter: function(cell){
                 return '<div class="flex gap-1.5">' +
                        '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 edit-subadmin-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
-                       '  <button class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 delete-subadmin-btn"><i class="fa-solid fa-trash"></i> Delete</button>' +
                        '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 if (e.target.classList.contains('edit-subadmin-btn') || e.target.closest('.edit-subadmin-btn')) {
                     window.dispatchEvent(new CustomEvent('open-edit-subadmin-modal', { detail: data }));
-                } else if (e.target.classList.contains('delete-subadmin-btn') || e.target.closest('.delete-subadmin-btn')) {
-                    deleteSubAdmin(data.db_id);
                 }
             }},
         ]

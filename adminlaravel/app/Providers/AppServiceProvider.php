@@ -57,6 +57,23 @@ class AppServiceProvider extends ServiceProvider
                 ];
             }
 
+            // Get pending complaints
+            $pendingComplaints = \App\Models\Complaint::with(['student', 'branch'])
+                ->whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])
+                ->latest()
+                ->take(5)
+                ->get();
+
+            foreach ($pendingComplaints as $complaint) {
+                $notifications[] = [
+                    'title' => 'New Support Ticket',
+                    'time' => $complaint->created_at ? $complaint->created_at->diffForHumans() : 'Just now',
+                    'message' => ($complaint->student->full_name ?? 'A student') . ' opened a complaint ticket for ' . ($complaint->category ?? 'support') . '.',
+                    'created_at' => $complaint->created_at ?? now(),
+                    'link' => route('sub_admin.complaints'),
+                ];
+            }
+
             // Sort notifications by created_at descending
             usort($notifications, function ($a, $b) {
                 return $b['created_at'] <=> $a['created_at'];
@@ -66,8 +83,9 @@ class AppServiceProvider extends ServiceProvider
             $notifications = array_slice($notifications, 0, 5);
 
             $view->with('systemNotifications', $notifications);
-            $view->with('pendingRegistrationCount', \App\Models\RegistrationRequest::where('status', 'PENDING')->count());
-            $view->with('pendingPaymentCount', \App\Models\PaymentProof::where('status', 'PENDING')->count());
+            $view->with('pendingRegistrationCount', \App\Models\RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->count());
+            $view->with('pendingPaymentCount', \App\Models\PaymentProof::whereIn('status', ['PENDING', 'pending'])->count());
+            $view->with('pendingComplaintsCount', \App\Models\Complaint::whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])->count());
         });
     }
 }

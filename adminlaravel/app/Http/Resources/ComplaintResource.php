@@ -17,6 +17,7 @@ class ComplaintResource extends JsonResource
             'description' => $this->description,
             'priority' => $this->priority,
             'status' => $this->status,
+            'resolution_remarks' => $this->resolution_remarks,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
