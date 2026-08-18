@@ -158,7 +158,7 @@
             confirmButtonText: 'Yes, Verify Payment'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/sub-admin/rent-ledger/" + id + "/verify", {
+                fetch(appUrl("sub-admin/rent-ledger/" + id + "/verify"), {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -191,7 +191,7 @@
             confirmButtonText: 'Yes, Reject Payment'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/sub-admin/rent-ledger/" + id + "/reject", {
+                fetch(appUrl("sub-admin/rent-ledger/" + id + "/reject"), {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",

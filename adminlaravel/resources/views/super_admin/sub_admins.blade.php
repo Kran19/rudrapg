@@ -257,7 +257,7 @@
         var formData = new FormData(this);
         var id = this.querySelector('input[name="db_id"]').value;
 
-        fetch("/super-admin/sub-admins/" + id + "/update", {
+        fetch(appUrl("super-admin/sub-admins/" + id + "/update"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -281,7 +281,7 @@
     });
 
     function toggleSubAdminStatus(id, cell) {
-        fetch("/super-admin/sub-admins/" + id + "/toggle-status", {
+        fetch(appUrl("super-admin/sub-admins/" + id + "/toggle-status"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -314,7 +314,7 @@
             confirmButtonText: 'Yes, Delete Account'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/super-admin/sub-admins/" + id, {
+                fetch(appUrl("super-admin/sub-admins/" + id), {
                     method: "DELETE",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",

@@ -442,7 +442,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 var targetId = student.db_id || student.id;
-                fetch("/sub-admin/verifications/" + targetId + "/approve-kyc", {
+                fetch(appUrl("sub-admin/verifications/" + targetId + "/approve-kyc"), {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -482,7 +482,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 var targetId = student.db_id || student.id;
-                fetch("/sub-admin/verifications/" + targetId + "/assign-bed", {
+                fetch(appUrl("sub-admin/verifications/" + targetId + "/assign-bed"), {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -521,7 +521,7 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 var targetId = student.db_id || student.id;
-                fetch("/sub-admin/verifications/" + targetId + "/approve", {
+                fetch(appUrl("sub-admin/verifications/" + targetId + "/approve"), {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -559,7 +559,7 @@
             confirmButtonText: 'Reject'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/sub-admin/verifications/" + student.id + "/reject", {
+                fetch(appUrl("sub-admin/verifications/" + student.id + "/reject"), {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",

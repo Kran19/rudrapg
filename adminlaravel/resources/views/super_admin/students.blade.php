@@ -344,7 +344,7 @@
         var formData = new FormData(this);
         var id = this.querySelector('input[name="db_id"]').value;
 
-        fetch("/super-admin/students/" + id + "/update", {
+        fetch(appUrl("super-admin/students/" + id + "/update"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -377,7 +377,7 @@
             confirmButtonText: 'Yes, Delete Student'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/super-admin/students/" + id, {
+                fetch(appUrl("super-admin/students/" + id), {
                     method: "DELETE",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",

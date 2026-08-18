@@ -26,6 +26,16 @@ class ExampleTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_authenticated_sub_admin_can_access_dashboard(): void
+    {
+        $subAdmin = User::where('role', 'SUB_ADMIN')->first();
+
+        $response = $this->actingAs($subAdmin)->get('/sub-admin/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertSee('Operational Dashboard');
+    }
+
     public function test_unauthenticated_root_renders_login_page(): void
     {
         $response = $this->get('/');

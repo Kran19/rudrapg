@@ -259,7 +259,7 @@
         var formData = new FormData(this);
         var id = this.querySelector('input[name="id"]').value;
 
-        fetch("/sub-admin/complaints/" + id + "/update", {
+        fetch(appUrl("sub-admin/complaints/" + id + "/update"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -292,7 +292,7 @@
             confirmButtonText: 'Yes, Delete Ticket'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/sub-admin/complaints/" + id, {
+                fetch(appUrl("sub-admin/complaints/" + id), {
                     method: "DELETE",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",

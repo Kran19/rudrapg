@@ -63,6 +63,13 @@
     <!-- Tabulator.js Core & Tailwind Compatible Styling -->
     <link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator_simple.min.css" rel="stylesheet">
     <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+    
+    <script>
+        window.APP_BASE_URL = "{{ url('/') }}";
+        window.appUrl = function(path) {
+            return window.APP_BASE_URL.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
+        };
+    </script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -534,9 +541,9 @@
         
         let endpoint = '';
         if (isSubAdmin) {
-            endpoint = '/sub-admin/sidebar-counts';
+            endpoint = "{{ route('sub_admin.sidebar_counts') }}";
         } else if (isSuperAdmin) {
-            endpoint = '/super-admin/sidebar-counts';
+            endpoint = "{{ route('super_admin.sidebar_counts') }}";
         } else {
             return;
         }

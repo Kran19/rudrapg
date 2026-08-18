@@ -328,7 +328,7 @@
         var formData = new FormData(this);
         var id = this.querySelector('input[name="id"]').value;
 
-        fetch("/super-admin/rooms-master/" + id + "/update", {
+        fetch(appUrl("super-admin/rooms-master/" + id + "/update"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -361,7 +361,7 @@
             confirmButtonText: 'Yes, Delete Room'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/super-admin/rooms-master/" + id, {
+                fetch(appUrl("super-admin/rooms-master/" + id), {
                     method: "DELETE",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",

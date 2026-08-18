@@ -329,7 +329,7 @@
         var formData = new FormData(this);
         var id = this.querySelector('input[name="id"]').value;
 
-        fetch("/super-admin/branches/" + id + "/update", {
+        fetch(appUrl("super-admin/branches/" + id + "/update"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -353,7 +353,7 @@
     });
 
     function toggleBranchStatus(id, cell) {
-        fetch("/super-admin/branches/" + id + "/toggle-status", {
+        fetch(appUrl("super-admin/branches/" + id + "/toggle-status"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -384,7 +384,7 @@
             confirmButtonText: 'Yes, Delete Branch'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/super-admin/branches/" + id, {
+                fetch(appUrl("super-admin/branches/" + id), {
                     method: "DELETE",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",

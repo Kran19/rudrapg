@@ -254,7 +254,7 @@
     });
 
     function approveReading(id) {
-        fetch("/sub-admin/electricity-audit/" + id + "/approve", {
+        fetch(appUrl("sub-admin/electricity-audit/" + id + "/approve"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -273,7 +273,7 @@
     }
 
     function rejectReading(id) {
-        fetch("/sub-admin/electricity-audit/" + id + "/reject", {
+        fetch(appUrl("sub-admin/electricity-audit/" + id + "/reject"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -296,7 +296,7 @@
         var formData = new FormData(this);
         var id = this.querySelector('input[name="id"]').value;
 
-        fetch("/sub-admin/electricity-audit/" + id + "/update", {
+        fetch(appUrl("sub-admin/electricity-audit/" + id + "/update"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",

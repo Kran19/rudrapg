@@ -370,7 +370,7 @@
         var formData = new FormData(this);
         var id = this.querySelector('input[name="id"]').value;
 
-        fetch("/super-admin/finance/" + id + "/update", {
+        fetch(appUrl("super-admin/finance/" + id + "/update"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -395,7 +395,7 @@
 
     function toggleTransactionStatus(id, cell) {
         toastr.info("Updating transaction status...", "", { timeOut: 500 });
-        fetch("/super-admin/finance/" + id + "/toggle-status", {
+        fetch(appUrl("super-admin/finance/" + id + "/toggle-status"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -433,7 +433,7 @@
             confirmButtonText: 'Yes, Delete Transaction'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/super-admin/finance/" + id, {
+                fetch(appUrl("super-admin/finance/" + id), {
                     method: "DELETE",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",
