@@ -15,6 +15,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class SuperAdminController extends Controller
 {
@@ -448,7 +449,13 @@ class SuperAdminController extends Controller
     {
         $validated = $request->validate([
             'branch_id' => ['required', 'exists:branches,id'],
-            'room_number' => ['required', 'string'],
+            'room_number' => [
+                'required',
+                'string',
+                Rule::unique('rooms')->where(function ($query) use ($request) {
+                    return $query->where('branch_id', $request->branch_id);
+                }),
+            ],
             'floor_number' => ['required', 'integer', 'min:1'],
             'sharing_type' => ['required', 'string'],
             'max_beds' => ['required', 'integer', 'min:1', 'max:6'],

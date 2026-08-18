@@ -19,6 +19,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (!empty(config('app.url')) && config('app.url') !== 'http://localhost' && config('app.url') !== 'http://127.0.0.1:8000') {
+            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+            if (str_starts_with(config('app.url'), 'https://')) {
+                \Illuminate\Support\Facades\URL::forceScheme('https');
+            }
+        }
+
         \Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
             $notifications = [];
 
