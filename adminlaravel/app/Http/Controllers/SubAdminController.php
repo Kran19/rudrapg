@@ -36,7 +36,7 @@ class SubAdminController extends Controller
             'occupied_beds' => $branchId ? Bed::where('status', 'OCCUPIED')->whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::where('status', 'OCCUPIED')->count(),
             'available_beds' => $branchId ? Bed::where('status', 'AVAILABLE')->whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::where('status', 'AVAILABLE')->count(),
             'pending_verifications' => ($branchId 
-                ? (RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->where('branch_id', $branchId)->count() + PaymentProof::whereIn('status', ['PENDING', 'pending'])->where('branch_id', $branchId)->count())
+                ? (RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->where('branch_id', $branchId)->count() + PaymentProof::whereIn('status', ['PENDING', 'pending'])->whereHas('payment', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count())
                 : (RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->count() + PaymentProof::whereIn('status', ['PENDING', 'pending'])->count())),
             'overdue_rents' => $branchId 
                 ? Student::where('rent_status', 'DUE')->where('branch_id', $branchId)->count() 
@@ -917,7 +917,7 @@ class SubAdminController extends Controller
         $availableBeds = $branchId ? Bed::where('status', 'AVAILABLE')->whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::where('status', 'AVAILABLE')->count();
 
         $pendingRegs = $branchId ? RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->where('branch_id', $branchId)->count() : RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->count();
-        $pendingProofs = $branchId ? PaymentProof::whereIn('status', ['PENDING', 'pending'])->where('branch_id', $branchId)->count() : PaymentProof::whereIn('status', ['PENDING', 'pending'])->count();
+        $pendingProofs = $branchId ? PaymentProof::whereIn('status', ['PENDING', 'pending'])->whereHas('payment', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : PaymentProof::whereIn('status', ['PENDING', 'pending'])->count();
 
         $overdueRents = $branchId ? Student::where('rent_status', 'DUE')->where('branch_id', $branchId)->count() : Student::where('rent_status', 'DUE')->count();
 
