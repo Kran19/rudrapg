@@ -65,11 +65,17 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Phone Number</label>
-                        <input type="text" name="phone" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" placeholder="+91 98765 12345">
+                        <input type="text" name="phone" required pattern="\d{10}" maxlength="10" minlength="10" title="Phone number must be exactly 10 digits" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" placeholder="e.g. 9876543210">
                     </div>
-                    <div>
+                    <div x-data="{ showPassword: false }">
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Account Password</label>
-                        <input type="password" name="password" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" placeholder="••••••••">
+                        <div class="relative">
+                            <input :type="showPassword ? 'text' : 'password'" name="password" required class="w-full px-3.5 py-2.5 pr-10 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" placeholder="••••••••">
+                            <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <i class="fa-regular fa-eye" x-show="!showPassword"></i>
+                                <i class="fa-regular fa-eye-slash" x-show="showPassword" style="display: none;"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -237,7 +243,22 @@
             },
             body: formData
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                if (res.status === 422 && data.errors) {
+                    let firstError = "";
+                    for (const field in data.errors) {
+                        firstError = data.errors[field][0];
+                        break;
+                    }
+                    toastr.error(firstError, "Validation Error");
+                    return Promise.reject("Validation Error");
+                }
+                return Promise.reject(data.message || "Server Error");
+            }
+            return data;
+        })
         .then(data => {
             if (data.status === "success") {
                 toastr.success(data.message);
@@ -248,7 +269,9 @@
             }
         })
         .catch(err => {
-            toastr.error("An error occurred during submission.");
+            if (err !== "Validation Error") {
+                toastr.error(typeof err === 'string' ? err : "An error occurred during submission.");
+            }
         });
     });
 

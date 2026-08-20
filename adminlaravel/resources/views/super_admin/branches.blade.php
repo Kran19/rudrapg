@@ -78,7 +78,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Branch Phone</label>
-                        <input type="text" name="phone" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="+91 79228 99887">
+                        <input type="text" name="phone" required pattern="\d{10}" maxlength="10" minlength="10" title="Phone number must be exactly 10 digits" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. 9876543210">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Branch Email</label>
@@ -96,7 +96,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Manager Phone</label>
-                        <input type="text" name="manager_phone" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="+91 98765 00000">
+                        <input type="text" name="manager_phone" required pattern="\d{10}" maxlength="10" minlength="10" title="Phone number must be exactly 10 digits" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="e.g. 9876543210">
                     </div>
                 </div>
 
@@ -309,7 +309,22 @@
             },
             body: formData
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) {
+                if (res.status === 422 && data.errors) {
+                    let firstError = "";
+                    for (const field in data.errors) {
+                        firstError = data.errors[field][0];
+                        break; // Stop at the first error field
+                    }
+                    toastr.error(firstError, "Validation Error");
+                    return Promise.reject("Validation Error");
+                }
+                return Promise.reject(data.message || "Server Error");
+            }
+            return data;
+        })
         .then(data => {
             if (data.status === "success") {
                 toastr.success(data.message);
@@ -320,7 +335,9 @@
             }
         })
         .catch(err => {
-            toastr.error("An error occurred during submission.");
+            if (err !== "Validation Error") {
+                toastr.error(typeof err === 'string' ? err : "An error occurred during submission.");
+            }
         });
     });
 

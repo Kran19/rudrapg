@@ -26,7 +26,7 @@ class BranchModel {
     required this.name,
     required this.address,
     required this.city,
-    this.contactNumber = '+91 98765 43210',
+    this.contactNumber = '98765 43210',
     required this.managerName,
     required this.managerPhone,
     this.managerEmail = 'manager@rudrapg.com',
