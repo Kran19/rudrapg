@@ -59,7 +59,7 @@ class RegisterStudentRequest extends FormRequest
             'profile_photo' => [$fileRule, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'aadhaar_front' => [$fileRule, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'aadhaar_back' => [$fileRule, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
-            'pan_card' => [$fileRule, 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'pan_card' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ];
     }
 }
