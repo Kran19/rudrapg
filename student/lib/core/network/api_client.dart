@@ -44,13 +44,17 @@ final apiClientProvider = Provider<Dio>((ref) {
     receiveTimeout: const Duration(seconds: 10),
     headers: {
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
     },
   ));
 
   // Add Auth Interceptor
   dio.interceptors.add(InterceptorsWrapper(
     onRequest: (options, handler) {
+      if (options.data is FormData) {
+        options.contentType = null;
+        options.headers.remove('Content-Type');
+        options.headers.remove('content-type');
+      }
       final token = prefs.getString('auth_token');
       if (token != null && token.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $token';

@@ -296,7 +296,7 @@ class _QRScannerGateScreenState extends ConsumerState<QRScannerGateScreen>
               child: const Text(
                 'LIVE QR SCANNER',
                 style: TextStyle(
-                  color: AppColors.secondary,
+                  color: AppColors.accent,
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
                   letterSpacing: 1.2,
@@ -429,8 +429,10 @@ class _QRScannerGateScreenState extends ConsumerState<QRScannerGateScreen>
             // Flashlight Toggle Button
             IconButton.filled(
               onPressed: () {
-                _scannerController.toggleTorch();
-                setState(() => _isFlashOn = !_isFlashOn);
+                if (_scannerController.value.isInitialized && _scannerController.value.isRunning) {
+                  _scannerController.toggleTorch();
+                  setState(() => _isFlashOn = !_isFlashOn);
+                }
               },
               style: IconButton.styleFrom(
                 backgroundColor: _isFlashOn ? AppColors.accent : Colors.white12,

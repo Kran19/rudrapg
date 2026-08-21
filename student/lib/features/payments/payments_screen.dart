@@ -45,7 +45,12 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     }
     
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+      maxWidth: 1200,
+      maxHeight: 1200,
+    );
     if (image != null) {
       setModalState(() {
         _proofImage = image;

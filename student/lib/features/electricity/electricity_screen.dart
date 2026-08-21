@@ -45,7 +45,12 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
     }
     
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    final image = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+      maxWidth: 1200,
+      maxHeight: 1200,
+    );
     if (image != null) {
       setState(() {
         _meterPhoto = image;
