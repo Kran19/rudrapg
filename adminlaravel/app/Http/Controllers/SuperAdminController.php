@@ -67,11 +67,13 @@ class SuperAdminController extends Controller
             'name' => ['required', 'string'],
             'address' => ['required', 'string'],
             'city' => ['required', 'string'],
-            'phone' => ['required', 'string'],
+            'phone' => ['required', 'string', 'digits:10'],
             'email' => ['required', 'email'],
             'manager_name' => ['required', 'string'],
-            'manager_phone' => ['required', 'string'],
+            'manager_phone' => ['required', 'string', 'digits:10'],
             'electricity_unit_rate' => ['required', 'numeric', 'min:0'],
+        ], [
+            'code.unique' => 'This Branch Code already exists. Please enter a different one.'
         ]);
 
         $validated['qr_code_hash'] = 'hash_'.strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $validated['code']));
@@ -267,7 +269,7 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'digits:10'],
             'password' => ['required', 'string', 'min:6'],
             'branches' => ['required', 'array', 'min:1'],
             'branches.*' => ['exists:branches,id'],

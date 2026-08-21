@@ -445,14 +445,9 @@
                 @auth
                     @if(auth()->user()->role === 'SUPER_ADMIN')
                         <div class="hidden sm:flex bg-slate-100 dark:bg-slate-700 p-1 rounded-full border border-slate-200 dark:border-slate-600 items-center">
-                            <a href="{{ route('super_admin.dashboard') }}" 
-                               class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 {{ !request()->is('sub-admin*') ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
+                            <div class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 bg-slate-900 text-white dark:bg-blue-600 shadow-xs">
                                 🛡️ Executive
-                            </a>
-                            <a href="{{ route('sub_admin.dashboard') }}" 
-                               class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 {{ request()->is('sub-admin*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
-                                🛡️ Sub Admin
-                            </a>
+                            </div>
                         </div>
                     @else
                         <div class="hidden sm:flex bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold items-center gap-1">
