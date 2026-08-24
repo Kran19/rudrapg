@@ -226,6 +226,14 @@ class SuperAdminController extends Controller
     public function destroyBranch($id)
     {
         $branch = Branch::findOrFail($id);
+
+        if ($branch->subAdmins()->exists()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Cannot delete branch because it has sub-admins assigned to it.',
+            ]);
+        }
+
         $branch->delete();
 
         AuditLog::create([
@@ -271,8 +279,16 @@ class SuperAdminController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'digits:10'],
             'password' => ['required', 'string', 'min:6'],
-            'branches' => ['required', 'array', 'min:1'],
-            'branches.*' => ['exists:branches,id'],
+            'branches' => ['required', 'array', 'size:1'],
+            'branches.*' => [
+                'exists:branches,id',
+                function ($attribute, $value, $fail) {
+                    $hasSubAdmin = \Illuminate\Support\Facades\DB::table('sub_admin_branch')->where('branch_id', $value)->exists();
+                    if ($hasSubAdmin) {
+                        $fail('This branch already has a sub-admin assigned to it.');
+                    }
+                }
+            ],
         ]);
 
         DB::transaction(function () use ($validated, &$user) {
@@ -329,8 +345,19 @@ class SuperAdminController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$id],
             'phone' => ['required', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'min:6'],
-            'branches' => ['required', 'array', 'min:1'],
-            'branches.*' => ['exists:branches,id'],
+            'branches' => ['required', 'array', 'size:1'],
+            'branches.*' => [
+                'exists:branches,id',
+                function ($attribute, $value, $fail) use ($id) {
+                    $hasSubAdmin = \Illuminate\Support\Facades\DB::table('sub_admin_branch')
+                        ->where('branch_id', $value)
+                        ->where('user_id', '!=', $id)
+                        ->exists();
+                    if ($hasSubAdmin) {
+                        $fail('This branch already has another sub-admin assigned to it.');
+                    }
+                }
+            ],
         ]);
 
         DB::transaction(function () use ($user, $validated) {
@@ -402,7 +429,11 @@ class SuperAdminController extends Controller
     public function destroySubAdmin($id)
     {
         $user = User::findOrFail($id);
-        $user->delete();
+        
+        DB::transaction(function () use ($user) {
+            $user->branches()->detach();
+            $user->forceDelete();
+        });
 
         AuditLog::create([
             'user_id' => auth()->id(),

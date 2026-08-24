@@ -72,8 +72,8 @@
 </div>
 
 <!-- Charts & Process Workflow Grid -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <!-- Student Onboarding workflow guide card (2/3 width) -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Student Onboarding workflow guide card (2/4 width) -->
     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between">
         <div>
             <div class="flex items-center justify-between mb-4">
@@ -134,7 +134,7 @@
         </div>
     </div>
 
-    <!-- Doughnut Occupancy Breakdown (1/3 width) -->
+    <!-- Doughnut Occupancy Breakdown (1/4 width) -->
     <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between">
         <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">Occupancy Breakdown</h3>
         <div class="relative h-44 flex items-center justify-center">
@@ -148,6 +148,22 @@
                 <span id="available-indicator-dot" class="w-3 h-3 bg-slate-200 dark:bg-slate-700 rounded-full inline-block"></span> Available (<span id="db-breakdown-available">{{ $branchInfo['available_beds'] }}</span>)
             </span>
         </div>
+    </div>
+
+    <!-- Branch QR Standee (1/4 width) -->
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col items-center justify-between text-center">
+        <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">Branch QR Standee</h3>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-4">Students scan this to onboard</p>
+        </div>
+        <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm inline-block mb-3">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ urlencode($branchInfo['code']) }}" 
+                 class="w-32 h-32 object-contain rounded-lg" 
+                 alt="Branch Reception QR">
+        </div>
+        <button onclick="window.open('https://api.qrserver.com/v1/create-qr-code/?size=400x400&data={{ urlencode($branchInfo['code']) }}', '_blank')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center justify-center gap-1.5 transition-colors w-full border border-blue-200 dark:border-blue-900 rounded-lg py-2 bg-blue-50 dark:bg-blue-900/30">
+            <i class="fa-solid fa-download"></i> Download QR
+        </button>
     </div>
 </div>
 
