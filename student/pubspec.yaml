@@ -44,6 +44,7 @@ dependencies:
   cached_network_image: ^3.4.1
   package_info_plus: ^10.2.1
   url_launcher: ^6.3.2
+  http_parser: ^4.1.0
 
 dev_dependencies:
   flutter_test:
