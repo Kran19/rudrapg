@@ -34,8 +34,10 @@ class SettingsScreen extends StatelessWidget {
                       title: 'Privacy Policy',
                       subtitle: 'How we protect your personal resident data',
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Opening Privacy Policy...')),
+                        _showPolicyDialog(
+                          context,
+                          'Privacy Policy',
+                          'Rudra Group PG Privacy Policy\n\n1. Information We Collect:\nWe collect personal identification details (Full Name, Phone Number, Email, Aadhaar, PAN) and KYC document images for resident verification, security, and hostel stay compliance.\n\n2. How We Use Data:\nResident data is strictly used for stay management, room allocation, digital rent ledgers, electricity billing, and emergency guardian contact.\n\n3. Data Storage & Security:\nData is transmitted using encrypted HTTPS channels and stored in secure PostgreSQL databases with role-based access control.\n\n4. Your Rights:\nResidents can review their profile data and request account deletion via this app or by contacting branch management.',
                         );
                       },
                     ),
@@ -45,8 +47,10 @@ class SettingsScreen extends StatelessWidget {
                       title: 'Terms & Conditions of Stay',
                       subtitle: 'PG stay rules, notice period & deposit policy',
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Opening Terms of Stay...')),
+                        _showPolicyDialog(
+                          context,
+                          'Terms & Conditions of Stay',
+                          'Rudra Group PG Terms of Stay\n\n1. Rent & Dues:\nMonthly rent is due on or before the 5th of every month. Digital payment receipts must be submitted via UPI or bank transfer.\n\n2. Security Deposit:\nSecurity deposits are refundable upon checkout, subject to room inspection, clearing of electricity dues, and completion of notice period.\n\n3. Notice Period:\nA mandatory 30-day notice must be submitted before vacating the PG room.\n\n4. Code of Conduct:\nResidents must adhere to branch curfew, noise regulations, and cleanliness policies.',
                         );
                       },
                     ),
@@ -71,6 +75,13 @@ class SettingsScreen extends StatelessWidget {
                           const SnackBar(content: Text('Opening Help Desk...')),
                         );
                       },
+                    ),
+                    const Divider(height: 20),
+                    _buildSettingsTile(
+                      icon: Icons.delete_forever_rounded,
+                      title: 'Delete Resident Account',
+                      subtitle: 'Request account removal & data deletion',
+                      onTap: () => _confirmAccountDeletion(context),
                     ),
                   ],
                 ),
@@ -101,6 +112,65 @@ class SettingsScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showPolicyDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title, style: AppTypography.titleLarge),
+        content: SingleChildScrollView(
+          child: Text(content, style: AppTypography.bodyMedium),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmAccountDeletion(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.error),
+            SizedBox(width: 8),
+            Text('Delete Account?'),
+          ],
+        ),
+        content: const Text(
+          'Requesting account deletion will initiate resident data removal and revoke app access. Active stay contracts, pending rent dues, and deposit settlements will be audited by branch administration in accordance with PG policy.\n\nAre you sure you want to proceed?',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Account deletion request submitted. Logging out...'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            child: const Text('Delete Account', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
