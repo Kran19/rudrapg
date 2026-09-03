@@ -164,4 +164,15 @@ class StudentRepository {
       throw Exception('Error registering student: $e');
     }
   }
+
+  Future<void> deleteAccount() async {
+    try {
+      await _dio.delete('/student/account');
+    } catch (e) {
+      if (e is DioException) {
+        rethrow;
+      }
+      throw Exception('Error deleting account: $e');
+    }
+  }
 }

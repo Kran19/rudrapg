@@ -235,4 +235,46 @@ class StudentApiController extends Controller
             'data' => $branches,
         ]);
     }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $student = \App\Models\Student::where('user_id', $user->id)->first();
+
+        if ($student) {
+            $hasActiveAllocation = \App\Models\RoomAllocation::where('student_id', $student->id)
+                ->where('status', 'ACTIVE')
+                ->exists();
+
+            if ($hasActiveAllocation) {
+                $student->update(['status' => 'DELETION_REQUESTED']);
+
+                \App\Models\Complaint::create([
+                    'student_id' => $student->id,
+                    'branch_id' => $student->branch_id,
+                    'category' => 'GENERAL',
+                    'title' => 'Resident Account Deletion & Exit Request',
+                    'description' => 'Resident initiated account deletion via mobile app. Notice period and security deposit settlement required.',
+                    'status' => 'OPEN',
+                    'priority' => 'HIGH',
+                ]);
+            } else {
+                $student->update([
+                    'status' => 'ARCHIVED',
+                    'pan_number' => null,
+                    'aadhaar_number' => null,
+                    'emergency_contact' => null,
+                ]);
+            }
+        }
+
+        // Revoke all tokens and soft-delete user
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Account deletion request processed successfully. Personal session tokens have been revoked.',
+        ]);
+    }
 }

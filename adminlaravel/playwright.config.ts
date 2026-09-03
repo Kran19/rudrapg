@@ -31,7 +31,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: '"C:\\xampp\\php\\php.exe" artisan serve --port=8088',
+    command: 'php artisan serve --port=8088',
     url: 'http://127.0.0.1:8088',
     reuseExistingServer: true,
     timeout: 120 * 1000,

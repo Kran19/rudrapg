@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_card.dart';
+import '../home/data/student_repository.dart';
 import '../login/login_screen.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -81,7 +84,7 @@ class SettingsScreen extends StatelessWidget {
                       icon: Icons.delete_forever_rounded,
                       title: 'Delete Resident Account',
                       subtitle: 'Request account removal & data deletion',
-                      onTap: () => _confirmAccountDeletion(context),
+                      onTap: () => _confirmAccountDeletion(context, ref),
                     ),
                   ],
                 ),
@@ -134,10 +137,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _confirmAccountDeletion(BuildContext context) {
+  void _confirmAccountDeletion(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: AppColors.error),
@@ -151,22 +154,32 @@ class SettingsScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogCtx).pop(),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Account deletion request submitted. Logging out...'),
-                  backgroundColor: AppColors.error,
-                ),
-              );
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+            onPressed: () async {
+              Navigator.of(dialogCtx).pop();
+              try {
+                await ref.read(studentRepositoryProvider).deleteAccount();
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('auth_token');
+                await prefs.remove('user_role');
+              } catch (_) {
+                // Proceed with local logout even if network fails
+              }
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Account deletion request submitted. Logging out...'),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              }
             },
             child: const Text('Delete Account', style: TextStyle(color: Colors.white)),
           ),

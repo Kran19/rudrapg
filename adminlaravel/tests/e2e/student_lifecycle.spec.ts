@@ -49,8 +49,8 @@ test.describe('End-to-End Student Lifecycle', () => {
     await page.waitForTimeout(1000); // Give Tabulator a second to settle
     await auditButton.click();
 
-    // Assign Room/Bed if modal requires it (assuming modal has these fields)
-    const approveButton = page.locator('button:has-text("Step 3: Approve & Key Handover")');
+    // In 3-step verification desk, newly registered student is at Step 1 (Profile KYC)
+    const approveButton = page.locator('button:has-text("Step 1: Approve Profile KYC"), button:has-text("Step 3: Approve & Key Handover")').first();
     await expect(approveButton).toBeVisible({ timeout: 15000 });
     await page.waitForTimeout(500); // Give Alpine transition a moment
     await approveButton.click();

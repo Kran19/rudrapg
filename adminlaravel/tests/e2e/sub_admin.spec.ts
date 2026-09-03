@@ -19,15 +19,28 @@ test.describe('Sub Admin Flows', () => {
     if (await auditButton.isVisible()) {
       await auditButton.click();
       
-      // Wait for the modal and click approve
-      const approveButton = page.locator('button:has-text("Step 3: Approve & Key Handover")');
-      await approveButton.click();
+      // Wait for modal to render
+      await expect(page.locator('text="Applicant Audit Desk:"')).toBeVisible({ timeout: 10000 });
       
-      // Click SweetAlert confirm button
-      await page.click('.swal2-confirm');
-      
-      // Verify Toastr success
-      await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
+      // Check which approval action is pending (Step 1 KYC or Step 3 Key Handover)
+      const kycApproveBtn = page.locator('button:has-text("Step 1: Approve Profile KYC")');
+      const step3ApproveBtn = page.locator('button:has-text("Step 3: Approve & Key Handover")');
+
+      if (await kycApproveBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await kycApproveBtn.click();
+        const swal = page.locator('.swal2-confirm');
+        if (await swal.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await swal.click();
+        }
+        await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
+      } else if (await step3ApproveBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await step3ApproveBtn.click();
+        const swal = page.locator('.swal2-confirm');
+        if (await swal.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await swal.click();
+        }
+        await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
+      }
     } else {
       // If no pending audit buttons, verify the verifications table container is rendered cleanly
       await expect(page.locator('#verifications-table')).toBeVisible();

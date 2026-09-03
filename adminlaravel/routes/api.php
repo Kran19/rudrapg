@@ -80,6 +80,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/complaint', [StudentApiController::class, 'createComplaint']);
             Route::get('/complaints', [StudentApiController::class, 'complaints']);
             Route::get('/notices', [StudentApiController::class, 'notices']);
+            Route::delete('/account', [StudentApiController::class, 'deleteAccount']);
         });
 
         // Sub Admin Management Routes

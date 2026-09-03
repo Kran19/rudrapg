@@ -83,7 +83,7 @@
                     <div class="space-y-2 max-h-36 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
                         @foreach($allBranches as $branch)
                             <label class="flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-300 font-medium">
-                                <input type="checkbox" name="branches[]" value="{{ $branch->id }}" checked class="rounded border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" name="branches[]" value="{{ $branch->id }}" class="rounded border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-blue-600 focus:ring-blue-500">
                                 {{ $branch->name }} ({{ $branch->code }})
                             </label>
                         @endforeach

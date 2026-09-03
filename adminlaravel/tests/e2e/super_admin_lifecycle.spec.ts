@@ -35,11 +35,11 @@ test.describe('Super Admin Zero-Trust Lifecycle', () => {
     await page.fill('input[name="name"]', `Test Branch ${timestamp}`);
     await page.fill('input[name="city"]', 'Ahmedabad');
     await page.fill('textarea[name="address"]', '123 Automated Testing Road, Bopal');
-    await page.fill('input[name="phone"]', '+91 99999 88888');
+    await page.fill('input[name="phone"]', '9999988888');
     await page.fill('input[name="email"]', `test.branch.${timestamp}@rudrapg.com`);
     await page.fill('input[name="electricity_unit_rate"]', '12');
     await page.fill('input[name="manager_name"]', 'Auto Manager');
-    await page.fill('input[name="manager_phone"]', '+91 88888 77777');
+    await page.fill('input[name="manager_phone"]', '8888877777');
     
     // Submit
     await page.click('button:has-text("Save Branch")');
@@ -93,14 +93,23 @@ test.describe('Super Admin Zero-Trust Lifecycle', () => {
     await page.fill('input[name="phone"]', '9999911111');
     await page.fill('input[name="password"]', 'password123');
     
-    // Check the branch checkbox
-    const branchBoxes = page.locator('input[name="branches[]"]');
-    if (await branchBoxes.count() > 0) {
-      await branchBoxes.first().check();
+    // Check the newly created branch checkbox in create form
+    const newBranchBox = page.locator(`#create-subadmin-form label:has-text("${branchCode}") input[type="checkbox"]`);
+    if (await newBranchBox.count() > 0) {
+      await newBranchBox.first().check();
+    } else {
+      const branchBoxes = page.locator('input[name="branches[]"]');
+      if (await branchBoxes.count() > 0) {
+        await branchBoxes.last().check();
+      }
     }
     
     // Submit
     await page.click('button:has-text("Create Account")');
+    
+    // Wait for success toast and auto-reload
+    await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(1500);
     
     // Verify Sub Admin created in table
     await expect(page.locator(`text=${subAdminEmail}`)).toBeVisible({ timeout: 15000 });
@@ -123,7 +132,7 @@ test.describe('Super Admin Zero-Trust Lifecycle', () => {
     await page.click('button[type="submit"]');
     
     // Should see Sub Admin Dashboard
-    await expect(page.locator('text="Branch Occupancy"').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text="Occupancy Rate"').first()).toBeVisible({ timeout: 10000 });
   });
 
 });

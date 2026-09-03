@@ -131,7 +131,7 @@ class StudentService
 
         return ElectricityReading::create([
             'branch_id' => $student->branch_id,
-            'room_id' => $student->room_id,
+            'room_id' => $student->room_id ?? ($student->branch?->rooms()->first()?->id ?? 1),
             'student_id' => $student->id,
             'reading_month' => date('F Y'),
             'current_reading' => $currReading,
