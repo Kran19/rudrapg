@@ -38,13 +38,14 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         style="display: none;">
         
         <div @click.away="cashModalOpen = false" 
              class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-md overflow-hidden transform transition-all">
             <div class="bg-emerald-600 text-white p-5 flex items-center justify-between">
                 <h4 class="font-bold text-base flex items-center gap-2">
-                    <i class="fa-solid fa-hand-holding-dollar"></i> Record Cash Payment
+                    <i class="fa-solid fa-money-bill-wave"></i> Record Cash Payment
                 </h4>
                 <button @click="cashModalOpen = false" class="text-white/80 hover:text-white">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -95,6 +96,10 @@
     var table = new Tabulator("#rent-table", {
         data: duesData,
         layout: "fitColumns",
+        pagination: "local",
+        paginationSize: 10,
+        paginationSizeSelector: [10, 20, 50, 100],
+        paginationCounter: "rows",
 
         placeholder: "No Rent Dues Found",
         columns: [
@@ -102,27 +107,42 @@
             {title: "Student Name", field: "student_name", minWidth: 160, formatter: function(cell){
                 return "<strong class='text-slate-900 dark:text-slate-100'>" + cell.getValue() + "</strong>";
             }},
-            {title: "Room & Bed", field: "room", minWidth: 150},
-            {title: "Monthly Rent", field: "rent", minWidth: 120},
-            {title: "Due Date", field: "due_date", minWidth: 120},
+            {title: "Room & Bed", field: "room", minWidth: 140},
+            {title: "Monthly Rent", field: "rent", minWidth: 110},
+            {title: "Due Date", field: "due_date", minWidth: 110},
             {title: "Mode", field: "payment_mode", minWidth: 100},
             {title: "Ref / UTR", field: "utr", minWidth: 140},
-            {title: "Status", field: "status", minWidth: 140, formatter: function(cell){
+            {title: "Status", field: "status", minWidth: 120, formatter: function(cell){
                 var status = cell.getValue();
-                if (status.includes("Paid")) return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">' + status + '</span>';
-                if (status.includes("Pending")) return '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">' + status + '</span>';
-                return '<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-full">' + status + '</span>';
-            }},
-            {title: "Action", field: "id", minWidth: 130, formatter: function(cell){
-                var status = cell.getRow().getData().status;
-                if (status === "Paid" || status === "PAID" || status === "VERIFIED") {
-                    return '<span class="text-xs font-semibold text-emerald-600"><i class="fa-solid fa-circle-check"></i> Verified</span>';
+                if (status === "Verified" || status === "VERIFIED" || status === "Paid" || status === "PAID") {
+                    return '<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-450 text-xs font-bold px-2.5 py-1 rounded-full">PAID</span>';
                 }
-                return '<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1"><i class="fa-solid fa-check"></i> Verify</button>';
+                if (status === "Rejected" || status === "REJECTED") {
+                    return '<span class="bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400 text-xs font-bold px-2.5 py-1 rounded-full">REJECTED</span>';
+                }
+                return '<span class="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full">PENDING</span>';
+            }},
+            {title: "Action", field: "status", minWidth: 120, formatter: function(cell){
+                var status = cell.getValue();
+                if (status === "Verified" || status === "VERIFIED" || status === "Paid" || status === "PAID") {
+                    return '<span class="text-xs font-bold text-emerald-600 dark:text-emerald-450 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Approved</span>';
+                }
+                if (status === "Rejected" || status === "REJECTED") {
+                    return '<span class="text-xs font-bold text-rose-600 dark:text-rose-450 flex items-center gap-1"><i class="fa-solid fa-circle-xmark"></i> Rejected</span>';
+                }
+                return '<span class="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1"><i class="fa-regular fa-clock"></i> Pending Audit</span>';
+            }},
+            {title: "A/R - Reject", field: "id", minWidth: 180, formatter: function(cell){
+                return '<div class="flex gap-1.5">' +
+                       '  <button class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 approve-btn"><i class="fa-solid fa-circle-check"></i> Approve</button>' +
+                       '  <button class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 reject-btn"><i class="fa-solid fa-circle-xmark"></i> Reject</button>' +
+                       '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                if (data.status !== "Paid" && data.status !== "PAID" && data.status !== "VERIFIED") {
+                if (e.target.classList.contains('approve-btn') || e.target.closest('.approve-btn')) {
                     verifyPayment(data.id);
+                } else if (e.target.classList.contains('reject-btn') || e.target.closest('.reject-btn')) {
+                    rejectPayment(data.id);
                 }
             }},
         ]
@@ -134,11 +154,11 @@
             text: 'This will mark the payment as verified and update student rent status.',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#2563EB',
+            confirmButtonColor: '#059669',
             confirmButtonText: 'Yes, Verify Payment'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch("/sub-admin/rent-ledger/" + id + "/verify", {
+                fetch(appUrl("sub-admin/rent-ledger/" + id + "/verify"), {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -156,6 +176,39 @@
                 })
                 .catch(err => {
                     toastr.error("An error occurred during verification.");
+                });
+            }
+        });
+    }
+
+    function rejectPayment(id) {
+        Swal.fire({
+            title: 'Reject Rent/Deposit Payment?',
+            text: 'This will reject the payment and set the resident status back to DUE.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            confirmButtonText: 'Yes, Reject Payment'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(appUrl("sub-admin/rent-ledger/" + id + "/reject"), {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        toastr.success(data.message);
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || "Failed to reject payment.");
+                    }
+                })
+                .catch(err => {
+                    toastr.error("An error occurred during rejection.");
                 });
             }
         });

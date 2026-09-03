@@ -89,7 +89,11 @@ class StudentRepository {
 
   Future<void> submitElectricityReading(FormData formData) async {
     try {
-      await _dio.post('/student/electricity-reading', data: formData);
+      await _dio.post(
+        '/student/electricity-reading',
+        data: formData,
+        options: Options(contentType: null, headers: {'Accept': 'application/json'}),
+      );
     } catch (e) {
       throw Exception('Error submitting reading: $e');
     }
@@ -106,7 +110,11 @@ class StudentRepository {
 
   Future<void> submitPaymentProof(FormData formData) async {
     try {
-      await _dio.post('/student/payment-proof', data: formData);
+      await _dio.post(
+        '/student/payment-proof',
+        data: formData,
+        options: Options(contentType: null, headers: {'Accept': 'application/json'}),
+      );
     } catch (e) {
       throw Exception('Error submitting payment proof: $e');
     }
@@ -140,7 +148,11 @@ class StudentRepository {
 
   Future<String> register(FormData formData) async {
     try {
-      final response = await _dio.post('/student/register', data: formData);
+      final response = await _dio.post(
+        '/student/register',
+        data: formData,
+        options: Options(contentType: null, headers: {'Accept': 'application/json'}),
+      );
       if (response.statusCode != 201) {
         throw Exception('Failed to register');
       }

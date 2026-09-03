@@ -12,6 +12,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Rudra Group PG Admin Portal')</title>
     
     <!-- Tailwind CSS CDN -->
@@ -62,6 +63,13 @@
     <!-- Tabulator.js Core & Tailwind Compatible Styling -->
     <link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator_simple.min.css" rel="stylesheet">
     <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+    
+    <script>
+        window.APP_BASE_URL = "{{ url('/') }}";
+        window.appUrl = function(path) {
+            return window.APP_BASE_URL.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '');
+        };
+    </script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -260,9 +268,7 @@
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-user-check w-5 text-center"></i> Verification Desk
                     </span>
-                    @if(isset($pendingRegistrationCount) && $pendingRegistrationCount > 0)
-                        <span class="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingRegistrationCount }}</span>
-                    @endif
+                    <span id="badge-verifications" class="{{ isset($pendingRegistrationCount) && $pendingRegistrationCount > 0 ? '' : 'hidden' }} bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingRegistrationCount ?? 0 }}</span>
                 </a>
                 <a href="{{ route('sub_admin.bed_map') }}" 
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.bed_map') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
@@ -273,18 +279,25 @@
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i> Rent Collection Dues
                     </span>
-                    @if(isset($pendingPaymentCount) && $pendingPaymentCount > 0)
-                        <span class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingPaymentCount }}</span>
-                    @endif
+                    <span id="badge-rent" class="{{ isset($pendingPaymentCount) && $pendingPaymentCount > 0 ? '' : 'hidden' }} bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingPaymentCount ?? 0 }}</span>
                 </a>
                 <a href="{{ route('sub_admin.electricity_audit') }}" 
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.electricity_audit') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <i class="fa-solid fa-bolt w-5 text-center"></i> Electricity Meter Audit
                 </a>
                 <a href="{{ route('sub_admin.complaints') }}" 
-                   class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.complaints') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
-                    <i class="fa-solid fa-headset w-5 text-center"></i> Complaints & Notices
+                   class="flex items-center justify-between px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.complaints') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-headset w-5 text-center"></i> Complaints & Notices
+                    </span>
+                    <span id="badge-complaints" class="{{ isset($pendingComplaintsCount) && $pendingComplaintsCount > 0 ? '' : 'hidden' }} bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingComplaintsCount ?? 0 }}</span>
                 </a>
+                <form action="{{ route('logout') }}" method="POST" class="w-full pt-1.5 mt-1.5 border-t border-slate-800/60">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-rose-400 hover:text-white hover:bg-rose-900/30 transition-all duration-200">
+                        <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout Account
+                    </button>
+                </form>
             @else
                 <!-- Super Admin Menu -->
                 <a href="{{ route('super_admin.dashboard') }}" 
@@ -304,17 +317,29 @@
                     <i class="fa-solid fa-door-open w-5 text-center"></i> Master Room Matrix
                 </a>
                 <a href="{{ route('super_admin.students') }}" 
-                   class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.students') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
-                    <i class="fa-solid fa-users w-5 text-center"></i> Student Directory
+                   class="flex items-center justify-between px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.students') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-users w-5 text-center"></i> Student Directory
+                    </span>
+                    <span id="badge-verifications-super" class="{{ isset($pendingRegistrationCount) && $pendingRegistrationCount > 0 ? '' : 'hidden' }} bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingRegistrationCount ?? 0 }}</span>
                 </a>
                 <a href="{{ route('super_admin.finance') }}" 
-                   class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.finance') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
-                    <i class="fa-solid fa-wallet w-5 text-center"></i> Financial & Revenue Hub
+                   class="flex items-center justify-between px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.finance') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-wallet w-5 text-center"></i> Financial & Revenue Hub
+                    </span>
+                    <span id="badge-rent-super" class="{{ isset($pendingPaymentCount) && $pendingPaymentCount > 0 ? '' : 'hidden' }} bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingPaymentCount ?? 0 }}</span>
                 </a>
                 <a href="{{ route('super_admin.settings') }}" 
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.settings') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <i class="fa-solid fa-sliders w-5 text-center"></i> Audit Logs & Settings
                 </a>
+                <form action="{{ route('logout') }}" method="POST" class="w-full pt-1.5 mt-1.5 border-t border-slate-800/60">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-rose-400 hover:text-white hover:bg-rose-900/30 transition-all duration-200">
+                        <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout Account
+                    </button>
+                </form>
             @endif
         </nav>
         
@@ -378,9 +403,7 @@
                     <button @click="notificationOpen = !notificationOpen" @click.away="notificationOpen = false"
                             class="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors relative">
                         <i class="fa-solid fa-bell text-sm sm:text-base"></i>
-                        @if(isset($systemNotifications) && count($systemNotifications) > 0)
-                            <span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ count($systemNotifications) }}</span>
-                        @endif
+                        <span id="badge-notifications-bell" class="{{ isset($systemNotifications) && count($systemNotifications) > 0 ? '' : 'hidden' }} absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{ isset($systemNotifications) ? count($systemNotifications) : 0 }}</span>
                     </button>
 
                     <!-- Notifications Drawer -->
@@ -422,14 +445,9 @@
                 @auth
                     @if(auth()->user()->role === 'SUPER_ADMIN')
                         <div class="hidden sm:flex bg-slate-100 dark:bg-slate-700 p-1 rounded-full border border-slate-200 dark:border-slate-600 items-center">
-                            <a href="{{ route('super_admin.dashboard') }}" 
-                               class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 {{ !request()->is('sub-admin*') ? 'bg-slate-900 text-white dark:bg-blue-600 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
+                            <div class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 bg-slate-900 text-white dark:bg-blue-600 shadow-xs">
                                 🛡️ Executive
-                            </a>
-                            <a href="{{ route('sub_admin.dashboard') }}" 
-                               class="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 {{ request()->is('sub-admin*') ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900' }}">
-                                🛡️ Sub Admin
-                            </a>
+                            </div>
                         </div>
                     @else
                         <div class="hidden sm:flex bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold items-center gap-1">
@@ -479,7 +497,7 @@
         </header>
 
         <!-- Dynamic Body Page Content -->
-        <main class="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto">
+        <main class="flex-1 p-4 lg:p-8 w-full mx-auto">
             @yield('content')
         </main>
     </div>
@@ -510,6 +528,137 @@
         "positionClass": "toast-top-right",
         "timeOut": "3000"
     };
+
+    // Real-Time Sidebar & Notification Count Badges Update
+    function updateSidebarBadges() {
+        const isSubAdmin = window.location.pathname.includes('/sub-admin');
+        const isSuperAdmin = window.location.pathname.includes('/super-admin');
+        
+        let endpoint = '';
+        if (isSubAdmin) {
+            endpoint = "{{ route('sub_admin.sidebar_counts') }}";
+        } else if (isSuperAdmin) {
+            endpoint = "{{ route('super_admin.sidebar_counts') }}";
+        } else {
+            return;
+        }
+
+        fetch(endpoint, {
+            headers: {
+                "Accept": "application/json"
+            }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('API offline');
+            return res.json();
+        })
+        .then(data => {
+            // 1. Sub Admin Badges
+            const regBadge = document.getElementById('badge-verifications');
+            if (regBadge) {
+                if (data.pending_registrations > 0) {
+                    regBadge.textContent = data.pending_registrations;
+                    regBadge.classList.remove('hidden');
+                } else {
+                    regBadge.classList.add('hidden');
+                }
+            }
+
+            const paymentBadge = document.getElementById('badge-rent');
+            if (paymentBadge) {
+                if (data.pending_payments > 0) {
+                    paymentBadge.textContent = data.pending_payments;
+                    paymentBadge.classList.remove('hidden');
+                } else {
+                    paymentBadge.classList.add('hidden');
+                }
+            }
+
+            const complaintBadge = document.getElementById('badge-complaints');
+            if (complaintBadge) {
+                if (data.pending_complaints > 0) {
+                    complaintBadge.textContent = data.pending_complaints;
+                    complaintBadge.classList.remove('hidden');
+                } else {
+                    complaintBadge.classList.add('hidden');
+                }
+            }
+
+            // 2. Super Admin Badges
+            const regBadgeSuper = document.getElementById('badge-verifications-super');
+            if (regBadgeSuper) {
+                if (data.pending_registrations > 0) {
+                    regBadgeSuper.textContent = data.pending_registrations;
+                    regBadgeSuper.classList.remove('hidden');
+                } else {
+                    regBadgeSuper.classList.add('hidden');
+                }
+            }
+
+            const paymentBadgeSuper = document.getElementById('badge-rent-super');
+            if (paymentBadgeSuper) {
+                if (data.pending_payments > 0) {
+                    paymentBadgeSuper.textContent = data.pending_payments;
+                    paymentBadgeSuper.classList.remove('hidden');
+                } else {
+                    paymentBadgeSuper.classList.add('hidden');
+                }
+            }
+
+            // 3. Header Notification Bell Badge
+            const bellBadge = document.getElementById('badge-notifications-bell');
+            if (bellBadge) {
+                const totalAlerts = (data.pending_registrations || 0) + (data.pending_payments || 0) + (data.pending_complaints || 0);
+                if (totalAlerts > 0) {
+                    bellBadge.textContent = totalAlerts;
+                    bellBadge.classList.remove('hidden');
+                } else {
+                    bellBadge.classList.add('hidden');
+                }
+            }
+
+            // 4. Sub Admin Dashboard Dynamic KPI Updates
+            const dbOccupancyRate = document.getElementById('db-occupancy-rate');
+            if (dbOccupancyRate) {
+                dbOccupancyRate.textContent = data.occupancy_rate;
+            }
+            const dbOccupiedBedsLabel = document.getElementById('db-occupied-beds-label');
+            if (dbOccupiedBedsLabel) {
+                dbOccupiedBedsLabel.textContent = `🟢 ${data.occupied_beds} / ${data.total_beds} Beds Occupied`;
+            }
+            const dbPendingVerifications = document.getElementById('db-pending-verifications');
+            if (dbPendingVerifications) {
+                dbPendingVerifications.textContent = data.pending_verifications;
+            }
+            const dbOverdueRents = document.getElementById('db-overdue-rents');
+            if (dbOverdueRents) {
+                dbOverdueRents.textContent = data.overdue_rents;
+            }
+            const dbMonthlyRevenue = document.getElementById('db-monthly-revenue');
+            if (dbMonthlyRevenue) {
+                dbMonthlyRevenue.textContent = data.monthly_revenue;
+            }
+            const dbBreakdownOccupied = document.getElementById('db-breakdown-occupied');
+            if (dbBreakdownOccupied) {
+                dbBreakdownOccupied.textContent = data.occupied_beds;
+            }
+            const dbBreakdownAvailable = document.getElementById('db-breakdown-available');
+            if (dbBreakdownAvailable) {
+                dbBreakdownAvailable.textContent = data.available_beds;
+            }
+            if (window.occupancyDoughnut) {
+                window.occupancyDoughnut.data.datasets[0].data = [data.occupied_beds, data.available_beds];
+                window.occupancyDoughnut.update();
+            }
+        })
+        .catch(err => {
+            console.debug('Badge sync deferred:', err.message);
+        });
+    }
+
+    // Initialize and sync every 10 seconds
+    updateSidebarBadges();
+    setInterval(updateSidebarBadges, 10000);
 </script>
 
 @yield('scripts')

@@ -58,6 +58,10 @@
     var table = new Tabulator("#audit-table", {
         data: logsData,
         layout: "fitColumns",
+        pagination: "local",
+        paginationSize: 10,
+        paginationSizeSelector: [10, 20, 50, 100],
+        paginationCounter: "rows",
 
         placeholder: "No System Audit Activity Found",
         columns: [

@@ -19,6 +19,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (!empty(config('app.url')) && config('app.url') !== 'http://localhost' && config('app.url') !== 'http://127.0.0.1:8000') {
+            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
+            if (str_starts_with(config('app.url'), 'https://')) {
+                \Illuminate\Support\Facades\URL::forceScheme('https');
+            }
+        }
+
         \Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
             $notifications = [];
 
@@ -32,9 +39,9 @@ class AppServiceProvider extends ServiceProvider
             foreach ($pendingRegistrations as $reg) {
                 $notifications[] = [
                     'title' => 'New QR Registration',
-                    'time' => $reg->created_at->diffForHumans(),
-                    'message' => ($reg->student->full_name ?? 'A student') . ' submitted KYC documents for ' . ($reg->branch->name ?? 'a branch') . '.',
-                    'created_at' => $reg->created_at,
+                    'time' => $reg->created_at ? $reg->created_at->diffForHumans() : 'Just now',
+                    'message' => ($reg->student?->full_name ?? 'A student') . ' submitted KYC documents for ' . ($reg->branch?->name ?? 'a branch') . '.',
+                    'created_at' => $reg->created_at ?? now(),
                     'link' => route('sub_admin.verifications'),
                 ];
             }
@@ -50,10 +57,27 @@ class AppServiceProvider extends ServiceProvider
                 $payment = $proof->payment;
                 $notifications[] = [
                     'title' => 'Payment UTR Proof',
-                    'time' => $proof->created_at->diffForHumans(),
-                    'message' => 'UPI payment ₹' . number_format($payment->amount ?? 0, 2) . ' proof uploaded by ' . ($payment->student->full_name ?? 'a student') . '.',
-                    'created_at' => $proof->created_at,
+                    'time' => $proof->created_at ? $proof->created_at->diffForHumans() : 'Just now',
+                    'message' => 'UPI payment ₹' . number_format($payment?->amount ?? 0, 2) . ' proof uploaded by ' . ($payment?->student?->full_name ?? 'a student') . '.',
+                    'created_at' => $proof->created_at ?? now(),
                     'link' => '#',
+                ];
+            }
+
+            // Get pending complaints
+            $pendingComplaints = \App\Models\Complaint::with(['student', 'branch'])
+                ->whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])
+                ->latest()
+                ->take(5)
+                ->get();
+
+            foreach ($pendingComplaints as $complaint) {
+                $notifications[] = [
+                    'title' => 'New Support Ticket',
+                    'time' => $complaint->created_at ? $complaint->created_at->diffForHumans() : 'Just now',
+                    'message' => ($complaint->student?->full_name ?? 'A student') . ' opened a complaint ticket for ' . ($complaint->category ?? 'support') . '.',
+                    'created_at' => $complaint->created_at ?? now(),
+                    'link' => route('sub_admin.complaints'),
                 ];
             }
 
@@ -66,8 +90,9 @@ class AppServiceProvider extends ServiceProvider
             $notifications = array_slice($notifications, 0, 5);
 
             $view->with('systemNotifications', $notifications);
-            $view->with('pendingRegistrationCount', \App\Models\RegistrationRequest::where('status', 'PENDING')->count());
-            $view->with('pendingPaymentCount', \App\Models\PaymentProof::where('status', 'PENDING')->count());
+            $view->with('pendingRegistrationCount', \App\Models\RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->count());
+            $view->with('pendingPaymentCount', \App\Models\PaymentProof::whereIn('status', ['PENDING', 'pending'])->count());
+            $view->with('pendingComplaintsCount', \App\Models\Complaint::whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])->count());
         });
     }
 }

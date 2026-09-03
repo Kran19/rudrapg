@@ -11,7 +11,7 @@ test.describe('End-to-End Super Admin Lifecycle', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('1. API: Super Admin Logs In', async ({ request }) => {
-    const loginRes = await request.post('http://127.0.0.1:8000/api/v1/auth/login', {
+    const loginRes = await request.post('http://127.0.0.1:8088/api/v1/auth/login', {
       headers: { 'Accept': 'application/json' },
       data: {
         email: 'admin@rudrapg.com',
@@ -26,7 +26,7 @@ test.describe('End-to-End Super Admin Lifecycle', () => {
   });
 
   test('2. API: Setup New Branch', async ({ request }) => {
-    const branchRes = await request.post('http://127.0.0.1:8000/api/v1/super-admin/branches', {
+    const branchRes = await request.post('http://127.0.0.1:8088/api/v1/super-admin/branches', {
       headers: { 
         'Accept': 'application/json',
         'Authorization': `Bearer ${superAdminToken}`
@@ -51,7 +51,7 @@ test.describe('End-to-End Super Admin Lifecycle', () => {
   });
 
   test('3. API: Hire New Sub Admin', async ({ request }) => {
-    const subAdminRes = await request.post('http://127.0.0.1:8000/api/v1/super-admin/sub-admins', {
+    const subAdminRes = await request.post('http://127.0.0.1:8088/api/v1/super-admin/sub-admins', {
       headers: { 
         'Accept': 'application/json',
         'Authorization': `Bearer ${superAdminToken}`
@@ -73,7 +73,7 @@ test.describe('End-to-End Super Admin Lifecycle', () => {
   });
 
   test('4. API: View KPIs and Logs', async ({ request }) => {
-    const dashboardRes = await request.get('http://127.0.0.1:8000/api/v1/super-admin/dashboard', {
+    const dashboardRes = await request.get('http://127.0.0.1:8088/api/v1/super-admin/dashboard', {
       headers: { 
         'Accept': 'application/json',
         'Authorization': `Bearer ${superAdminToken}`
@@ -85,7 +85,7 @@ test.describe('End-to-End Super Admin Lifecycle', () => {
     // Ensure the structure returns numbers, e.g. total_branches
     expect(typeof dashboardData.data.total_branches).toBe('number');
 
-    const logsRes = await request.get('http://127.0.0.1:8000/api/v1/super-admin/audit-logs', {
+    const logsRes = await request.get('http://127.0.0.1:8088/api/v1/super-admin/audit-logs', {
       headers: { 
         'Accept': 'application/json',
         'Authorization': `Bearer ${superAdminToken}`
@@ -99,7 +99,7 @@ test.describe('End-to-End Super Admin Lifecycle', () => {
 
   test('5. UI: Super Admin Logs into Blade Dashboard', async ({ page }) => {
     // Navigate to web login
-    await page.goto('http://127.0.0.1:8000/login');
+    await page.goto('http://127.0.0.1:8088/login');
     await page.fill('input[type="email"]', 'admin@rudrapg.com');
     await page.fill('input[type="password"]', 'password');
     await page.click('button[type="submit"]');
@@ -112,3 +112,4 @@ test.describe('End-to-End Super Admin Lifecycle', () => {
     expect(page.url()).toContain('/super-admin/dashboard');
   });
 });
+

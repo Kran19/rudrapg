@@ -149,4 +149,90 @@ class StudentApiController extends Controller
             'data' => ComplaintResource::collection($complaints),
         ]);
     }
+
+    public function verifyBranchQr(Request $request): JsonResponse
+    {
+        $qrData = $request->input('qr_data') ?? $request->input('code') ?? $request->input('branch_code');
+        
+        if (empty($qrData)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No QR code payload or branch code provided.',
+            ], 422);
+        }
+
+        // Handle JSON payload if student scanned a structured QR e.g. {"branch_code":"PG-NRD-01", ...}
+        $branchCode = $qrData;
+        if (is_string($qrData) && (str_starts_with(trim($qrData), '{') || str_contains($qrData, 'branch_code'))) {
+            $json = json_decode($qrData, true);
+            if (is_array($json) && !empty($json['branch_code'])) {
+                $branchCode = $json['branch_code'];
+            }
+        }
+        
+        // Handle URL payload e.g. https://domain.com/register?branch=PG-NRD-01
+        if (is_string($qrData) && str_contains($qrData, 'branch=')) {
+            parse_str(parse_url($qrData, PHP_URL_QUERY) ?? '', $query);
+            if (!empty($query['branch'])) {
+                $branchCode = $query['branch'];
+            }
+        }
+
+        $branch = \App\Models\Branch::where('status', 'ACTIVE')
+            ->where(function ($q) use ($branchCode) {
+                $q->where('code', $branchCode)
+                  ->orWhere('id', $branchCode)
+                  ->orWhere('qr_code_hash', $branchCode);
+            })->first();
+
+        if (!$branch) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid or Inactive Branch QR Code. Please scan the official Rudra PG reception QR standee.',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Branch QR code verified successfully.',
+            'data' => [
+                'id' => $branch->id,
+                'code' => $branch->code,
+                'name' => $branch->name,
+                'city' => $branch->city,
+                'address' => $branch->address,
+                'phone' => $branch->phone,
+                'email' => $branch->email,
+                'electricity_unit_rate' => (float) $branch->electricity_unit_rate,
+                'manager_name' => $branch->manager_name,
+                'manager_phone' => $branch->manager_phone,
+                'qr_payload' => json_encode([
+                    'branch_code' => $branch->code,
+                    'branch_name' => $branch->name,
+                    'type' => 'RUDRA_BRANCH_ONBOARDING',
+                    'timestamp' => now()->timestamp,
+                ]),
+            ],
+        ]);
+    }
+
+    public function activeBranchesList(): JsonResponse
+    {
+        $branches = \App\Models\Branch::where('status', 'ACTIVE')->get()->map(function ($b) {
+            return [
+                'id' => $b->id,
+                'code' => $b->code,
+                'name' => $b->name,
+                'city' => $b->city,
+                'address' => $b->address,
+                'phone' => $b->phone,
+                'manager_name' => $b->manager_name,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $branches,
+        ]);
+    }
 }

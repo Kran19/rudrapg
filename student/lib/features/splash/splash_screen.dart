@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
-import '../welcome/welcome_screen.dart';
+import '../qr_scanner/qr_scanner_gate_screen.dart';
 import '../main_layout/main_layout_screen.dart';
 import '../auth/presentation/auth_notifier.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -134,7 +134,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     final authState = ref.read(authNotifierProvider);
     final Widget nextScreen = authState.status == AuthStatus.authenticated
         ? const MainLayoutScreen()
-        : const WelcomeScreen();
+        : const QRScannerGateScreen();
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(

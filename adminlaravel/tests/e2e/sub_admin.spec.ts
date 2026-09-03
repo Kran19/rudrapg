@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Sub Admin Flows', () => {
   test.beforeEach(async ({ page }) => {
     // Login as Sub Admin
-    await page.goto('http://127.0.0.1:8000/login');
+    await page.goto('http://127.0.0.1:8088/login');
     await page.fill('input[type="email"]', 'subadmin.naroda@rudrapg.com');
     await page.fill('input[type="password"]', 'password');
     await page.click('button[type="submit"]');
@@ -11,7 +11,7 @@ test.describe('Sub Admin Flows', () => {
   });
 
   test('can process pending student verifications', async ({ page }) => {
-    await page.goto('http://127.0.0.1:8000/sub-admin/verifications');
+    await page.goto('http://127.0.0.1:8088/sub-admin/verifications');
     
     // Check if there's any pending verification to process
     const auditButton = page.locator('.tabulator-row button:has-text("Audit")').first();
@@ -35,7 +35,7 @@ test.describe('Sub Admin Flows', () => {
   });
 
   test('can record offline cash payment', async ({ page }) => {
-    await page.goto('http://127.0.0.1:8000/sub-admin/rent-ledger');
+    await page.goto('http://127.0.0.1:8088/sub-admin/rent-ledger');
     
     await page.click('button:has-text("Record Offline Cash Payment")');
     await expect(page.locator('#record-cash-form')).toBeVisible();
@@ -55,3 +55,4 @@ test.describe('Sub Admin Flows', () => {
     await expect(page.locator('.toast-success')).toBeVisible({ timeout: 10000 });
   });
 });
+

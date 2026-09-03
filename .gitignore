@@ -1,0 +1,16 @@
+*.apk
+*.aab
+*.phar
+build/
+.gradle/
+.idea/
+.vscode/
+node_modules/
+vendor/
+.env
+adminlaravel/QA/raw-evidence/
+adminlaravel/QA/reports/
+adminlaravel/public/downloads/*.apk
+adminlaravel/public/*.apk
+student/build/
+.tempmediaStorage/

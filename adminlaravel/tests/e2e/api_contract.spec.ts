@@ -4,7 +4,7 @@ test.describe('API Contract Regression', () => {
   let authToken = '';
 
   test('Super Admin can authenticate via Sanctum', async ({ request }) => {
-    const response = await request.post('http://127.0.0.1:8000/api/v1/auth/login', {
+    const response = await request.post('http://127.0.0.1:8088/api/v1/auth/login', {
       data: {
         email: 'admin@rudrapg.com',
         password: 'password',
@@ -21,7 +21,7 @@ test.describe('API Contract Regression', () => {
   test('Super Admin can fetch API dashboard KPI metrics', async ({ request }) => {
     expect(authToken).not.toBe('');
     
-    const response = await request.get('http://127.0.0.1:8000/api/v1/super-admin/dashboard', {
+    const response = await request.get('http://127.0.0.1:8088/api/v1/super-admin/dashboard', {
       headers: {
         Authorization: `Bearer ${authToken}`
       }
@@ -33,3 +33,4 @@ test.describe('API Contract Regression', () => {
     expect(json.data).toHaveProperty('total_branches');
   });
 });
+

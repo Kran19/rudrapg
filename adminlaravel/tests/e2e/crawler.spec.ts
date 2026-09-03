@@ -6,7 +6,7 @@ test.describe('Autonomous Crawler & Evidence Generator', () => {
 
   test('Crawl and verify all reachable routes', async ({ page, context }) => {
     test.setTimeout(90000);
-    const baseUrl = 'http://127.0.0.1:8000';
+    const baseUrl = 'http://127.0.0.1:8088';
     
     // Login to access protected routes
     await page.goto(`${baseUrl}/login`);
@@ -44,3 +44,4 @@ test.describe('Autonomous Crawler & Evidence Generator', () => {
     }
   });
 });
+

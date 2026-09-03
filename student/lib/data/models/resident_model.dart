@@ -63,4 +63,30 @@ class ResidentModel {
       bedCode != 'N/A' &&
       bedCode != 'Pending' &&
       monthlyRent > 0;
+
+  bool get isKycApproved =>
+      kycStatus.toUpperCase() == 'APPROVED' ||
+      kycStatus.toUpperCase() == 'VERIFIED' ||
+      status.toUpperCase() == 'KYC_APPROVED' ||
+      status.toUpperCase() == 'BED_ALLOCATED' ||
+      status.toUpperCase() == 'APPROVED';
+
+  bool get isPaymentSubmitted =>
+      rentStatus.toUpperCase() == 'UNDER_VERIFICATION' ||
+      depositStatus.toUpperCase() == 'UNDER_VERIFICATION';
+
+  bool get isPaid =>
+      rentStatus.toUpperCase() == 'PAID' ||
+      (status.toUpperCase() == 'APPROVED' && rentStatus.toUpperCase() != 'DUE');
+
+  bool get isFullyApproved =>
+      status.toUpperCase() == 'APPROVED' && isPaid;
+
+  int get currentOnboardingStep {
+    if (isFullyApproved) return 5;
+    if (isPaymentSubmitted) return 4;
+    if (isRoomAssigned) return 3;
+    if (isKycApproved) return 2;
+    return 1;
+  }
 }
