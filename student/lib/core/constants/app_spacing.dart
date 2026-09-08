@@ -30,6 +30,27 @@ class AppSpacing {
   static const EdgeInsets cardPadding = EdgeInsets.all(lg);
   static const EdgeInsets buttonPadding = EdgeInsets.symmetric(horizontal: xxl, vertical: lg);
 
+  // Responsive Layout & Padding Helpers
+  static const double maxContentWidth = 640.0;
+
+  static EdgeInsets responsivePagePadding(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width < 360) {
+      return const EdgeInsets.symmetric(horizontal: 12, vertical: 12);
+    } else if (width > 640) {
+      return const EdgeInsets.symmetric(horizontal: 24, vertical: 20);
+    }
+    return const EdgeInsets.symmetric(horizontal: lg, vertical: lg);
+  }
+
+  static EdgeInsets responsiveCardPadding(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width < 360) {
+      return const EdgeInsets.all(12);
+    }
+    return const EdgeInsets.all(lg);
+  }
+
   // Soft Shadows
   static const List<BoxShadow> softShadow = [
     BoxShadow(

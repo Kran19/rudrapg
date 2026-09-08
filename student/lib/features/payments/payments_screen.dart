@@ -123,87 +123,101 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         foregroundColor: AppColors.primary,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Pending Dues Summary Header Card
-              profileAsync.when(
-                data: (resident) {
-                  final bool isRoomSet = resident.isRoomAssigned;
-                  final bool isPaid = resident.isPaid;
-                  final bool isSubmitted = resident.isPaymentSubmitted;
-                  final double totalDue = (isRoomSet && !isPaid)
-                      ? (resident.monthlyRent + resident.securityDeposit)
-                      : 0.0;
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+            child: SingleChildScrollView(
+              padding: AppSpacing.responsivePagePadding(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Pending Dues Summary Header Card
+                  profileAsync.when(
+                    data: (resident) {
+                      final bool isRoomSet = resident.isRoomAssigned;
+                      final bool isPaid = resident.isPaid;
+                      final bool isSubmitted = resident.isPaymentSubmitted;
+                      final double totalDue = (isRoomSet && !isPaid)
+                          ? (resident.monthlyRent + resident.securityDeposit)
+                          : 0.0;
 
-                  final String badgeText = !isRoomSet
-                      ? 'AWAITING BED ALLOCATION'
-                      : (isPaid
-                          ? '✓ ALL DUES CLEARED'
-                          : (isSubmitted
-                              ? 'UNDER AUDIT ⏳'
-                              : '! DUES PENDING'));
+                      final String badgeText = !isRoomSet
+                          ? 'AWAITING BED ALLOCATION'
+                          : (isPaid
+                              ? '✓ ALL DUES CLEARED'
+                              : (isSubmitted
+                                  ? 'UNDER AUDIT ⏳'
+                                  : '! DUES PENDING'));
 
-                  final Color badgeColor = !isRoomSet
-                      ? Colors.white70
-                      : (isPaid
-                          ? AppColors.success
-                          : (isSubmitted
-                              ? AppColors.accent
-                              : AppColors.warning));
+                      final Color badgeColor = !isRoomSet
+                          ? Colors.white70
+                          : (isPaid
+                              ? AppColors.success
+                              : (isSubmitted
+                                  ? AppColors.accent
+                                  : AppColors.warning));
 
-                  final String subtitleText = !isRoomSet
-                      ? 'Your room & bed have not been assigned yet. Dues will be calculated once sub-admin allocates your bed.'
-                      : (isPaid
-                          ? 'All rent and security deposit dues are completely cleared.'
-                          : (isSubmitted
-                              ? 'Your payment proof has been submitted and is currently being audited by the branch manager.'
-                              : 'Initial admission payment: Rent ₹${resident.monthlyRent.toInt()} + Deposit ₹${resident.securityDeposit.toInt()}.'));
+                      final String subtitleText = !isRoomSet
+                          ? 'Your room & bed have not been assigned yet. Dues will be calculated once sub-admin allocates your bed.'
+                          : (isPaid
+                              ? 'All rent and security deposit dues are completely cleared.'
+                              : (isSubmitted
+                                  ? 'Your payment proof has been submitted and is currently being audited by the branch manager.'
+                                  : 'Initial admission payment: Rent ₹${resident.monthlyRent.toInt()} + Deposit ₹${resident.securityDeposit.toInt()}.'));
 
-                  return Column(
-                    children: [
-                      CustomCard(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.all(AppSpacing.xl),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      return Column(
+                        children: [
+                          CustomCard(
+                            backgroundColor: AppColors.primary,
+                            padding: AppSpacing.responsiveCardPadding(context),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'TOTAL OUTSTANDING DUES',
-                                  style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'TOTAL OUTSTANDING DUES',
+                                        style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: badgeColor.withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: Text(
+                                          badgeText,
+                                          style: AppTypography.badge.copyWith(color: badgeColor),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: badgeColor.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Text(
-                                    badgeText,
-                                    style: AppTypography.badge.copyWith(color: badgeColor),
-                                  ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  isPaid ? '₹0.00' : (isRoomSet ? '₹${totalDue.toInt()}' : '₹0.00'),
+                                  style: AppTypography.displayLarge.copyWith(color: Colors.white),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                Text(
+                                  subtitleText,
+                                  style: AppTypography.bodySmall.copyWith(color: Colors.white70),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              isPaid ? '₹0.00' : (isRoomSet ? '₹${totalDue.toInt()}' : '₹0.00'),
-                              style: AppTypography.displayLarge.copyWith(color: Colors.white),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Text(
-                              subtitleText,
-                              style: AppTypography.bodySmall.copyWith(color: Colors.white70),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xxl),
+                          ),
+                          const SizedBox(height: AppSpacing.xxl),
 
                       // Breakout Categories Grid
                       Align(
@@ -340,19 +354,37 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item['payment_type'] ?? 'PAYMENT', style: AppTypography.titleSmall),
+                                  Text(
+                                    item['payment_type'] ?? 'PAYMENT',
+                                    style: AppTypography.titleSmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                   const SizedBox(height: 2),
-                                  Text('${item['payment_mode']} • ${item['tx_reference']}', style: AppTypography.bodySmall),
-                                  Text(item['payment_date'] ?? '', style: AppTypography.caption),
+                                  Text(
+                                    '${item['payment_mode']} • ${item['tx_reference']}',
+                                    style: AppTypography.bodySmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    item['payment_date'] ?? '',
+                                    style: AppTypography.caption,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ],
                               ),
                             ),
+                            const SizedBox(width: AppSpacing.sm),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
                                   '₹$amount',
                                   style: AppTypography.titleSmall.copyWith(color: AppColors.success),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
                                 Container(
@@ -364,6 +396,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                                   child: Text(
                                     item['status'] ?? 'PENDING',
                                     style: AppTypography.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -381,8 +415,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildBreakdownCard({
     required String title,
@@ -400,23 +436,28 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Icon(icon, color: color, size: 20),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  status,
-                  style: AppTypography.caption.copyWith(color: color, fontWeight: FontWeight.bold, fontSize: 10),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status,
+                    style: AppTypography.caption.copyWith(color: color, fontWeight: FontWeight.bold, fontSize: 10),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text(title, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+          Text(title, style: AppTypography.caption.copyWith(color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 2),
-          Text(amount, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+          Text(amount, style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
@@ -434,64 +475,71 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final isProofSelected = _proofImage != null;
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-                top: 24,
-                left: 24,
-                right: 24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Upload Payment Proof', style: AppTypography.titleLarge),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Attach screenshot of your GPay/PhonePe transfer & enter UTR number.',
-                    style: AppTypography.bodySmall,
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                    top: 24,
+                    left: 24,
+                    right: 24,
                   ),
-                  const SizedBox(height: AppSpacing.lg),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Upload Payment Proof', style: AppTypography.titleLarge),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Attach screenshot of your GPay/PhonePe transfer & enter UTR number.',
+                        style: AppTypography.bodySmall,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
 
-                  CustomTextField(
-                    label: 'UPI Transaction Ref / UTR Number',
-                    hint: '12-digit UTR reference code',
-                    prefixIcon: Icons.tag_rounded,
-                    controller: _utrController,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+                      CustomTextField(
+                        label: 'UPI Transaction Ref / UTR Number',
+                        hint: '12-digit UTR reference code',
+                        prefixIcon: Icons.tag_rounded,
+                        controller: _utrController,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
 
-                  CustomCard(
-                    onTap: () {
-                      _pickImage(setModalState);
-                    },
-                    backgroundColor: isProofSelected ? AppColors.success.withValues(alpha: 0.05) : Colors.white,
-                    border: Border.all(color: isProofSelected ? AppColors.success : AppColors.divider),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isProofSelected ? Icons.check_circle_rounded : Icons.add_photo_alternate_rounded,
-                          color: isProofSelected ? AppColors.success : AppColors.secondary,
+                      CustomCard(
+                        onTap: () {
+                          _pickImage(setModalState);
+                        },
+                        backgroundColor: isProofSelected ? AppColors.success.withValues(alpha: 0.05) : Colors.white,
+                        border: Border.all(color: isProofSelected ? AppColors.success : AppColors.divider),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isProofSelected ? Icons.check_circle_rounded : Icons.add_photo_alternate_rounded,
+                              color: isProofSelected ? AppColors.success : AppColors.secondary,
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Text(
+                                isProofSelected ? 'File Attached: ${_proofImage!.name}' : 'Select Screenshot Image File',
+                                style: AppTypography.bodyMedium,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Text(
-                            isProofSelected ? 'File Attached: ${_proofImage!.name}' : 'Select Screenshot Image File',
-                            style: AppTypography.bodyMedium,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxl),
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
 
-                  CustomButton(
-                    text: 'Submit Proof to Manager',
-                    icon: Icons.send_rounded,
-                    isLoading: _isSubmitting,
-                    onPressed: _submitProof,
+                      CustomButton(
+                        text: 'Submit Proof to Manager',
+                        icon: Icons.send_rounded,
+                        isLoading: _isSubmitting,
+                        onPressed: _submitProof,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             );
           },

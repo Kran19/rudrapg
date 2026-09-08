@@ -28,65 +28,77 @@ class HomeDashboardScreen extends ConsumerWidget {
               ref.invalidate(studentProfileProvider);
               ref.invalidate(paymentHistoryProvider);
             },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Bar Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: AppSpacing.responsivePagePadding(context),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Top Bar Header
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Icon(
-                                resident.isFullyApproved
-                                    ? Icons.verified_user_rounded
-                                    : (resident.isRoomAssigned
-                                        ? Icons.bed_rounded
-                                        : Icons.pending_actions_rounded),
-                                size: 16,
-                                color: resident.isFullyApproved
-                                    ? AppColors.success
-                                    : (resident.isRoomAssigned
-                                        ? AppColors.accent
-                                        : AppColors.warning),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                resident.isFullyApproved
-                                    ? 'APPROVED RESIDENT'
-                                    : (resident.isPaymentSubmitted
-                                        ? 'PAYMENT UNDER AUDIT'
-                                        : (resident.isRoomAssigned
-                                            ? 'BED ASSIGNED • PAY RENT'
-                                            : (resident.isKycApproved
-                                                ? 'KYC VERIFIED • AWAITING BED'
-                                                : 'APPLICATION UNDER REVIEW'))),
-                                style: AppTypography.caption.copyWith(
-                                  color: resident.isFullyApproved
-                                      ? AppColors.success
-                                      : (resident.isRoomAssigned
-                                          ? AppColors.accent
-                                          : AppColors.warning),
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      resident.isFullyApproved
+                                          ? Icons.verified_user_rounded
+                                          : (resident.isRoomAssigned
+                                              ? Icons.bed_rounded
+                                              : Icons.pending_actions_rounded),
+                                      size: 16,
+                                      color: resident.isFullyApproved
+                                          ? AppColors.success
+                                          : (resident.isRoomAssigned
+                                              ? AppColors.accent
+                                              : AppColors.warning),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        resident.isFullyApproved
+                                            ? 'APPROVED RESIDENT'
+                                            : (resident.isPaymentSubmitted
+                                                ? 'PAYMENT UNDER AUDIT'
+                                                : (resident.isRoomAssigned
+                                                    ? 'BED ASSIGNED • PAY RENT'
+                                                    : (resident.isKycApproved
+                                                        ? 'KYC VERIFIED • AWAITING BED'
+                                                        : 'APPLICATION UNDER REVIEW'))),
+                                        style: AppTypography.caption.copyWith(
+                                          color: resident.isFullyApproved
+                                              ? AppColors.success
+                                              : (resident.isRoomAssigned
+                                                  ? AppColors.accent
+                                                  : AppColors.warning),
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.8,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 2),
+                                Text(
+                                  resident.branchName,
+                                  style: AppTypography.titleLarge,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            resident.branchName,
-                            style: AppTypography.titleLarge,
-                          ),
-                        ],
-                      ),
-                      Container(
+                          const SizedBox(width: AppSpacing.md),
+                          Container(
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
@@ -115,21 +127,26 @@ class HomeDashboardScreen extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: (resident.isRoomAssigned ? AppColors.accent : AppColors.warning).withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                resident.isRoomAssigned
-                                    ? 'ROOM ${resident.roomNumber} • ${resident.bedCode}'
-                                    : 'ROOM ALLOCATION PENDING',
-                                style: AppTypography.badge.copyWith(
-                                  color: resident.isRoomAssigned ? AppColors.accent : AppColors.warning,
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: (resident.isRoomAssigned ? AppColors.accent : AppColors.warning).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  resident.isRoomAssigned
+                                      ? 'ROOM ${resident.roomNumber} • ${resident.bedCode}'
+                                      : 'ROOM ALLOCATION PENDING',
+                                  style: AppTypography.badge.copyWith(
+                                    color: resident.isRoomAssigned ? AppColors.accent : AppColors.warning,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ),
+                            const SizedBox(width: AppSpacing.sm),
                             Text(
                               resident.isRoomAssigned ? '₹${resident.monthlyRent.toInt()}/mo' : 'Pending Allocation',
                               style: AppTypography.titleMedium.copyWith(color: Colors.white),
@@ -268,10 +285,12 @@ class HomeDashboardScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
+        ),
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
           error: (error, stackTrace) => Center(
             child: Column(
@@ -305,20 +324,30 @@ class HomeDashboardScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.timeline_rounded, color: AppColors.secondary, size: 18),
                     ),
-                    child: const Icon(Icons.timeline_rounded, color: AppColors.secondary, size: 18),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('Onboarding Progress', style: AppTypography.titleMedium),
-                ],
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Onboarding Progress',
+                        style: AppTypography.titleMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -561,8 +590,16 @@ class HomeDashboardScreen extends ConsumerWidget {
         Icon(icon, size: 20, color: AppColors.secondary),
         const SizedBox(width: AppSpacing.md),
         Text(label, style: AppTypography.bodyMedium),
-        const Spacer(),
-        Text(value, style: AppTypography.titleSmall),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTypography.titleSmall,
+            textAlign: TextAlign.end,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }

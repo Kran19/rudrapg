@@ -128,102 +128,117 @@ class _QRScannerGateScreenState extends ConsumerState<QRScannerGateScreen>
       backgroundColor: Colors.transparent,
       isDismissible: false,
       enableDrag: false,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      builder: (ctx) => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 28),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Branch QR Code Verified!',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.success,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Branch Locked: ${branch['code']}',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
+                const SizedBox(height: AppSpacing.lg),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.divider),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Branch QR Code Verified!',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.success,
-                        ),
+                      Text(branch['name'] ?? 'Branch Name', style: AppTypography.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 14, color: AppColors.secondary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${branch['address'] ?? ''}, ${branch['city'] ?? ''}',
+                              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Branch Locked: ${branch['code']}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.person_outline, size: 14, color: AppColors.secondary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Manager: ${branch['manager_name'] ?? 'Rudra PG Staff'} (${branch['manager_phone'] ?? branch['phone'] ?? 'N/A'})',
+                              style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: AppSpacing.xl),
+                CustomButton(
+                  text: 'Proceed to Student Registration',
+                  icon: Icons.how_to_reg_rounded,
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => StudentRegistrationScreen(verifiedBranch: branch),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.divider),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(branch['name'] ?? 'Branch Name', style: AppTypography.titleMedium),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 14, color: AppColors.secondary),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          '${branch['address'] ?? ''}, ${branch['city'] ?? ''}',
-                          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.person_outline, size: 14, color: AppColors.secondary),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Manager: ${branch['manager_name'] ?? 'Rudra PG Staff'} (${branch['manager_phone'] ?? branch['phone'] ?? 'N/A'})',
-                        style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            CustomButton(
-              text: 'Proceed to Student Registration',
-              icon: Icons.how_to_reg_rounded,
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => StudentRegistrationScreen(verifiedBranch: branch),
-                  ),
-                );
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -238,181 +253,194 @@ class _QRScannerGateScreenState extends ConsumerState<QRScannerGateScreen>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final double viewfinderSize = (screenWidth * 0.72).clamp(240.0, 290.0);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0B132B),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Top App Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+            child: Column(
+              children: [
+                // Top App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondary.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondary.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.apartment_rounded, color: AppColors.secondary, size: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Rudra Group PG',
+                                style: AppTypography.titleMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                        child: const Icon(Icons.apartment_rounded, color: AppColors.secondary, size: 20),
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Rudra Group PG',
-                        style: AppTypography.titleMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                      const SizedBox(width: 8),
+                      // Login Button for Approved Residents
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.login_rounded, size: 16, color: AppColors.accent),
+                        label: const Text(
+                          'Login',
+                          style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
                       ),
                     ],
                   ),
-                  // Login Button for Approved Residents
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      );
-                    },
-                    icon: const Icon(Icons.login_rounded, size: 16, color: AppColors.accent),
-                    label: const Text(
-                      'Login',
-                      style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // Title Badge & Instructions
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
+                  ),
+                  child: const Text(
+                    'LIVE QR SCANNER',
+                    style: TextStyle(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      letterSpacing: 1.2,
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // Title Badge & Instructions
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.secondary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
-              ),
-              child: const Text(
-                'LIVE QR SCANNER',
-                style: TextStyle(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                  letterSpacing: 1.2,
                 ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Scan Branch QR Code',
-              style: AppTypography.displayMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-              child: Text(
-                'Align the reception standee QR code inside the viewfinder to begin registration.',
-                style: AppTypography.bodySmall.copyWith(color: Colors.white70),
-                textAlign: TextAlign.center,
-              ),
-            ),
-
-            const Spacer(),
-
-            // Real-Time Camera Viewfinder
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                child: Container(
-                  width: 290,
-                  height: 290,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: AppColors.secondary.withValues(alpha: 0.5), width: 2),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Scan Branch QR Code',
+                  style: AppTypography.displayMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+                  child: Text(
+                    'Align the reception standee QR code inside the viewfinder to begin registration.',
+                    style: AppTypography.bodySmall.copyWith(color: Colors.white70),
+                    textAlign: TextAlign.center,
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Live Camera Stream
-                      MobileScanner(
-                        controller: _scannerController,
-                        onDetect: _onDetect,
-                        errorBuilder: (context, error) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(AppSpacing.md),
+                ),
+
+                const Spacer(),
+
+                // Real-Time Camera Viewfinder
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: Container(
+                      width: viewfinderSize,
+                      height: viewfinderSize,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.5), width: 2),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Live Camera Stream
+                          MobileScanner(
+                            controller: _scannerController,
+                            onDetect: _onDetect,
+                            errorBuilder: (context, error) {
+                              return Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(AppSpacing.md),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.videocam_off_rounded, color: AppColors.error, size: 36),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Camera Access Required',
+                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        error.errorDetails?.message ?? 'Please grant camera permission in phone settings.',
+                                        style: const TextStyle(color: Colors.white60, fontSize: 11),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+
+                          // Viewfinder corner reticles
+                          Positioned(top: 14, left: 14, child: _buildCorner(0)),
+                          Positioned(top: 14, right: 14, child: _buildCorner(1)),
+                          Positioned(bottom: 14, left: 14, child: _buildCorner(2)),
+                          Positioned(bottom: 14, right: 14, child: _buildCorner(3)),
+
+                          // Animated Scanning Laser Bar
+                          if (!_isProcessing)
+                            AnimatedBuilder(
+                              animation: _laserAnimation,
+                              builder: (context, child) {
+                                return Positioned(
+                                  top: 20 + (_laserAnimation.value * (viewfinderSize - 44)),
+                                  left: 20,
+                                  right: 20,
+                                  child: Container(
+                                    height: 3,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.accent,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppColors.accent.withValues(alpha: 0.9),
+                                          blurRadius: 12,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+
+                          // Processing Spinner Overlay
+                          if (_isProcessing)
+                            Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.75),
+                              ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.videocam_off_rounded, color: AppColors.error, size: 36),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Camera Access Required',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                                  ),
-                                  const SizedBox(height: 4),
+                                children: const [
+                                  CircularProgressIndicator(color: AppColors.accent),
+                                  SizedBox(height: 14),
                                   Text(
-                                    error.errorDetails?.message ?? 'Please grant camera permission in phone settings.',
-                                    style: const TextStyle(color: Colors.white60, fontSize: 11),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      // Viewfinder corner reticles
-                      Positioned(top: 14, left: 14, child: _buildCorner(0)),
-                      Positioned(top: 14, right: 14, child: _buildCorner(1)),
-                      Positioned(bottom: 14, left: 14, child: _buildCorner(2)),
-                      Positioned(bottom: 14, right: 14, child: _buildCorner(3)),
-
-                      // Animated Scanning Laser Bar
-                      if (!_isProcessing)
-                        AnimatedBuilder(
-                          animation: _laserAnimation,
-                          builder: (context, child) {
-                            return Positioned(
-                              top: 20 + (_laserAnimation.value * 240),
-                              left: 20,
-                              right: 20,
-                              child: Container(
-                                height: 3,
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.accent.withValues(alpha: 0.9),
-                                      blurRadius: 12,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-
-                      // Processing Spinner Overlay
-                      if (_isProcessing)
-                        Container(
-                          width: double.infinity,
-                          height: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.75),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              CircularProgressIndicator(color: AppColors.accent),
-                              SizedBox(height: 14),
-                              Text(
-                                'Verifying Branch...',
+                                    'Verifying Branch...',
                                 style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                               ),
                             ],
@@ -453,9 +481,13 @@ class _QRScannerGateScreenState extends ConsumerState<QRScannerGateScreen>
                 children: [
                   const Icon(Icons.verified_user_rounded, size: 14, color: AppColors.secondary),
                   const SizedBox(width: 6),
-                  Text(
-                    'Official Rudra Group PG Verification System',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11),
+                  Flexible(
+                    child: Text(
+                      'Official Rudra Group PG Verification System',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -463,8 +495,10 @@ class _QRScannerGateScreenState extends ConsumerState<QRScannerGateScreen>
           ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildCorner(int quadrant) {
     return Container(

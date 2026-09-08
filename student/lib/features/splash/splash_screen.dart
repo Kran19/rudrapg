@@ -169,18 +169,40 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 100,
-                      height: 100,
+                      width: 104,
+                      height: 104,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.accent, width: 2),
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.secondary.withValues(alpha: 0.35),
+                            blurRadius: 24,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.apartment_rounded,
-                          size: 52,
-                          color: AppColors.accent,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(26),
+                        child: Image.asset(
+                          'assets/icons/logo.png',
+                          width: 104,
+                          height: 104,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.accent, width: 2),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.apartment_rounded,
+                                size: 52,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),

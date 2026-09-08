@@ -82,269 +82,287 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         foregroundColor: AppColors.primary,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Contact Branch Manager Actions
-              Text('Direct Manager Contact', style: AppTypography.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+            child: SingleChildScrollView(
+              padding: AppSpacing.responsivePagePadding(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: CustomCard(
-                      onTap: () {
-                        if (profileAsync.hasValue) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Calling branch manager: ${profileAsync.value!.branchName}')),
-                          );
-                        }
-                      },
-                      backgroundColor: AppColors.success.withValues(alpha: 0.08),
-                      border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.phone_rounded, color: AppColors.success, size: 24),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Text('Call Manager', style: AppTypography.titleSmall),
-                          const SizedBox(height: 2),
-                          Text('Dial Support', style: AppTypography.caption),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: CustomCard(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Opening WhatsApp Support chat...')),
-                        );
-                      },
-                      backgroundColor: AppColors.secondary.withValues(alpha: 0.08),
-                      border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.chat_rounded, color: AppColors.secondary, size: 24),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Text('WhatsApp Support', style: AppTypography.titleSmall),
-                          const SizedBox(height: 2),
-                          Text('Quick Chat', style: AppTypography.caption),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Raise Maintenance Complaint Ticket
-              Text('Raise Maintenance Request', style: AppTypography.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              CustomCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Select Category', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: 'PLUMBING',
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'PLUMBING', child: Text('Plumbing & Geyser')),
-                        DropdownMenuItem(value: 'ELECTRICAL', child: Text('Electrical & Lights')),
-                        DropdownMenuItem(value: 'WIFI', child: Text('Wi-Fi & Internet')),
-                        DropdownMenuItem(value: 'CLEANING', child: Text('Room Housekeeping')),
-                      ],
-                      onChanged: (val) {
-                        setState(() {
-                          _category = val ?? 'PLUMBING';
-                        });
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    CustomTextField(
-                      label: 'Subject',
-                      hint: 'Short summary of issue',
-                      controller: _subjectController,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    CustomTextField(
-                      label: 'Complaint Description',
-                      hint: 'Describe issue in detail...',
-                      maxLines: 3,
-                      controller: _descController,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    CustomButton(
-                      text: 'Submit Ticket to Manager',
-                      icon: Icons.assignment_turned_in_rounded,
-                      isLoading: _isSubmitting,
-                      onPressed: _submitComplaint,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Complaint History
-              Text('My Tickets', style: AppTypography.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              historyAsync.when(
-                skipLoadingOnRefresh: true,
-                data: (history) {
-                  if (history.isEmpty) {
-                    return const Text('No tickets raised.');
-                  }
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: history.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, index) {
-                      final item = history[index];
-                      final String rawStatus = item['status'] ?? 'PENDING';
-                      final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'Resolved';
-                      final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'In Progress';
-                      
-                      Color statusBgColor;
-                      Color statusTextColor;
-                      String statusLabel;
-
-                      if (isResolved) {
-                        statusBgColor = AppColors.success.withValues(alpha: 0.1);
-                        statusTextColor = AppColors.success;
-                        statusLabel = 'SOLVED';
-                      } else if (isInProgress) {
-                        statusBgColor = AppColors.info.withValues(alpha: 0.1);
-                        statusTextColor = AppColors.info;
-                        statusLabel = 'IN PROGRESS';
-                      } else {
-                        statusBgColor = AppColors.warning.withValues(alpha: 0.1);
-                        statusTextColor = AppColors.warning;
-                        statusLabel = 'PENDING';
-                      }
-
-                      return CustomCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('${item['ticket_number']} • ${item['category']}', style: AppTypography.titleSmall),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: statusBgColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    statusLabel,
-                                    style: AppTypography.caption.copyWith(color: statusTextColor, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(item['subject'] ?? '', style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(item['description'] ?? '', style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
-                            if (item['resolution_remarks'] != null && (item['resolution_remarks'] as String).trim().isNotEmpty) ...[
-                              const SizedBox(height: 8),
+                  // Contact Branch Manager Actions
+                  Text('Direct Manager Contact', style: AppTypography.titleLarge),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CustomCard(
+                          padding: AppSpacing.responsiveCardPadding(context),
+                          onTap: () {
+                            if (profileAsync.hasValue) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Calling branch manager: ${profileAsync.value!.branchName}')),
+                              );
+                            }
+                          },
+                          backgroundColor: AppColors.success.withValues(alpha: 0.08),
+                          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                          child: Column(
+                            children: [
                               Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: isResolved 
-                                      ? AppColors.success.withValues(alpha: 0.05)
-                                      : AppColors.info.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isResolved 
-                                        ? AppColors.success.withValues(alpha: 0.15)
-                                        : AppColors.info.withValues(alpha: 0.15),
-                                  ),
+                                  color: AppColors.success.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: const Icon(Icons.phone_rounded, color: AppColors.success, size: 24),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text('Call Manager', style: AppTypography.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              const SizedBox(height: 2),
+                              Text('Dial Support', style: AppTypography.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: CustomCard(
+                          padding: AppSpacing.responsiveCardPadding(context),
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Opening WhatsApp Support chat...')),
+                            );
+                          },
+                          backgroundColor: AppColors.secondary.withValues(alpha: 0.08),
+                          border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.secondary.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.chat_rounded, color: AppColors.secondary, size: 24),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text('WhatsApp Support', style: AppTypography.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              const SizedBox(height: 2),
+                              Text('Quick Chat', style: AppTypography.caption, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+
+                  // Raise Maintenance Complaint Ticket
+                  Text('Raise Maintenance Request', style: AppTypography.titleLarge),
+                  const SizedBox(height: AppSpacing.md),
+                  CustomCard(
+                    padding: AppSpacing.responsiveCardPadding(context),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Select Category', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                        const SizedBox(height: 6),
+                        DropdownButtonFormField<String>(
+                          initialValue: 'PLUMBING',
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'PLUMBING', child: Text('Plumbing & Geyser')),
+                            DropdownMenuItem(value: 'ELECTRICAL', child: Text('Electrical & Lights')),
+                            DropdownMenuItem(value: 'WIFI', child: Text('Wi-Fi & Internet')),
+                            DropdownMenuItem(value: 'CLEANING', child: Text('Room Housekeeping')),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _category = val ?? 'PLUMBING';
+                            });
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        CustomTextField(
+                          label: 'Subject',
+                          hint: 'Short summary of issue',
+                          controller: _subjectController,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        CustomTextField(
+                          label: 'Complaint Description',
+                          hint: 'Describe issue in detail...',
+                          maxLines: 3,
+                          controller: _descController,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        CustomButton(
+                          text: 'Submit Ticket to Manager',
+                          icon: Icons.assignment_turned_in_rounded,
+                          isLoading: _isSubmitting,
+                          onPressed: _submitComplaint,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+
+                  // Complaint History
+                  Text('My Tickets', style: AppTypography.titleLarge),
+                  const SizedBox(height: AppSpacing.md),
+                  historyAsync.when(
+                    skipLoadingOnRefresh: true,
+                    data: (history) {
+                      if (history.isEmpty) {
+                        return const Text('No tickets raised.');
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: history.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                        itemBuilder: (context, index) {
+                          final item = history[index];
+                          final String rawStatus = item['status'] ?? 'PENDING';
+                          final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'Resolved';
+                          final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'In Progress';
+                          
+                          Color statusBgColor;
+                          Color statusTextColor;
+                          String statusLabel;
+
+                          if (isResolved) {
+                            statusBgColor = AppColors.success.withValues(alpha: 0.1);
+                            statusTextColor = AppColors.success;
+                            statusLabel = 'SOLVED';
+                          } else if (isInProgress) {
+                            statusBgColor = AppColors.info.withValues(alpha: 0.1);
+                            statusTextColor = AppColors.info;
+                            statusLabel = 'IN PROGRESS';
+                          } else {
+                            statusBgColor = AppColors.warning.withValues(alpha: 0.1);
+                            statusTextColor = AppColors.warning;
+                            statusLabel = 'PENDING';
+                          }
+
+                          return CustomCard(
+                            padding: AppSpacing.responsiveCardPadding(context),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      isResolved ? 'Resolution Result / Remarks:' : 'Admin Update:',
-                                      style: AppTypography.caption.copyWith(
-                                        color: isResolved ? AppColors.success : AppColors.info,
-                                        fontWeight: FontWeight.bold,
+                                    Expanded(
+                                      child: Text(
+                                        '${item['ticket_number']} • ${item['category']}',
+                                        style: AppTypography.titleSmall,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      item['resolution_remarks'] ?? '',
-                                      style: AppTypography.bodySmall.copyWith(
-                                        color: AppColors.textPrimary,
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: statusBgColor,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        statusLabel,
+                                        style: AppTypography.caption.copyWith(color: statusTextColor, fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 8),
+                                Text(item['subject'] ?? '', style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text(item['description'] ?? '', style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
+                                if (item['resolution_remarks'] != null && (item['resolution_remarks'] as String).trim().isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: isResolved 
+                                          ? AppColors.success.withValues(alpha: 0.05)
+                                          : AppColors.info.withValues(alpha: 0.05),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: isResolved 
+                                            ? AppColors.success.withValues(alpha: 0.15)
+                                            : AppColors.info.withValues(alpha: 0.15),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          isResolved ? 'Resolution Result / Remarks:' : 'Admin Update:',
+                                          style: AppTypography.caption.copyWith(
+                                            color: isResolved ? AppColors.success : AppColors.info,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          item['resolution_remarks'] ?? '',
+                                          style: AppTypography.bodySmall.copyWith(
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Text('Error loading tickets: $err'),
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+
+                  // Frequently Asked Questions
+                  Text('Resident FAQs', style: AppTypography.titleLarge),
+                  const SizedBox(height: AppSpacing.md),
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: faqs.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
+                    itemBuilder: (context, index) {
+                      final faq = faqs[index];
+                      return CustomCard(
+                        padding: AppSpacing.responsiveCardPadding(context),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.help_outline_rounded, size: 20, color: AppColors.secondary),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(faq['question']!, style: AppTypography.titleSmall)),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(faq['answer']!, style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary, height: 1.5)),
                           ],
                         ),
                       );
                     },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Text('Error loading tickets: $err'),
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Frequently Asked Questions
-              Text('Resident FAQs', style: AppTypography.titleLarge),
-              const SizedBox(height: AppSpacing.md),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: faqs.length,
-                separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
-                itemBuilder: (context, index) {
-                  final faq = faqs[index];
-                  return CustomCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.help_outline_rounded, size: 20, color: AppColors.secondary),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(faq['question']!, style: AppTypography.titleSmall)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(faq['answer']!, style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary, height: 1.5)),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
+            ),
           ),
         ),
       ),

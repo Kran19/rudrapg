@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
@@ -91,10 +91,14 @@ class _StudentRegistrationScreenState
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    title,
-                    style: AppTypography.titleSmall.copyWith(
-                      color: Colors.white,
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: AppTypography.titleSmall.copyWith(
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   IconButton(
@@ -290,7 +294,7 @@ class _StudentRegistrationScreenState
         'current_address': _addressController.text.trim(),
       });
 
-      if (_profilePhoto != null)
+      if (_profilePhoto != null) {
         formData.files.add(
           MapEntry(
             'profile_photo',
@@ -301,7 +305,8 @@ class _StudentRegistrationScreenState
             ),
           ),
         );
-      if (_aadhaarFront != null)
+      }
+      if (_aadhaarFront != null) {
         formData.files.add(
           MapEntry(
             'aadhaar_front',
@@ -312,7 +317,8 @@ class _StudentRegistrationScreenState
             ),
           ),
         );
-      if (_aadhaarBack != null)
+      }
+      if (_aadhaarBack != null) {
         formData.files.add(
           MapEntry(
             'aadhaar_back',
@@ -323,7 +329,8 @@ class _StudentRegistrationScreenState
             ),
           ),
         );
-      if (_panCard != null)
+      }
+      if (_panCard != null) {
         formData.files.add(
           MapEntry(
             'pan_card',
@@ -334,6 +341,7 @@ class _StudentRegistrationScreenState
             ),
           ),
         );
+      }
 
       final repo = ref.read(studentRepositoryProvider);
       final appReference = await repo.register(formData);
@@ -390,14 +398,17 @@ class _StudentRegistrationScreenState
         foregroundColor: AppColors.primary,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CustomCard(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+            child: SingleChildScrollView(
+              padding: AppSpacing.responsivePagePadding(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomCard(
+                    backgroundColor: AppColors.primary,
+                    padding: AppSpacing.responsiveCardPadding(context),
                 child: Row(
                   children: [
                     Container(
@@ -603,8 +614,10 @@ class _StudentRegistrationScreenState
           ),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildUploadCard({
     required String title,
@@ -643,7 +656,12 @@ class _StudentRegistrationScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTypography.titleSmall),
+                Text(
+                  title,
+                  style: AppTypography.titleSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   isUploaded
@@ -657,6 +675,8 @@ class _StudentRegistrationScreenState
                         ? FontWeight.w600
                         : FontWeight.normal,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

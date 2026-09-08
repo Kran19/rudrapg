@@ -138,10 +138,15 @@ class RoomCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Room ${room.roomNumber}',
-                      style: AppTypography.titleLarge,
+                    Expanded(
+                      child: Text(
+                        'Room ${room.roomNumber}',
+                        style: AppTypography.titleLarge,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: AppSpacing.sm),
                     Text(
                       '₹${room.monthlyRent.toInt()}/mo',
                       style: AppTypography.titleLarge.copyWith(color: AppColors.secondary),
@@ -152,50 +157,63 @@ class RoomCard extends StatelessWidget {
                 Text(
                   'Deposit ₹${room.securityDeposit.toInt()} • Size: ${room.roomSize}',
                   style: AppTypography.bodyMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppSpacing.md),
 
                 // BOOKMYSHOW CINEMA SEAT STYLE VISUAL BED STATUS BAR
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppColors.background,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.divider),
                   ),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Mini Bed Icons Row
-                      Row(
-                        children: room.beds.map((bed) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: _buildMiniBedIcon(bed.status),
-                          );
-                        }).toList(),
-                      ),
-                      const Spacer(),
-                      // Status Text Denotion (e.g. 2 Booked • 1 Left)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: availableCount > 0
-                              ? AppColors.success.withValues(alpha: 0.12)
-                              : AppColors.error.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: availableCount > 0
-                                ? AppColors.success.withValues(alpha: 0.3)
-                                : AppColors.error.withValues(alpha: 0.3),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: room.beds.map((bed) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: _buildMiniBedIcon(bed.status),
+                              );
+                            }).toList(),
                           ),
                         ),
-                        child: Text(
-                          bookedCount > 0
-                              ? '$bookedCount Booked • $availableCount Left'
-                              : '$availableCount Left Available',
-                          style: AppTypography.badge.copyWith(
-                            color: availableCount > 0 ? AppColors.success : AppColors.error,
-                            fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(width: 8),
+                      // Status Text Denotion (e.g. 2 Booked • 1 Left)
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: availableCount > 0
+                                ? AppColors.success.withValues(alpha: 0.12)
+                                : AppColors.error.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: availableCount > 0
+                                  ? AppColors.success.withValues(alpha: 0.3)
+                                  : AppColors.error.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            bookedCount > 0
+                                ? '$bookedCount Booked • $availableCount Left'
+                                : '$availableCount Left Available',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.badge.copyWith(
+                              color: availableCount > 0 ? AppColors.success : AppColors.error,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),

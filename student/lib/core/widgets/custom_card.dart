@@ -22,7 +22,10 @@ class CustomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectivePadding = padding ?? AppSpacing.responsiveCardPadding(context);
+
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: backgroundColor ?? AppColors.card,
         borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
@@ -36,7 +39,7 @@ class CustomCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
           onTap: onTap,
           child: Padding(
-            padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
+            padding: effectivePadding,
             child: child,
           ),
         ),

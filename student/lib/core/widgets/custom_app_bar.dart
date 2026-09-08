@@ -30,6 +30,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         title,
         style: AppTypography.titleLarge,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
       actions: actions,
     );
