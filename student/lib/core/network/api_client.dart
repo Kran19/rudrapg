@@ -17,11 +17,11 @@ final apiClientProvider = Provider<Dio>((ref) {
   final prefs = ref.read(sharedPreferencesProvider);
   
   // Production-Ready URL Resolution:
-  // 1. Default to the production server.
+  // Default to the production server so live data always loads seamlessly.
   String baseUrl = _prodBaseUrl;
   
-  // 2. In debug mode, default to local development.
-  if (kDebugMode) {
+  const bool useLocal = bool.fromEnvironment('USE_LOCAL_API', defaultValue: false);
+  if (useLocal) {
     if (kIsWeb) {
       baseUrl = _localBaseUrl;
     } else if (defaultTargetPlatform == TargetPlatform.android) {
