@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RudraboysPG — Apple App Store Rejection Resolution & Resubmission Master Guide</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 12mm 14mm 12mm;
+    }
+    *, *:before, *:after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 11pt;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+    .header-card {
+      border-left: 5px solid #2563eb;
+      background: #f8fafc;
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 20pt;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.5px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 20px;
+      font-size: 9.5pt;
+      color: #475569;
+      margin-top: 10px;
+    }
+    .meta-grid strong {
+      color: #0f172a;
+    }
+    h2 {
+      font-size: 13.5pt;
+      font-weight: 700;
+      color: #0f172a;
+      border-bottom: 1.5px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 11.5pt;
+      font-weight: 600;
+      color: #1e3a8a;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+    p {
+      margin: 0 0 10px 0;
+    }
+    ul, ol {
+      margin: 0 0 12px 0;
+      padding-left: 22px;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 16px 0;
+      font-size: 9.5pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 10px;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 8.5pt;
+      font-weight: 700;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-info { background: #e0f2fe; color: #075985; }
+
+    .callout {
+      border-left: 4px solid #0284c7;
+      background: #f0f9ff;
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin: 12px 0;
+      font-size: 9.5pt;
+      page-break-inside: avoid;
+    }
+    .callout-title {
+      font-weight: 700;
+      color: #0369a1;
+      margin-bottom: 4px;
+    }
+    pre, code {
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+      font-size: 9pt;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 2px 5px;
+      border-radius: 4px;
+      color: #0f172a;
+    }
+    pre {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      margin: 8px 0 14px 0;
+      line-height: 1.4;
+      page-break-inside: avoid;
+    }
+    .copy-box {
+      background: #f8fafc;
+      border: 1.5px dashed #94a3b8;
+      border-radius: 6px;
+      padding: 14px;
+      margin: 12px 0 16px 0;
+      font-size: 9pt;
+      line-height: 1.45;
+      color: #0f172a;
+      page-break-inside: avoid;
+    }
+    .copy-box-header {
+      font-weight: 700;
+      color: #2563eb;
+      text-transform: uppercase;
+      font-size: 8.5pt;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .checklist {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    .checklist li {
+      padding-left: 24px;
+      position: relative;
+      margin-bottom: 6px;
+    }
+    .checklist li:before {
+      content: '☐';
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 11pt;
+      color: #2563eb;
+    }
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-card">
+    <h1>RudraboysPG (iOS)</h1>
+    <div style="font-size: 13pt; font-weight: 600; color: #2563eb;">Apple App Store Rejection Resolution & Resubmission Master Guide</div>
+    <div class="meta-grid">
+      <div><strong>Target App:</strong> RudraboysPG (Apple ID: <code>6808289005</code>)</div>
+      <div><strong>Submission ID:</strong> <code>578a1932-0033-4078-8729-8e897652a43b</code></div>
+      <div><strong>Rejected Build:</strong> <span class="badge badge-warning">1.0.1 (1)</span></div>
+      <div><strong>Target Resubmission Build:</strong> <span class="badge badge-success">1.0.1 (2)</span></div>
+      <div><strong>Guideline Violated:</strong> 2.1.0 Performance: App Completeness</div>
+      <div><strong>Document Status:</strong> Ready for Developer Execution</div>
+    </div>
+  </div>
+
+  <h2>1. Executive Summary & Objective</h2>
+  <p>
+    Apple App Review has paused submission review under <strong>Guideline 2.1 - Information Needed</strong>. Because this developer account has a limited submission history, Apple requires supplemental verification on a physical device, functional demo access, and architectural clarifications regarding real-world hostel rent payments.
+  </p>
+  <p>
+    In addition, build <code>1.0.1 (1)</code> exhibited layout overflow bugs (<code>RIGHT OVERFLOWED BY X PIXELS</code>) on compact iPhone screens. All layout defects have now been completely stabilized in the code, and the project version has been bumped to <strong><code>1.0.1+2</code></strong>.
+  </p>
+  <div class="callout">
+    <div class="callout-title">Key Objective for Developer</div>
+    Compile and upload build <strong><code>1.0.1 (2)</code></strong> to App Store Connect, swap the build in the submission record, attach the physical screen recording, and submit the pre-written technical response to Apple App Review.
+  </div>
+
+  <h2>2. Code Status & Layout Bug Fixes Verified</h2>
+  <p>
+    The following table outlines the fixes implemented across all screens to ensure 100% compliance on all physical devices down to 320px width:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 32%;">Screen / Component</th>
+        <th>Root Cause in Build 1.0.1 (1)</th>
+        <th>Resolved in Build 1.0.1 (2)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>lib/features/login/ login_screen.dart</strong></td>
+        <td><code>Row</code> laid out password hint and Forgot Password button with unbounded width, overflowing by 17px.</td>
+        <td>Password hint wrapped in <code>Expanded</code> with single-line ellipsis; <code>TextButton</code> touch target compressed.</td>
+      </tr>
+      <tr>
+        <td><strong>lib/features/home/ home_dashboard_screen.dart</strong></td>
+        <td><code>_buildOverviewRow</code> placed long room/manager labels and values side-by-side without flex ratios (92px & 55px overflows).</td>
+        <td>Re-architected with <code>Flexible(flex: 2)</code> for labels and <code>Expanded(flex: 3)</code> for values; stay indicators split equally (33.3% each).</td>
+      </tr>
+      <tr>
+        <td><strong>lib/features/payments/ payments_screen.dart</strong></td>
+        <td>Total Dues header card text and status badge container lacked bounded flex constraints (29px overflow).</td>
+        <td>Configured with <code>flex: 3</code> on title and <code>flex: 2</code> on badge container; added ellipsis to UPI handle.</td>
+      </tr>
+      <tr>
+        <td><strong>lib/features/resident/ my_room_screen.dart</strong></td>
+        <td>Assigned spot badge and monthly rent row had no flex constraints.</td>
+        <td>Both elements enclosed in <code>Flexible</code> wrappers with single-line text truncation.</td>
+      </tr>
+      <tr>
+        <td><strong>lib/core/widgets/ section_header.dart</strong></td>
+        <td>Shared header title and action text were in an unconstrained row.</td>
+        <td>Wrapped title in <code>Expanded</code> with text ellipsis, protecting all screen section titles app-wide.</td>
+      </tr>
+      <tr>
+        <td><strong>lib/features/notifications/ notifications_screen.dart</strong></td>
+        <td>Notice category badge and timestamp date row were unbounded.</td>
+        <td>Both badge container and date wrapped in <code>Flexible</code> with text ellipsis.</td>
+      </tr>
+      <tr>
+        <td><strong>lib/features/profile/ profile_screen.dart</strong> & <strong>settings_screen.dart</strong></td>
+        <td>Sign out button row and account deletion dialog title lacked compact screen protection.</td>
+        <td>Text wrapped in <code>Flexible</code> / <code>Expanded</code> with text truncation.</td>
+      </tr>
+      <tr>
+        <td><strong>pubspec.yaml</strong></td>
+        <td>Version was <code>1.0.1+1</code>.</td>
+        <td>Version updated to <code>1.0.1+2</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="callout-title">Static Analysis Verification</div>
+    Ran <code>dart analyze lib</code> &rarr; <strong>Output: No issues found! (0 errors, 0 warnings, 0 lints)</strong>.
+  </div>
+
+  <div class="page-break"></div>
+
+  <h2>3. Developer Build & Upload Instructions</h2>
+  <p>Follow these steps to archive and upload build <code>1.0.1 (2)</code> to App Store Connect:</p>
+
+  <h3>Step 3.1: Clean and Fetch Dependencies</h3>
+  <pre>cd student
+flutter clean
+flutter pub get</pre>
+
+  <h3>Step 3.2: Verify Version in <code>pubspec.yaml</code></h3>
+  <p>Confirm that line 19 of <code>student/pubspec.yaml</code> contains:</p>
+  <pre>version: 1.0.1+2</pre>
+
+  <h3>Step 3.3: Build iOS Release Archive</h3>
+  <p><strong>Option A (Command Line):</strong></p>
+  <pre>flutter build ipa --release</pre>
+  <p>The archive will be output to: <code>build/ios/ipa/rudraboyspg.ipa</code></p>
+
+  <p><strong>Option B (Xcode GUI):</strong></p>
+  <ol>
+    <li>Open <code>student/ios/Runner.xcworkspace</code> in Xcode.</li>
+    <li>Select <strong>Any iOS Device (arm64)</strong> as the build target.</li>
+    <li>Go to <strong>Product &rarr; Archive</strong>.</li>
+    <li>When the Organizer appears, click <strong>Distribute App</strong> &rarr; <strong>App Store Connect</strong> &rarr; <strong>Upload</strong>.</li>
+  </ol>
+
+  <h3>Step 3.4: Processing in TestFlight</h3>
+  <ol>
+    <li>Log into <a href="https://appstoreconnect.apple.com/apps/6808289005/testflight">App Store Connect &rarr; TestFlight</a>.</li>
+    <li>Wait 5–10 minutes until build <strong><code>1.0.1 (2)</code></strong> finishes processing.</li>
+    <li>If prompted for <em>Missing Export Compliance</em>, select <strong>No</strong> (Standard HTTPS encryption) and save.</li>
+  </ol>
+
+  <h2>4. Physical Device Screen Recording Specifications</h2>
+  <p>Apple requires a demonstration video recorded on an actual physical iPhone running current iOS (do not use an emulator or simulator):</p>
+  <ul>
+    <li><strong>Format:</strong> <code>.mp4</code> or <code>.mov</code> (Portrait orientation).</li>
+    <li><strong>Duration:</strong> 60 to 90 seconds.</li>
+    <li><strong>Required Sequential Scenes:</strong>
+      <ol>
+        <li><strong>Cold Launch & Login:</strong> Launch app from home screen. On the login screen, enter demo credentials: Mobile: <code>6354351080</code>, Password: <code>password123</code>, and tap <em>Sign In to Portal</em>.</li>
+        <li><strong>Dashboard & Stay Details:</strong> Show the hero welcome card (Room 201), Resident Services, and My Stay Overview.</li>
+        <li><strong>Payments & Dues Ledger:</strong> Tap the <em>Payments</em> tab. Show the Total Outstanding Dues card, dues breakdown, and UPI handle.</li>
+        <li><strong>Resident Services:</strong> Open <em>My Room</em> and <em>Support</em> (ticket submission desk).</li>
+        <li><strong>Account Deletion Flow (Mandatory Guideline 5.1.1(v)):</strong> Tap <em>Profile</em> &rarr; <em>App Settings & Policy</em> &rarr; tap <strong>Delete Resident Account</strong> &rarr; show the confirmation dialog prompt &rarr; tap <em>Cancel</em> &rarr; tap <em>Sign Out</em>.</li>
+      </ol>
+    </li>
+  </ul>
+
+  <div class="page-break"></div>
+
+  <h2>5. App Store Connect Configuration Steps</h2>
+
+  <h3>Step 5.1: Swap the Submission Build</h3>
+  <ol>
+    <li>Go to <a href="https://appstoreconnect.apple.com/apps/6808289005/distribution">App Store Connect &rarr; Distribution &rarr; iOS App 1.0</a>.</li>
+    <li>Scroll down to the <strong>Build</strong> section.</li>
+    <li>Hover over the old rejected build <strong><code>1.0.1 (1)</code></strong> and click the red delete icon (<strong>—</strong>).</li>
+    <li>Click the <strong>+ (Add Build)</strong> button.</li>
+    <li>Select new build <strong><code>1.0.1 (2)</code></strong> and click <strong>Done</strong>.</li>
+    <li>Click <strong>Save</strong> in the top right.</li>
+  </ol>
+
+  <h3>Step 5.2: Update App Review Information</h3>
+  <ol>
+    <li>On the same page, scroll to <strong>App Review Information</strong>.</li>
+    <li>Ensure <strong>Sign-in required</strong> is checked:
+      <ul>
+        <li><strong>User name:</strong> <code>6354351080</code></li>
+        <li><strong>Password:</strong> <code>password123</code></li>
+      </ul>
+    </li>
+    <li>In the <strong>Notes</strong> field, paste the text from Section 6 below.</li>
+    <li>Click <strong>Save</strong>.</li>
+  </ol>
+
+  <h2>6. Official Copy-Paste Reply for Apple App Review</h2>
+  <p>In App Store Connect, click <strong>Reply to App Review</strong>, attach the screen recording, and paste the exact message below:</p>
+
+  <div class="copy-box">
+    <div class="copy-box-header">Copy & Paste This Entire Box to Apple App Review</div>
+Dear Apple App Review Team,<br><br>
+
+Thank you for your guidance. We have updated our submission to build 1.0.1 (2) with complete layout stabilization and provided full reviewer information below to fulfill all requirements under Guideline 2.1.<br><br>
+
+======================================================================<br>
+1. PHYSICAL DEVICE SCREEN RECORDING<br>
+======================================================================<br>
+We have attached a physical iPhone screen recording demonstrating the core resident lifecycle:<br>
+- Cold Launch & Welcome / Login Gate<br>
+- Sign-In with Demo Resident Credentials<br>
+- Home Dashboard, Room Details, and Stay Overview<br>
+- Payments & Dues Ledger (Physical hostel room rent and deposit records)<br>
+- Support Desk & Maintenance Ticket submission<br>
+- Profile Settings and the Account Deletion Flow (Settings > "Delete Resident Account")<br><br>
+
+The video is attached directly to this reply.<br><br>
+
+======================================================================<br>
+2. APP PURPOSE & TARGET AUDIENCE<br>
+======================================================================<br>
+- Purpose: RudraboysPG is a resident companion application created exclusively for students and working professionals residing in physical hostel properties operated by Rudra Group PG (located in Ahmedabad/Gujarat, India).<br>
+- Problem Solved: It replaces manual paper record-keeping, offline payment receipts, physical meter reading slips, and physical complaint books.<br>
+- Value Provided: Residents can monitor their assigned room and bed allocation, review their physical room rent ledger, track electricity sub-meter readings, submit maintenance requests to their branch manager, and receive branch notices in real-time.<br><br>
+
+======================================================================<br>
+3. STEP-BY-STEP REVIEWER INSTRUCTIONS & DEMO CREDENTIALS<br>
+======================================================================<br>
+Please use the following active pre-configured demo credentials:<br>
+- Mobile Number: 6354351080<br>
+- Password: password123<br><br>
+
+Reviewer Navigation Flow:<br>
+1. Open the application. If the Branch QR Scanner gate appears on first launch, tap "Login" or "Already an Approved Resident? Log In" at the top/bottom.<br>
+2. On the Resident Portal Login screen, enter Mobile Number: 6354351080 and Password: password123, then tap "Sign In to Portal".<br>
+3. The resident dashboard will load displaying an active stay (Room 201, 2 Sharing AC), payment status, and quick services.<br>
+4. Tap the "Payments" tab in the bottom navigation bar to review the rent breakdown and ledger.<br>
+5. Tap "Profile" > "App Settings & Policy" > "Delete Resident Account" to verify the account deletion confirmation flow as required by Guideline 5.1.1(v).<br><br>
+
+Note regarding Branch QR Registration:<br>
+New resident registration is initiated by scanning a physical QR code posted at the PG reception desk. If you wish to test the live scanner, a sample Branch QR Code image is also attached to this submission.<br><br>
+
+======================================================================<br>
+4. EXTERNAL SERVICES & PLATFORMS<br>
+======================================================================<br>
+The app uses the following external services:<br>
+- Backend REST API: Secure HTTPS endpoints (Laravel / PostgreSQL) for resident records, room allocation, and billing ledgers.<br>
+- Camera / Photo Gallery (Permission-Based): Used solely for residents to upload KYC documents (Aadhaar/PAN), capture physical electricity sub-meter photos, and submit payment receipt screenshots.<br>
+- The app contains no third-party advertisements, tracking SDKs, social login providers, or AI services.<br><br>
+
+======================================================================<br>
+5. REGIONAL DIFFERENCES<br>
+======================================================================<br>
+The application functions uniformly across all geographic regions worldwide without restrictions. While the physical hostel buildings are situated in Gujarat, India (using INR ₹ currency formatting), all app features and APIs are globally accessible.<br><br>
+
+======================================================================<br>
+6. REGULATION & PHYSICAL GOODS/SERVICES EXEMPTION<br>
+======================================================================<br>
+- Real-World Physical Accommodation: The payments and dues displayed in the app represent real-world physical hostel accommodation, security deposits, and utility consumption for brick-and-mortar housing. Under Apple Review Guideline 3.1.5(a) and 3.1.3(e), physical goods and services are paid through external banking/UPI mechanisms and do not use Apple In-App Purchases (IAP).<br>
+- Proprietary Rights: "Rudra Group PG" and all associated branding belong directly to our organization. No third-party intellectual property is used.<br><br>
+
+We have attached the demonstration video and replaced the submission build with build 1.0.1 (2). We appreciate your assistance in making RudraboysPG available on the App Store.<br><br>
+
+Sincerely,<br>
+Emperor Solutions / RudraboysPG Team
+  </div>
+
+  <h2>7. Pre-Submission Quality Checklist</h2>
+  <ul class="checklist">
+    <li>New archive compiled with <code>version: 1.0.1+2</code> and successfully uploaded to App Store Connect.</li>
+    <li>Build <code>1.0.1 (1)</code> removed and build <code>1.0.1 (2)</code> selected in the version submission.</li>
+    <li>Physical device screen recording attached in the <strong>Reply to App Review</strong> section.</li>
+    <li>(Optional) Sample Branch QR image attached for camera scanner review.</li>
+    <li>Full reply text from Section 6 sent in the <strong>Reply to App Review</strong> message box.</li>
+    <li>Same text pasted into <strong>App Review Information &rarr; Notes</strong> field.</li>
+    <li>Demo credentials (<code>6354351080</code> / <code>password123</code>) verified in <strong>App Review Information</strong>.</li>
+    <li>Clicked blue <strong>Resubmit to App Review</strong> button on the main submission page.</li>
+  </ul>
+
+</body>
+</html>
