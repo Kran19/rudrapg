@@ -22,11 +22,16 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: AppTypography.titleLarge,
+          Expanded(
+            child: Text(
+              title,
+              style: AppTypography.titleLarge,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          if (actionText != null)
+          if (actionText != null) ...[
+            const SizedBox(width: AppSpacing.sm),
             GestureDetector(
               onTap: onActionTap,
               child: Text(
@@ -37,6 +42,7 @@ class SectionHeader extends StatelessWidget {
                 ),
               ),
             ),
+          ],
         ],
       ),
     );

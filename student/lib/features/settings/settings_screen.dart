@@ -105,9 +105,13 @@ class SettingsScreen extends ConsumerWidget {
                   children: [
                     const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
                     const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'Sign Out',
-                      style: AppTypography.titleSmall.copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
+                    Flexible(
+                      child: Text(
+                        'Sign Out',
+                        style: AppTypography.titleSmall.copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -145,7 +149,9 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Icon(Icons.warning_amber_rounded, color: AppColors.error),
             SizedBox(width: 8),
-            Text('Delete Account?'),
+            Expanded(
+              child: Text('Delete Account?'),
+            ),
           ],
         ),
         content: const Text(

@@ -147,9 +147,13 @@ class HomeDashboardScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
-                            Text(
-                              resident.isRoomAssigned ? '₹${resident.monthlyRent.toInt()}/mo' : 'Pending Allocation',
-                              style: AppTypography.titleMedium.copyWith(color: Colors.white),
+                            Flexible(
+                              child: Text(
+                                resident.isRoomAssigned ? '₹${resident.monthlyRent.toInt()}/mo' : 'Pending Allocation',
+                                style: AppTypography.titleMedium.copyWith(color: Colors.white),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -157,11 +161,15 @@ class HomeDashboardScreen extends ConsumerWidget {
                         Text(
                           'Welcome, ${resident.fullName} 👋',
                           style: AppTypography.displayMedium.copyWith(color: Colors.white),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Ref: ${resident.id} • Joining Date: ${resident.joiningDate}',
                           style: AppTypography.bodyMedium.copyWith(color: Colors.white70),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         const Divider(color: Colors.white24),
@@ -536,16 +544,25 @@ class HomeDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildStatusColumn({required String label, required String value, required Color color}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTypography.caption.copyWith(color: Colors.white70)),
-        const SizedBox(height: 2),
-        Text(
-          value.toUpperCase(),
-          style: AppTypography.bodySmall.copyWith(color: color, fontWeight: FontWeight.bold),
-        ),
-      ],
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(color: Colors.white70),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value.toUpperCase(),
+            style: AppTypography.bodySmall.copyWith(color: color, fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -589,9 +606,18 @@ class HomeDashboardScreen extends ConsumerWidget {
       children: [
         Icon(icon, size: 20, color: AppColors.secondary),
         const SizedBox(width: AppSpacing.md),
-        Text(label, style: AppTypography.bodyMedium),
-        const SizedBox(width: AppSpacing.md),
+        Flexible(
+          flex: 2,
+          child: Text(
+            label,
+            style: AppTypography.bodyMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
+          flex: 3,
           child: Text(
             value,
             style: AppTypography.titleSmall,

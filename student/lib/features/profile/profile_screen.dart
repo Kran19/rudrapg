@@ -59,11 +59,18 @@ class ProfileScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(resident.fullName.isNotEmpty ? resident.fullName : 'Resident', style: AppTypography.titleLarge),
+                            Text(
+                              resident.fullName.isNotEmpty ? resident.fullName : 'Resident',
+                              style: AppTypography.titleLarge,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             const SizedBox(height: 2),
                             Text(
                               resident.branchName,
                               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 6),
                             Container(
@@ -185,9 +192,13 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
                     const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'Sign Out of Resident Account',
-                      style: AppTypography.titleSmall.copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
+                    Flexible(
+                      child: Text(
+                        'Sign Out of Resident Account',
+                        style: AppTypography.titleSmall.copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

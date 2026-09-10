@@ -175,9 +175,18 @@ class RegistrationSubmittedScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTypography.bodySmall),
+        Flexible(
+          flex: 2,
+          child: Text(
+            label,
+            style: AppTypography.bodySmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         const SizedBox(width: 8),
         Expanded(
+          flex: 3,
           child: Text(
             value,
             textAlign: TextAlign.end,
@@ -185,6 +194,8 @@ class RegistrationSubmittedScreen extends StatelessWidget {
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
               color: isBold ? AppColors.secondary : AppColors.textPrimary,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],

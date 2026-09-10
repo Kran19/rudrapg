@@ -41,20 +41,30 @@ class MyRoomScreen extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  'ASSIGNED SPOT',
-                                  style: AppTypography.badge.copyWith(color: AppColors.accent),
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    'ASSIGNED SPOT',
+                                    style: AppTypography.badge.copyWith(color: AppColors.accent),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
-                              Text(
-                                '₹${resident.monthlyRent.toInt()}/mo',
-                                style: AppTypography.titleMedium.copyWith(color: Colors.white),
+                              const SizedBox(width: AppSpacing.sm),
+                              Flexible(
+                                child: Text(
+                                  '₹${resident.monthlyRent.toInt()}/mo',
+                                  style: AppTypography.titleMedium.copyWith(color: Colors.white),
+                                  textAlign: TextAlign.end,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),

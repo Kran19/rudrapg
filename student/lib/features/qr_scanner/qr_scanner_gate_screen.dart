@@ -94,13 +94,15 @@ class _QRScannerGateScreenState extends ConsumerState<QRScannerGateScreen>
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.error_outline_rounded, color: AppColors.error, size: 24),
             SizedBox(width: 8),
-            Text(
-              'Invalid Branch QR',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+            Expanded(
+              child: Text(
+                'Invalid Branch QR',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

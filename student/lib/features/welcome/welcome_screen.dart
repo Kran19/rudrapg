@@ -127,9 +127,13 @@ class WelcomeScreen extends StatelessWidget {
                                   );
                                 },
                                 icon: const Icon(Icons.login_rounded, size: 18, color: AppColors.secondary),
-                                label: Text(
-                                  'Already an Approved Resident? Log In',
-                                  style: AppTypography.titleSmall.copyWith(color: AppColors.secondary),
+                                label: Flexible(
+                                  child: Text(
+                                    'Already an Approved Resident? Log In',
+                                    style: AppTypography.titleSmall.copyWith(color: AppColors.secondary),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
                             ),

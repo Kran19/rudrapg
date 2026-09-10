@@ -151,19 +151,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: AppSpacing.sm),
 
                   // Responsive Credential Hint & Action
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
-                    runSpacing: 4,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Default Password: password123',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textSecondary,
-                          fontStyle: FontStyle.italic,
+                      Expanded(
+                        child: Text(
+                          'Default Password: password123',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: AppSpacing.sm),
                       TextButton(
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
@@ -179,7 +181,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         },
                         child: Text(
                           'Forgot Password?',
-                          style: AppTypography.caption.copyWith(color: AppColors.secondary),
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.secondary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],

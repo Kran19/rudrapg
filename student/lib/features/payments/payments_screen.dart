@@ -177,6 +177,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
+                                      flex: 3,
                                       child: Text(
                                         'TOTAL OUTSTANDING DUES',
                                         style: AppTypography.caption.copyWith(color: Colors.white70, letterSpacing: 1.0),
@@ -186,6 +187,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                                     ),
                                     const SizedBox(width: AppSpacing.sm),
                                     Flexible(
+                                      flex: 2,
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
@@ -302,9 +304,9 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Branch UPI Handle', style: AppTypography.titleSmall),
+                              Text('Branch UPI Handle', style: AppTypography.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                               const SizedBox(height: 2),
-                              Text('rudra.naroda@upi • GPay / PhonePe', style: AppTypography.bodySmall),
+                              Text('rudra.naroda@upi • GPay / PhonePe', style: AppTypography.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
