@@ -20,6 +20,7 @@ Route::get('/download-app', [WebAuthController::class, 'downloadApp'])->name('do
 // Public Legal Routes (App Store & Google Play Store Compliance)
 Route::view('/privacy-policy', 'privacy_policy')->name('privacy_policy');
 Route::view('/terms', 'terms')->name('terms');
+Route::view('/delete-account', 'delete_account')->name('delete_account');
 
 // Super Admin Protected Routes
 Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('super_admin.')->group(function () {

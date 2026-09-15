@@ -1,4 +1,4 @@
-package com.example.rudraboyspg
+package com.rudrapg.app
 
 import io.flutter.embedding.android.FlutterActivity
 

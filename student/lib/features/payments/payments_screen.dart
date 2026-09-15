@@ -3,7 +3,6 @@ import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
@@ -11,7 +10,6 @@ import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_card.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../home/data/student_repository.dart';
-import 'package:flutter/foundation.dart';
 
 class PaymentsScreen extends ConsumerStatefulWidget {
   const PaymentsScreen({super.key});
@@ -32,18 +30,6 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   }
 
   Future<void> _pickImage(StateSetter setModalState) async {
-    if (!kIsWeb) {
-      final status = await Permission.photos.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Permission required to access gallery')),
-          );
-        }
-        return;
-      }
-    }
-    
     final picker = ImagePicker();
     final image = await picker.pickImage(
       source: ImageSource.gallery,

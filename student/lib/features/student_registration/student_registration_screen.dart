@@ -130,16 +130,12 @@ class _StudentRegistrationScreenState
     void Function(XFile?) onPicked,
   ) async {
     if (!kIsWeb) {
-      final permission = source == ImageSource.camera
-          ? Permission.camera
-          : Permission.photos;
-      final status = await permission.request();
-
-      if (!status.isGranted) {
-        _showError(
-          'Permission required to access ${source == ImageSource.camera ? "camera" : "gallery"}',
-        );
-        return;
+      if (source == ImageSource.camera) {
+        final status = await Permission.camera.request();
+        if (!status.isGranted) {
+          _showError('Permission required to access camera');
+          return;
+        }
       }
     }
 
