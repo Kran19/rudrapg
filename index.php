@@ -6,7 +6,8 @@
  */
 
 // Strip the subfolder from the URI so Laravel's router matches '/'
-$uri = $_SERVER['REQUEST_URI'];
+$uri = $_SERVER['REQUEST_URI'] ?? '/';
+$_SERVER['HTTP_X_ORIGINAL_URI'] = $uri;
 if (strpos($uri, '/rudrapgwebsite') === 0) {
     $_SERVER['REQUEST_URI'] = substr($uri, strlen('/rudrapgwebsite'));
     if ($_SERVER['REQUEST_URI'] === '') {

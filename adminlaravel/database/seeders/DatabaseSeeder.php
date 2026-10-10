@@ -60,6 +60,18 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // 3b. Demo Resident (Default Flutter UI Credentials: 6354351080 / password123)
+        $demoUser = User::firstOrCreate(
+            ['phone' => '+91 63543 51080'],
+            [
+                'name' => 'Resident Demo',
+                'email' => 'demo.student@rudrapg.com',
+                'password' => Hash::make('password123'),
+                'role' => 'STUDENT',
+                'status' => 'ACTIVE',
+            ]
+        );
+
         // 4. Naroda Branch Master
         $branch = Branch::firstOrCreate(
             ['code' => 'PG-NRD-01'],
@@ -153,6 +165,30 @@ class DatabaseSeeder extends Seeder
                 'parent_phone' => '+91 98250 11223',
                 'emergency_contact' => '+91 98250 11223',
                 'current_address' => '102, Shanti Nagar, SG Highway, Ahmedabad',
+                'joining_date' => '2026-08-01',
+                'kyc_status' => 'VERIFIED',
+                'rent_status' => 'PAID',
+                'deposit_status' => 'VERIFIED',
+                'status' => 'APPROVED',
+            ]
+        );
+
+        $demoStudent = Student::firstOrCreate(
+            ['app_reference' => 'REG-2026-6354'],
+            [
+                'user_id' => $demoUser->id,
+                'branch_id' => $branch->id,
+                'room_id' => $firstRoom ? $firstRoom->id : null,
+                'bed_id' => $firstBed ? $firstBed->id : null,
+                'full_name' => 'Resident Demo',
+                'phone' => '+91 63543 51080',
+                'email' => 'demo.student@rudrapg.com',
+                'aadhaar_number' => 'XXXX-XXXX-6354',
+                'pan_number' => 'DEMOP1234F',
+                'parent_name' => 'Guardian Name',
+                'parent_phone' => '+91 98000 00000',
+                'emergency_contact' => '+91 98000 00000',
+                'current_address' => 'Ahmedabad, Gujarat',
                 'joining_date' => '2026-08-01',
                 'kyc_status' => 'VERIFIED',
                 'rent_status' => 'PAID',

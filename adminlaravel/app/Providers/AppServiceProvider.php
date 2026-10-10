@@ -19,9 +19,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (!empty(config('app.url')) && config('app.url') !== 'http://localhost' && config('app.url') !== 'http://127.0.0.1:8000') {
-            \Illuminate\Support\Facades\URL::forceRootUrl(config('app.url'));
-            if (str_starts_with(config('app.url'), 'https://')) {
+        $appUrl = config('app.url');
+        $originalUri = $_SERVER['HTTP_X_ORIGINAL_URI'] ?? $_SERVER['REQUEST_URI'] ?? '';
+        $isSubfolder = str_contains($originalUri, '/rudrapgwebsite') || str_contains($appUrl, '/rudrapgwebsite');
+
+        if ($isSubfolder && isset($_SERVER['HTTP_HOST'])) {
+            $scheme = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || str_starts_with($appUrl, 'https://')) ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'];
+            \Illuminate\Support\Facades\URL::forceRootUrl("{$scheme}://{$host}/rudrapgwebsite");
+            if ($scheme === 'https') {
+                \Illuminate\Support\Facades\URL::forceScheme('https');
+            }
+        } elseif (!empty($appUrl) && $appUrl !== 'http://localhost' && $appUrl !== 'http://127.0.0.1:8000') {
+            \Illuminate\Support\Facades\URL::forceRootUrl($appUrl);
+            if (str_starts_with($appUrl, 'https://')) {
                 \Illuminate\Support\Facades\URL::forceScheme('https');
             }
         }

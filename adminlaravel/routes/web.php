@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Route;
 
 // Default Root Redirect
 Route::get('/', [WebAuthController::class, 'showLoginForm'])->name('root');
+Route::redirect('/admin', '/login');
+Route::redirect('/admin/login', '/login');
+Route::redirect('/adminlaravel', '/login');
+Route::redirect('/super-admin', '/login');
+Route::redirect('/sub-admin', '/login');
 
 // Authentication Web Routes
 Route::get('/login', [WebAuthController::class, 'showLoginForm'])->name('login');

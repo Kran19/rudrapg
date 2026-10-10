@@ -53,6 +53,9 @@ Route::prefix('v1')->group(function () {
             
             \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
             $output[] = 'Artisan migrate --force: ' . trim(\Illuminate\Support\Facades\Artisan::output());
+
+            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'DatabaseSeeder', '--force' => true]);
+            $output[] = 'Artisan db:seed: ' . trim(\Illuminate\Support\Facades\Artisan::output());
         } catch (\Exception $e) {
             $output[] = 'Artisan error: ' . $e->getMessage();
         }

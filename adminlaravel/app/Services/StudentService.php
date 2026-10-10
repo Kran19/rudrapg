@@ -27,7 +27,7 @@ class StudentService
                 'name' => $data['full_name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
-                'password' => Hash::make($data['password'] ?? 'secret123'),
+                'password' => Hash::make($data['password'] ?? 'password123'),
                 'role' => 'STUDENT',
                 'status' => 'ACTIVE',
             ]);
