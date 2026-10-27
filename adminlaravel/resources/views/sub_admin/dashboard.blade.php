@@ -140,13 +140,17 @@
         <div class="relative h-44 flex items-center justify-center">
             <canvas id="branchOccupancyDoughnut"></canvas>
         </div>
-        <div class="flex justify-center gap-4 mt-4 text-xs">
-            <span class="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold">
-                <span class="w-3 h-3 bg-emerald-500 rounded-full inline-block"></span> Occupied (<span id="db-breakdown-occupied">{{ $branchInfo['occupied_beds'] }}</span>)
-            </span>
-            <span class="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold">
-                <span id="available-indicator-dot" class="w-3 h-3 bg-slate-200 dark:bg-slate-700 rounded-full inline-block"></span> Available (<span id="db-breakdown-available">{{ $branchInfo['available_beds'] }}</span>)
-            </span>
+        <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs">
+            <div class="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl font-medium text-emerald-800 dark:text-emerald-300 whitespace-nowrap">
+                <span class="w-2 h-2 bg-emerald-500 rounded-full shrink-0"></span>
+                <span>Occupied:</span>
+                <strong id="db-breakdown-occupied" class="font-bold text-emerald-900 dark:text-emerald-100">{{ $branchInfo['occupied_beds'] }}</strong>
+            </div>
+            <div class="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-700/60 rounded-xl font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                <span id="available-indicator-dot" class="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full shrink-0"></span>
+                <span>Available:</span>
+                <strong id="db-breakdown-available" class="font-bold text-slate-900 dark:text-slate-100">{{ $branchInfo['available_beds'] }}</strong>
+            </div>
         </div>
     </div>
 
