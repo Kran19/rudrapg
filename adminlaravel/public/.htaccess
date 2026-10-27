@@ -4,7 +4,7 @@
     </IfModule>
 
     RewriteEngine On
-    RewriteBase /rudrapgwebsite/adminlaravel/public/
+    RewriteBase /
 
     # Handle Android APK MIME Type
     AddType application/vnd.android.package-archive .apk
