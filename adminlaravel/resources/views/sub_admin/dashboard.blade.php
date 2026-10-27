@@ -140,16 +140,20 @@
         <div class="relative h-44 flex items-center justify-center">
             <canvas id="branchOccupancyDoughnut"></canvas>
         </div>
-        <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs">
-            <div class="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 rounded-xl font-medium text-emerald-800 dark:text-emerald-300 whitespace-nowrap">
-                <span class="w-2 h-2 bg-emerald-500 rounded-full shrink-0"></span>
-                <span>Occupied:</span>
-                <strong id="db-breakdown-occupied" class="font-bold text-emerald-900 dark:text-emerald-100">{{ $branchInfo['occupied_beds'] }}</strong>
+        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between py-1.5 px-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/40 rounded-xl">
+                <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-medium">
+                    <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full shrink-0"></span>
+                    <span>Occupied Beds</span>
+                </div>
+                <strong id="db-breakdown-occupied" class="font-bold text-emerald-900 dark:text-emerald-100 text-sm">{{ $branchInfo['occupied_beds'] }}</strong>
             </div>
-            <div class="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-700/60 rounded-xl font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                <span id="available-indicator-dot" class="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full shrink-0"></span>
-                <span>Available:</span>
-                <strong id="db-breakdown-available" class="font-bold text-slate-900 dark:text-slate-100">{{ $branchInfo['available_beds'] }}</strong>
+            <div class="flex items-center justify-between py-1.5 px-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200/50 dark:border-slate-700/50 rounded-xl">
+                <div class="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
+                    <span id="available-indicator-dot" class="w-2.5 h-2.5 bg-slate-400 dark:bg-slate-500 rounded-full shrink-0"></span>
+                    <span>Available Beds</span>
+                </div>
+                <strong id="db-breakdown-available" class="font-bold text-slate-900 dark:text-slate-100 text-sm">{{ $branchInfo['available_beds'] }}</strong>
             </div>
         </div>
     </div>
