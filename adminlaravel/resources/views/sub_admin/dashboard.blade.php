@@ -91,13 +91,13 @@
             <div class="relative pl-6 border-l-2 border-slate-200 dark:border-slate-700 space-y-6">
                 <!-- Step 1 -->
                 <div class="relative">
-                    <span class="absolute -left-[31px] top-0.5 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold ring-4 ring-white dark:ring-slate-800">1</span>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
+                    <span class="absolute -left-[31px] top-1 bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold ring-4 ring-white dark:ring-slate-800">1</span>
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1 min-w-0 pr-2">
                             <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">KYC & Document Review</h4>
                             <p class="text-[11px] text-slate-500 dark:text-slate-400">Verify candidate identification proofs (Aadhaar & PAN cards).</p>
                         </div>
-                        <a href="{{ route('sub_admin.verifications') }}" class="sm:self-center bg-slate-100 hover:bg-blue-600 hover:text-white dark:bg-slate-700 dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                        <a href="{{ route('sub_admin.verifications') }}" class="w-32 shrink-0 bg-blue-50 hover:bg-blue-600 hover:text-white dark:bg-blue-950/60 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-300 dark:hover:text-white border border-blue-200/60 dark:border-blue-800/60 text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap">
                             <i class="fa-solid fa-clipboard-check"></i> Audit KYC
                         </a>
                     </div>
@@ -105,13 +105,13 @@
 
                 <!-- Step 2 -->
                 <div class="relative">
-                    <span class="absolute -left-[31px] top-0.5 bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold ring-4 ring-white dark:ring-slate-800">2</span>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
+                    <span class="absolute -left-[31px] top-1 bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold ring-4 ring-white dark:ring-slate-800">2</span>
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1 min-w-0 pr-2">
                             <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">Bed & Room Allocation</h4>
                             <p class="text-[11px] text-slate-500 dark:text-slate-400">Assign a vacant bed based on their package selection.</p>
                         </div>
-                        <a href="{{ route('sub_admin.bed_map') }}" class="sm:self-center bg-slate-100 hover:bg-amber-600 hover:text-white dark:bg-slate-700 dark:hover:bg-amber-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                        <a href="{{ route('sub_admin.bed_map') }}" class="w-32 shrink-0 bg-amber-50 hover:bg-amber-600 hover:text-white dark:bg-amber-950/60 dark:hover:bg-amber-600 text-amber-700 dark:text-amber-300 dark:hover:text-white border border-amber-200/60 dark:border-amber-800/60 text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap">
                             <i class="fa-solid fa-bed"></i> Assign Bed
                         </a>
                     </div>
@@ -119,13 +119,13 @@
 
                 <!-- Step 3 -->
                 <div class="relative">
-                    <span class="absolute -left-[31px] top-0.5 bg-emerald-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold ring-4 ring-white dark:ring-slate-800">3</span>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
+                    <span class="absolute -left-[31px] top-1 bg-emerald-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold ring-4 ring-white dark:ring-slate-800">3</span>
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1 min-w-0 pr-2">
                             <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">Rent Payment Validation</h4>
                             <p class="text-[11px] text-slate-500 dark:text-slate-400">Verify rent/deposit payment proof to mark the resident as Active.</p>
                         </div>
-                        <a href="{{ route('sub_admin.rent_ledger') }}" class="sm:self-center bg-slate-100 hover:bg-emerald-600 hover:text-white dark:bg-slate-700 dark:hover:bg-emerald-600 text-slate-700 dark:text-slate-200 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                        <a href="{{ route('sub_admin.rent_ledger') }}" class="w-32 shrink-0 bg-emerald-50 hover:bg-emerald-600 hover:text-white dark:bg-emerald-950/60 dark:hover:bg-emerald-600 text-emerald-700 dark:text-emerald-300 dark:hover:text-white border border-emerald-200/60 dark:border-emerald-800/60 text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap">
                             <i class="fa-solid fa-file-invoice-dollar"></i> Verify Dues
                         </a>
                     </div>
