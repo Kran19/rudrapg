@@ -1,0 +1,47 @@
+services:
+  app:
+    build:
+      context: ./adminlaravel
+      dockerfile: Dockerfile
+    container_name: rudrapg_app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:80"
+    environment:
+      APP_NAME: "Rudra PG"
+      APP_ENV: "production"
+      APP_DEBUG: "false"
+      APP_URL: "https://rudrapg.emperorsmartsolutions.com"
+      DB_CONNECTION: "mysql"
+      DB_HOST: "db"
+      DB_PORT: "3306"
+      DB_DATABASE: "rudrapg_db"
+      DB_USERNAME: "rudrapg_user"
+      DB_PASSWORD: "RudraSecurePassword2026!"
+    volumes:
+      - ./adminlaravel/storage:/var/www/html/storage
+      - ./adminlaravel/.env:/var/www/html/.env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    container_name: rudrapg_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "RudraRootPassword2026!"
+      MYSQL_DATABASE: "rudrapg_db"
+      MYSQL_USER: "rudrapg_user"
+      MYSQL_PASSWORD: "RudraSecurePassword2026!"
+    volumes:
+      - rudrapg_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pRudraRootPassword2026!"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  rudrapg_mysql_data:
+    driver: local
