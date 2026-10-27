@@ -179,8 +179,9 @@
                             <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-1 text-center relative group cursor-pointer overflow-hidden"
                                  @click="activeStudent.profile_photo && $dispatch('open-lightbox', { src: activeStudent.profile_photo, title: 'Profile Photo - ' + activeStudent.student_name })">
                                 <template x-if="activeStudent.profile_photo">
-                                    <div class="relative">
-                                        <img :src="activeStudent.profile_photo" class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
+                                        <img :src="activeStudent.profile_photo" 
+                                             @error="$event.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'"
+                                             class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
                                         <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
                                             <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom
                                         </div>
@@ -201,7 +202,9 @@
                                  @click="activeStudent.aadhaar_front && $dispatch('open-lightbox', { src: activeStudent.aadhaar_front, title: 'Aadhaar Front - ' + activeStudent.student_name })">
                                 <template x-if="activeStudent.aadhaar_front">
                                     <div class="relative">
-                                        <img :src="activeStudent.aadhaar_front" class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
+                                        <img :src="activeStudent.aadhaar_front" 
+                                             @error="$event.target.src = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80'"
+                                             class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
                                         <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
                                             <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom
                                         </div>
@@ -222,7 +225,9 @@
                                  @click="activeStudent.aadhaar_back && $dispatch('open-lightbox', { src: activeStudent.aadhaar_back, title: 'Aadhaar Back - ' + activeStudent.student_name })">
                                 <template x-if="activeStudent.aadhaar_back">
                                     <div class="relative">
-                                        <img :src="activeStudent.aadhaar_back" class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
+                                        <img :src="activeStudent.aadhaar_back" 
+                                             @error="$event.target.src = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80'"
+                                             class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
                                         <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
                                             <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom
                                         </div>
@@ -243,7 +248,9 @@
                                  @click="activeStudent.pan_card && $dispatch('open-lightbox', { src: activeStudent.pan_card, title: 'PAN Card - ' + activeStudent.student_name })">
                                 <template x-if="activeStudent.pan_card">
                                     <div class="relative">
-                                        <img :src="activeStudent.pan_card" class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
+                                        <img :src="activeStudent.pan_card" 
+                                             @error="$event.target.src = 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=400&q=80'"
+                                             class="w-full h-28 object-cover rounded-lg group-hover:scale-105 transition-all">
                                         <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
                                             <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom
                                         </div>
