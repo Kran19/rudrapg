@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" x-data="{ showPassword: false, activePreset: 'super' }">
+<html lang="en" x-data="{ showPassword: false }">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,22 +51,6 @@
             <p class="text-xs text-slate-400 mt-1">Enterprise Admin & Operational Portal</p>
         </div>
 
-        <!-- Role Quick Preset Selector Buttons -->
-        <div class="bg-slate-900/80 p-1.5 rounded-2xl border border-slate-700/60 flex items-center mb-6">
-            <button type="button" 
-                    @click="activePreset = 'super'; document.getElementById('email').value = 'admin@rudrapg.com'; document.getElementById('password').value = 'password'"
-                    :class="activePreset === 'super' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'"
-                    class="flex-1 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-user-shield text-blue-400"></i> Executive Admin
-            </button>
-            <button type="button" 
-                    @click="activePreset = 'sub'; document.getElementById('email').value = 'subadmin.naroda@rudrapg.com'; document.getElementById('password').value = 'password'"
-                    :class="activePreset === 'sub' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'"
-                    class="flex-1 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-shield-halved text-cyan-400"></i> Sub Admin
-            </button>
-        </div>
-
         <!-- Error Notification Alert -->
         @if ($errors->any())
             <div class="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs space-y-1">
@@ -103,7 +87,8 @@
                            value="{{ old('email') }}" 
                            required 
                            autofocus
-                           placeholder="admin@rudrapg.com"
+                           autocomplete="username"
+                           placeholder="Enter your email"
                            class="w-full pl-10 pr-4 py-3 bg-slate-900/60 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 </div>
             </div>
@@ -120,7 +105,8 @@
                            name="password" 
                            value="" 
                            required
-                           placeholder="••••••••"
+                           autocomplete="current-password"
+                           placeholder="Enter your password"
                            class="w-full pl-10 pr-11 py-3 bg-slate-900/60 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     <button type="button" 
                             @click="showPassword = !showPassword" 
@@ -130,13 +116,12 @@
                 </div>
             </div>
 
-            <!-- Remember Me & Forgot Password -->
+            <!-- Remember Me -->
             <div class="flex items-center justify-between text-xs">
                 <label class="flex items-center gap-2 text-slate-400 cursor-pointer">
                     <input type="checkbox" name="remember" class="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500">
                     <span>Remember session</span>
                 </label>
-                <span class="text-slate-500 italic">Default password: password</span>
             </div>
 
             <!-- Submit Button -->
