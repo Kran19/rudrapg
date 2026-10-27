@@ -6,7 +6,7 @@ services:
     container_name: rudrapg_app
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8088:80"
+      - "127.0.0.1:8088:8080"
     environment:
       APP_NAME: "Rudra PG"
       APP_ENV: "production"
