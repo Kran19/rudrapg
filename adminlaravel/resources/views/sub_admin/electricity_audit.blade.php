@@ -104,7 +104,7 @@
                     <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center relative group cursor-pointer overflow-hidden"
                          @click="activeReading.photo_url && (lightboxSrc = activeReading.photo_url, lightboxTitle = 'Meter Reading Photo - Room ' + activeReading.room, lightboxOpen = true)">
                         <img :src="activeReading.photo_url" 
-                             @error="$event.target.src = 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80'"
+                             x-on:error="$event.target.src = 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80'"
                              class="w-full h-44 object-contain rounded-lg group-hover:scale-105 transition-all">
                         <div class="mt-1 text-[11px] text-blue-600 dark:text-blue-400 font-bold"><i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Click to Zoom High-Res Meter Photo</div>
                     </div>
