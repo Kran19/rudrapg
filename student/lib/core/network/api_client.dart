@@ -8,7 +8,7 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError();
 });
 
-const String _prodBaseUrl = 'https://emperorsmartsolutions.com/rudrapgwebsite/api/v1';
+const String _prodBaseUrl = 'https://rudrapg.emperorsmartsolutions.com/api/v1';
 const String _localBaseUrl = 'http://127.0.0.1:8000/api/v1';
 const String _emulatorBaseUrl = 'http://10.0.2.2:8000/api/v1';
 
