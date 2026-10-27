@@ -224,10 +224,10 @@
 
     <!-- Sidebar Navigation -->
     <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-           class="fixed lg:static inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 z-50 flex flex-col transition-transform duration-300 ease-in-out border-r border-slate-800 shadow-xl lg:shadow-none">
+           class="fixed lg:sticky top-0 h-screen inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 z-50 flex flex-col transition-transform duration-300 ease-in-out border-r border-slate-800 shadow-xl lg:shadow-none shrink-0">
         
         <!-- Brand Header -->
-        <div class="p-5 flex items-center justify-between border-b border-slate-800">
+        <div class="p-5 flex items-center justify-between border-b border-slate-800 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-md shadow-blue-500/20">
                     <i class="fa-solid fa-building-user text-xl"></i>
@@ -243,7 +243,7 @@
         </div>
 
         <!-- Role Badge Indicator -->
-        <div class="px-4 py-3 border-b border-slate-800/60">
+        <div class="px-4 py-3 border-b border-slate-800/60 shrink-0">
             <div class="bg-slate-800/70 border border-slate-700/50 rounded-xl p-2.5 text-center">
                 <span class="text-xs font-semibold tracking-wider text-cyan-400 uppercase flex items-center justify-center gap-1.5">
                     @if(request()->is('sub-admin*'))
@@ -344,7 +344,7 @@
         </nav>
         
         <!-- Sidebar Footer -->
-        <div class="p-4 border-t border-slate-800 text-center">
+        <div class="p-4 border-t border-slate-800 text-center shrink-0">
             <p class="text-xs text-slate-500">© 2026 Rudra Group PG v2.4</p>
         </div>
     </aside>
