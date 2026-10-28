@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class WebAuthController extends Controller
 {
@@ -93,5 +94,49 @@ class WebAuthController extends Controller
             'Pragma' => 'no-cache',
             'Expires' => '0',
         ]);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'current_password.required' => 'Please enter your current password.',
+            'password.required' => 'Please enter a new password.',
+            'password.min' => 'The new password must be at least 6 characters.',
+            'password.confirmed' => 'New password confirmation does not match.',
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The current password you provided is incorrect.',
+                    'errors' => [
+                        'current_password' => ['The current password you provided is incorrect.']
+                    ]
+                ], 422);
+            }
+
+            return back()->withErrors([
+                'current_password' => 'The current password you provided is incorrect.',
+            ]);
+        }
+
+        $user->password = Hash::make($validated['password']);
+        $user->save();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Password updated successfully.',
+            ]);
+        }
+
+        return back()->with('success', 'Password updated successfully.');
     }
 }

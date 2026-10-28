@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.rudrapg.app"
+    namespace = "com.emperorsmartsolutions.rudrapg"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -30,7 +30,7 @@ android {
 
     defaultConfig {
         // Application ID registered on Google Play Console
-        applicationId = "com.rudrapg.app"
+        applicationId = "com.emperorsmartsolutions.rudrapg"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

@@ -5,9 +5,11 @@
           profileDropdownOpen: false, 
           notificationOpen: false,
           searchModalOpen: false,
+          changePasswordModalOpen: false,
           darkMode: localStorage.getItem('theme') === 'dark' 
       }"
       x-init="$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'))"
+      @close-password-modal.window="changePasswordModalOpen = false"
       :class="{ 'dark': darkMode }">
 <head>
     <meta charset="UTF-8">
@@ -292,6 +294,10 @@
                     </span>
                     <span id="badge-complaints" class="{{ isset($pendingComplaintsCount) && $pendingComplaintsCount > 0 ? '' : 'hidden' }} bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingComplaintsCount ?? 0 }}</span>
                 </a>
+                <button type="button" @click="changePasswordModalOpen = true" 
+                        class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200">
+                    <i class="fa-solid fa-key w-5 text-center text-amber-400"></i> Change Password
+                </button>
                 <form action="{{ route('logout') }}" method="POST" class="w-full pt-1.5 mt-1.5 border-t border-slate-800/60">
                     @csrf
                     <button type="submit" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-rose-400 hover:text-white hover:bg-rose-900/30 transition-all duration-200">
@@ -334,6 +340,10 @@
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.settings') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <i class="fa-solid fa-sliders w-5 text-center"></i> Audit Logs & Settings
                 </a>
+                <button type="button" @click="changePasswordModalOpen = true" 
+                        class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200">
+                    <i class="fa-solid fa-key w-5 text-center text-amber-400"></i> Change Password
+                </button>
                 <form action="{{ route('logout') }}" method="POST" class="w-full pt-1.5 mt-1.5 border-t border-slate-800/60">
                     @csrf
                     <button type="submit" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-rose-400 hover:text-white hover:bg-rose-900/30 transition-all duration-200">
@@ -478,12 +488,20 @@
                         <div class="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700">
                             <p class="text-sm font-bold text-slate-900 dark:text-white">{{ auth()->check() ? auth()->user()->name : 'Administrator Desk' }}</p>
                             <p class="text-xs text-slate-500 dark:text-slate-400">{{ auth()->check() ? auth()->user()->email : 'admin@rudrapg.com' }}</p>
+                            <div class="mt-1.5">
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full {{ auth()->check() && auth()->user()->role === 'SUPER_ADMIN' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300' : 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/60 dark:text-cyan-300' }}">
+                                    {{ auth()->check() && auth()->user()->role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'SUB ADMIN' }}
+                                </span>
+                            </div>
                         </div>
                         @if(auth()->check() && auth()->user()->role === 'SUPER_ADMIN')
                             <a href="{{ route('super_admin.settings') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60">
-                                <i class="fa-solid fa-circle-user text-slate-400"></i> System Settings
+                                <i class="fa-solid fa-sliders text-slate-400"></i> System Settings
                             </a>
                         @endif
+                        <button type="button" @click="profileDropdownOpen = false; changePasswordModalOpen = true" class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors">
+                            <i class="fa-solid fa-key text-amber-500"></i> Change Password
+                        </button>
                         <div class="border-t border-slate-100 dark:border-slate-700 my-1"></div>
                         <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
                             @csrf
@@ -502,6 +520,130 @@
         </main>
     </div>
 </div>
+
+    <!-- Universal Change Password Modal (For Super Admin and Sub Admin) -->
+    <div x-show="changePasswordModalOpen" 
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Modal Backdrop -->
+            <div x-show="changePasswordModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="changePasswordModalOpen = false"
+                 class="fixed inset-0 bg-slate-900/80 backdrop-blur-xs transition-opacity" 
+                 aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div x-show="changePasswordModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-data="{ showCur: false, showNew: false, showConf: false }"
+                 class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-slate-200 dark:border-slate-700">
+                
+                <!-- Modal Header -->
+                <div class="px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-key"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">Change Account Password</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Update your account login security</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="changePasswordModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Body & Form -->
+                <form id="global-change-password-form" class="p-6 space-y-4">
+                    @csrf
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Current Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-lock text-xs"></i>
+                            </span>
+                            <input :type="showCur ? 'text' : 'password'" 
+                                   name="current_password" 
+                                   id="modal-current-password"
+                                   required 
+                                   autocomplete="current-password"
+                                   placeholder="Enter current password" 
+                                   class="w-full pl-9 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                            <button type="button" @click="showCur = !showCur" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <i class="fa-solid text-xs" :class="showCur ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">New Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-shield-halved text-xs"></i>
+                            </span>
+                            <input :type="showNew ? 'text' : 'password'" 
+                                   name="password" 
+                                   id="modal-new-password"
+                                   required 
+                                   minlength="6"
+                                   autocomplete="new-password"
+                                   placeholder="At least 6 characters" 
+                                   class="w-full pl-9 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                            <button type="button" @click="showNew = !showNew" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <i class="fa-solid text-xs" :class="showNew ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Confirm New Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-check-double text-xs"></i>
+                            </span>
+                            <input :type="showConf ? 'text' : 'password'" 
+                                   name="password_confirmation" 
+                                   id="modal-confirm-password"
+                                   required 
+                                   minlength="6"
+                                   autocomplete="new-password"
+                                   placeholder="Re-enter new password" 
+                                   class="w-full pl-9 pr-10 py-2.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                            <button type="button" @click="showConf = !showConf" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <i class="fa-solid text-xs" :class="showConf ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-700/80">
+                        <button type="button" @click="changePasswordModalOpen = false" 
+                                class="px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">
+                            Cancel
+                        </button>
+                        <button type="submit" id="btn-submit-change-password"
+                                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-shield-check"></i>
+                            <span>Update Password</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
 <script>
     // Global SweetAlert2 Logout Confirmation
@@ -659,6 +801,79 @@
     // Initialize and sync every 10 seconds
     updateSidebarBadges();
     setInterval(updateSidebarBadges, 10000);
+
+    // Global Change Password Handler (Super Admin & Sub Admin)
+    document.addEventListener("DOMContentLoaded", function () {
+        const changePwdForm = document.getElementById("global-change-password-form");
+        if (changePwdForm) {
+            changePwdForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const submitBtn = document.getElementById("btn-submit-change-password");
+                const originalHtml = submitBtn.innerHTML;
+
+                const curPwd = document.getElementById("modal-current-password").value;
+                const newPwd = document.getElementById("modal-new-password").value;
+                const confPwd = document.getElementById("modal-confirm-password").value;
+
+                if (!curPwd) {
+                    toastr.warning("Please enter your current password.");
+                    return;
+                }
+                if (newPwd.length < 6) {
+                    toastr.warning("New password must be at least 6 characters.");
+                    return;
+                }
+                if (newPwd !== confPwd) {
+                    toastr.warning("New password and confirmation do not match.");
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+
+                const formData = new FormData(changePwdForm);
+
+                fetch("{{ route('account.change_password') }}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                        "Accept": "application/json"
+                    },
+                    body: formData
+                })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) {
+                        if (res.status === 422 && data.errors) {
+                            let firstError = "";
+                            for (const field in data.errors) {
+                                firstError = data.errors[field][0];
+                                break;
+                            }
+                            toastr.error(firstError || data.message, "Validation Error");
+                            return Promise.reject("Validation Error");
+                        }
+                        return Promise.reject(data.message || "Failed to update password.");
+                    }
+                    return data;
+                })
+                .then(data => {
+                    toastr.success(data.message || "Password changed successfully!");
+                    changePwdForm.reset();
+                    window.dispatchEvent(new CustomEvent('close-password-modal'));
+                })
+                .catch(err => {
+                    if (err !== "Validation Error") {
+                        toastr.error(typeof err === 'string' ? err : "An error occurred while changing password.");
+                    }
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHtml;
+                });
+            });
+        }
+    });
 </script>
 
 @yield('scripts')

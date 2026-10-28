@@ -22,6 +22,11 @@ Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 // Uncached Direct Mobile APK Download Route
 Route::get('/download-app', [WebAuthController::class, 'downloadApp'])->name('download_app');
 
+// Authenticated Account & Security Routes (Both Super Admin and Sub Admin)
+Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->group(function () {
+    Route::post('/account/change-password', [WebAuthController::class, 'changePassword'])->name('account.change_password');
+});
+
 // Public Legal Routes (App Store & Google Play Store Compliance)
 Route::view('/privacy-policy', 'privacy_policy')->name('privacy_policy');
 Route::view('/terms', 'terms')->name('terms');

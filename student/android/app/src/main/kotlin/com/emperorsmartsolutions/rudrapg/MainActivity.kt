@@ -1,4 +1,4 @@
-package com.rudrapg.app
+package com.emperorsmartsolutions.rudrapg
 
 import io.flutter.embedding.android.FlutterActivity
 

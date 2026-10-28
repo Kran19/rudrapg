@@ -1,8 +1,8 @@
 # Google Play Console — Store Listing & Publication Kit
 
 **App Name:** Rudra PG - Resident Companion  
-**Package Name (Application ID):** `com.rudrapg.app`  
-**Version:** `1.0.2` (Version Code: `3`)  
+**Package Name (Application ID):** `com.emperorsmartsolutions.rudrapg`  
+**Version:** `1.0.3` (Version Code: `4`)  
 **Target SDK:** 36 (Android 15) | **Min SDK:** 24 (Android 7.0)  
 
 ---
@@ -13,7 +13,7 @@ All files have been prepared and mirrored to your local system for 1-click drag 
 
 | Asset | Project File Path | Direct Downloads Path | Specs / Status |
 | :--- | :--- | :--- | :--- |
-| **Android App Bundle (.aab)** | `student/play_store_assets/rudraboyspg-release.aab` | `D:\Downloads\play_store_assets\rudraboyspg-release.aab` | **63.0 MB** (Signed with Release Keystore) |
+| **Android App Bundle (.aab)** | `rudraboyspg-release.aab` | `student/play_store_assets/rudraboyspg-release.aab` | **38.6 MB** (Signed with Release Keystore) |
 | **Play Store App Icon** | `student/play_store_assets/app_icon_512x512.png` | `D:\Downloads\play_store_assets\app_icon_512x512.png` | **512 x 512 px**, 32-bit PNG |
 | **Feature Graphic Banner** | `student/play_store_assets/feature_graphic_1024x500.png` | `D:\Downloads\play_store_assets\feature_graphic_1024x500.png` | **1024 x 500 px**, PNG (No alpha) |
 | **Phone Screenshots (5)** | `student/play_store_assets/screenshots/` | `D:\Downloads\play_store_assets\screenshots/` | **1080 x 2400 px** (20:9 Ultra-HD) |
@@ -97,9 +97,9 @@ The release bundle was signed using an industry-standard PKCS12 release keystore
 | **Keystore Type** | `PKCS12` |
 | **Key Alias** | `upload` |
 | **Store / Key Password** | `rudrapg@2026` |
-| **Validity** | Until **January 31, 2054** |
-| **Certificate SHA-1** | `41:0D:B7:90:B7:C0:E5:EB:1C:03:C5:87:14:B7:59:BE:6B:B0:0B:50` |
-| **Certificate SHA-256** | `06:5F:E4:D1:97:41:42:BC:D0:A8:74:39:6C:6F:6E:0C:21:57:F1:6F:79:C7:D0:6D:6A:E0:8E:84:0B:29:B4:F6` |
+| **Validity** | Until **March 11, 2054** |
+| **Certificate SHA-1** | `B5:4B:F3:BB:43:43:2A:85:E3:DE:17:CB:C4:15:1C:CF:D8:26:87:88` |
+| **Certificate SHA-256** | `0D:C0:36:37:FE:CD:09:B1:7C:84:A0:5F:DB:47:13:3F:39:0A:A1:88:DB:E9:AA:B0:E2:C9:64:B2:81:17:65:13` |
 
 > [!IMPORTANT]
 > Google Play Console uses **Play App Signing**. When you upload your first `.aab`, Google registers the upload key above, verifies its SHA-1/SHA-256, and signs public distribution APKs with Google's managed key.

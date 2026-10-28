@@ -72,6 +72,7 @@ Route::prefix('v1')->group(function () {
         // Session & Identity
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
 
         // Student Mobile App Routes
         Route::prefix('student')->middleware('role:STUDENT')->group(function () {
