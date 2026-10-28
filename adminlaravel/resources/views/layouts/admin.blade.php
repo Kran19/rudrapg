@@ -832,8 +832,10 @@
                 submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
 
                 const formData = new FormData(changePwdForm);
+                const isSubAdmin = window.location.pathname.includes('/sub-admin');
+                const targetUrl = isSubAdmin ? "{{ route('sub_admin.change_password') }}" : "{{ route('super_admin.change_password') }}";
 
-                fetch("{{ route('account.change_password') }}", {
+                fetch(targetUrl, {
                     method: "POST",
                     headers: {
                         "X-CSRF-TOKEN": "{{ csrf_token() }}",

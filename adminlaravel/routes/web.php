@@ -64,6 +64,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('su
     Route::delete('/finance/{id}', [SuperAdminController::class, 'destroyTransaction'])->name('finance.destroy');
     
     Route::get('/settings', [SuperAdminController::class, 'settings'])->name('settings');
+    Route::post('/change-password', [WebAuthController::class, 'changePassword'])->name('change_password');
 });
 
 // Sub Admin Protected Routes (Accessible by Sub Admin and Super Admin)
@@ -96,4 +97,5 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::post('/complaints/{id}/update', [SubAdminController::class, 'updateComplaint'])->name('complaints.update');
     Route::delete('/complaints/{id}', [SubAdminController::class, 'destroyComplaint'])->name('complaints.destroy');
     Route::get('/complaints-data', [SubAdminController::class, 'getComplaintsData'])->name('complaints_data');
+    Route::post('/change-password', [WebAuthController::class, 'changePassword'])->name('change_password');
 });

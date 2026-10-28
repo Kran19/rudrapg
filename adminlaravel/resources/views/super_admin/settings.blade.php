@@ -177,7 +177,7 @@
 
             const formData = new FormData(settingsPwdForm);
 
-            fetch("{{ route('account.change_password') }}", {
+            fetch("{{ route('super_admin.change_password') }}", {
                 method: "POST",
                 headers: {
                     "X-CSRF-TOKEN": "{{ csrf_token() }}",
