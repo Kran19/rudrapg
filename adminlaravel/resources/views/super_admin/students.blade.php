@@ -39,10 +39,9 @@
         <div class="flex items-center gap-3 w-full md:w-auto">
             <select id="branch-filter" class="px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none text-slate-900 dark:text-slate-100">
                 <option value="" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">All PG Branches</option>
-                <option value="Naroda Branch" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Naroda Branch</option>
-                <option value="Satellite Branch" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Satellite Branch</option>
-                <option value="Prahlad Nagar Branch" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Prahlad Nagar Branch</option>
-                <option value="SG Highway Branch" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">SG Highway Branch</option>
+                @foreach($allBranches as $b)
+                    <option value="{{ $b->name }}" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">{{ $b->name }}</option>
+                @endforeach
             </select>
             <select id="kyc-filter" class="px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none text-slate-900 dark:text-slate-100">
                 <option value="" class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">All KYC Status</option>

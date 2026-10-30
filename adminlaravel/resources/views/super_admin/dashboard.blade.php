@@ -16,9 +16,15 @@
                 <i class="fa-solid fa-indian-rupee-sign text-xl"></i>
             </div>
         </div>
-        <div class="mt-4 flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 w-fit px-2.5 py-1 rounded-full">
-            <i class="fa-solid fa-arrow-up"></i> +12% from last month
-        </div>
+        @if(isset($metrics['revenue_change']) && $metrics['revenue_change'] !== null)
+            <div class="mt-4 flex items-center gap-1.5 text-xs font-semibold {{ $metrics['revenue_change'] >= 0 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40' : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/40' }} w-fit px-2.5 py-1 rounded-full">
+                <i class="fa-solid fa-arrow-{{ $metrics['revenue_change'] >= 0 ? 'up' : 'down' }}"></i> {{ ($metrics['revenue_change'] >= 0 ? '+' : '') . $metrics['revenue_change'] }}% from last month
+            </div>
+        @else
+            <div class="mt-4 flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/60 w-fit px-2.5 py-1 rounded-full">
+                <i class="fa-regular fa-calendar"></i> Current Month Realized
+            </div>
+        @endif
     </div>
 
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-xs hover:shadow-md transition-shadow">
@@ -32,7 +38,7 @@
             </div>
         </div>
         <div class="mt-4 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 w-fit px-2.5 py-1 rounded-full">
-            320 / 385 Beds Occupied
+            {{ $metrics['occupied_beds'] }} / {{ $metrics['total_beds'] }} Beds Occupied
         </div>
     </div>
 
@@ -47,7 +53,7 @@
             </div>
         </div>
         <div class="mt-4 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 w-fit px-2.5 py-1 rounded-full">
-            All 4 Branches Active
+            {{ $metrics['active_branches'] }} of {{ $metrics['total_branches'] }} {{ \Illuminate\Support\Str::plural('Branch', $metrics['total_branches']) }} Active
         </div>
     </div>
 
@@ -55,14 +61,14 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Approvals</p>
-                <h3 class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-2">{{ $metrics['pending_approvals'] }}</h3>
+                <h3 class="text-2xl font-extrabold {{ $metrics['pending_approvals'] > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100' }} mt-2">{{ $metrics['pending_approvals'] }}</h3>
             </div>
             <div class="bg-rose-50 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 p-3.5 rounded-2xl">
                 <i class="fa-solid fa-clock-rotate-left text-xl"></i>
             </div>
         </div>
-        <div class="mt-4 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/40 w-fit px-2.5 py-1 rounded-full">
-            Requires Sub Admin Review
+        <div class="mt-4 text-xs font-semibold {{ $metrics['pending_approvals'] > 0 ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/40' : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/60' }} w-fit px-2.5 py-1 rounded-full">
+            {{ $metrics['pending_approvals'] > 0 ? 'Requires Sub Admin Review' : 'All Requests Cleared' }}
         </div>
     </div>
 </div>
@@ -71,21 +77,35 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
     <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Branch Monthly Revenue Analytics</h3>
-            <select class="text-xs font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-1.5 focus:outline-none">
-                <option class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Year 2026</option>
-                <option class="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">Year 2025</option>
-            </select>
+            <div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Branch Monthly Revenue Analytics</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Actual collections per registered branch</p>
+            </div>
+            <span class="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/60 px-3 py-1.5 rounded-lg">Last 6 Months</span>
         </div>
         <div class="relative h-64">
-            <canvas id="revenueChart"></canvas>
+            @if(count($branchRevenueDatasets) > 0)
+                <canvas id="revenueChart"></canvas>
+            @else
+                <div class="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+                    <i class="fa-solid fa-chart-simple text-4xl mb-2 opacity-30"></i>
+                    <p class="text-sm font-medium">No active branches configured</p>
+                </div>
+            @endif
         </div>
     </div>
 
     <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
         <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mb-4">Occupancy Breakdown</h3>
         <div class="relative h-64 flex items-center justify-center">
-            <canvas id="occupancyDoughnut"></canvas>
+            @if($metrics['total_beds'] > 0)
+                <canvas id="occupancyDoughnut"></canvas>
+            @else
+                <div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+                    <i class="fa-solid fa-bed text-4xl mb-2 opacity-30"></i>
+                    <p class="text-sm font-medium">No rooms or beds configured</p>
+                </div>
+            @endif
         </div>
     </div>
 </div>
@@ -127,30 +147,66 @@
         table.setFilter("action", "like", this.value);
     });
 
-    // Chart.js Setup
-    const ctx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(ctx, {
+    // Branch Monthly Revenue Chart.js Setup
+    @if(count($branchRevenueDatasets) > 0)
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
         type: 'bar',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-            datasets: [
-                { label: 'Naroda Branch', data: [5.2, 5.5, 5.8, 6.0, 6.1, 6.3, 6.5], backgroundColor: '#0F172A' },
-                { label: 'Satellite Branch', data: [4.0, 4.2, 4.5, 4.8, 5.0, 5.2, 5.5], backgroundColor: '#2563EB' },
-                { label: 'Prahlad Nagar', data: [4.5, 4.7, 5.0, 5.1, 5.3, 5.6, 5.8], backgroundColor: '#14B8A6' },
-                { label: 'SG Highway', data: [6.0, 6.2, 6.4, 6.6, 6.8, 7.0, 7.2], backgroundColor: '#F59E0B' },
-            ]
+            labels: @json($revenueMonths),
+            datasets: @json($branchRevenueDatasets)
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
     });
+    @endif
+
+    // Occupancy Doughnut Setup
+    @if($metrics['total_beds'] > 0)
+    const occupiedCount = {{ (int) $metrics['occupied_beds'] }};
+    const availableCount = {{ (int) $metrics['available_beds'] }};
+    const isDark = document.documentElement.classList.contains('dark');
+    const availableColor = isDark ? '#334155' : '#E2E8F0';
 
     const ctxDoughnut = document.getElementById('occupancyDoughnut').getContext('2d');
     new Chart(ctxDoughnut, {
         type: 'doughnut',
         data: {
-            labels: ['Occupied (320)', 'Available (65)'],
-            datasets: [{ data: [320, 65], backgroundColor: ['#16A34A', '#E2E8F0'] }]
+            labels: ['Occupied (' + occupiedCount + ')', 'Available (' + availableCount + ')'],
+            datasets: [{
+                data: [occupiedCount, availableCount],
+                backgroundColor: ['#10B981', availableColor],
+                borderWidth: 0
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            cutout: '70%'
+        }
     });
+    @endif
 </script>
 @endsection

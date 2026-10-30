@@ -73,13 +73,8 @@ class SubAdminController extends Controller
                     ->whereYear('payment_date', $yearVal)
                     ->sum('amount');
             
-            // Set a realistic benchmark target (beds capacity * 60% average occupancy rent)
-            $target = $totalBeds > 0 ? $totalBeds * 6500 * 0.75 : 100000;
-            
-            // Add fallback historical data for nice visualization if seeder is sparse
-            if ($collected == 0 && $i > 0) {
-                $collected = $target * (0.8 + (rand(-5, 10) / 100));
-            }
+            // Set a benchmark target (beds capacity * average rent)
+            $target = $totalBeds > 0 ? $totalBeds * 6500 * 0.75 : 0;
 
             $collectionsTrend[] = [
                 'month' => $monthName,

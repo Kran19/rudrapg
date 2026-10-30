@@ -21,21 +21,70 @@ class SuperAdminController extends Controller
 {
     public function dashboard()
     {
+        $currentMonthRevenue = (float) Payment::whereIn('status', ['PAID', 'VERIFIED'])
+            ->whereMonth('payment_date', now()->month)
+            ->whereYear('payment_date', now()->year)
+            ->sum('amount');
+
+        $lastMonthRevenue = (float) Payment::whereIn('status', ['PAID', 'VERIFIED'])
+            ->whereMonth('payment_date', now()->subMonth()->month)
+            ->whereYear('payment_date', now()->subMonth()->year)
+            ->sum('amount');
+
+        $revenueChange = null;
+        if ($lastMonthRevenue > 0) {
+            $revenueChange = round((($currentMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1);
+        }
+
+        $totalBeds = Bed::count();
+        $occupiedBeds = Bed::where('status', 'OCCUPIED')->count();
+        $availableBeds = Bed::where('status', 'AVAILABLE')->count();
+
         $metrics = [
-            'total_revenue' => '₹'.number_format(Payment::whereIn('status', ['PAID', 'VERIFIED'])->sum('amount')),
-            'occupancy_rate' => Bed::count() > 0 ? round((Bed::where('status', 'OCCUPIED')->count() / Bed::count()) * 100, 1).'%' : '0%',
+            'total_revenue' => '₹'.number_format($currentMonthRevenue),
+            'revenue_change' => $revenueChange,
+            'occupancy_rate' => $totalBeds > 0 ? round(($occupiedBeds / $totalBeds) * 100, 1).'%' : '0%',
             'active_branches' => Branch::where('status', 'ACTIVE')->count(),
             'pending_approvals' => RegistrationRequest::where('status', 'PENDING')->count(),
             'total_branches' => Branch::count(),
             'total_students' => Student::where('status', 'APPROVED')->count(),
             'total_rooms' => Room::count(),
-            'total_beds' => Bed::count(),
-            'occupied_beds' => Bed::where('status', 'OCCUPIED')->count(),
-            'available_beds' => Bed::where('status', 'AVAILABLE')->count(),
-            'monthly_collection' => '₹'.number_format(Payment::whereIn('status', ['PAID', 'VERIFIED'])->sum('amount')),
+            'total_beds' => $totalBeds,
+            'occupied_beds' => $occupiedBeds,
+            'available_beds' => $availableBeds,
+            'monthly_collection' => '₹'.number_format($currentMonthRevenue),
             'pending_payments' => Payment::where('status', 'PENDING')->count(),
             'active_complaints' => Complaint::whereIn('status', ['PENDING', 'IN_PROGRESS'])->count(),
         ];
+
+        // Real Monthly Revenue Analytics per Active Branch (Last 6 Months)
+        $chartMonths = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $chartMonths[] = now()->subMonths($i);
+        }
+        $revenueMonths = array_map(fn($d) => $d->format('M Y'), $chartMonths);
+
+        $palette = ['#0F172A', '#2563EB', '#14B8A6', '#F59E0B', '#8B5CF6', '#EC4899', '#10B981'];
+        $branchRevenueDatasets = [];
+
+        $activeBranches = Branch::where('status', 'ACTIVE')->get();
+        foreach ($activeBranches as $idx => $b) {
+            $monthlyTotals = [];
+            foreach ($chartMonths as $d) {
+                $monthlyTotals[] = (float) Payment::where('branch_id', $b->id)
+                    ->whereIn('status', ['PAID', 'VERIFIED'])
+                    ->whereMonth('payment_date', $d->month)
+                    ->whereYear('payment_date', $d->year)
+                    ->sum('amount');
+            }
+
+            $branchRevenueDatasets[] = [
+                'label' => $b->name,
+                'data' => $monthlyTotals,
+                'backgroundColor' => $palette[$idx % count($palette)],
+                'borderRadius' => 6,
+            ];
+        }
 
         $recentRegistrations = Student::with('branch')->latest()->take(5)->get();
         $recentPayments = Payment::with(['student', 'branch'])->latest()->take(5)->get();
@@ -50,7 +99,15 @@ class SuperAdminController extends Controller
             ];
         })->toArray();
 
-        return view('super_admin.dashboard', compact('metrics', 'recentRegistrations', 'recentPayments', 'branches', 'recentActivities'));
+        return view('super_admin.dashboard', compact(
+            'metrics',
+            'recentRegistrations',
+            'recentPayments',
+            'branches',
+            'recentActivities',
+            'revenueMonths',
+            'branchRevenueDatasets'
+        ));
     }
 
     public function branches()
