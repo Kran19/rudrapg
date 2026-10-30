@@ -6,6 +6,13 @@
     <title>Sign In - Rudra Group PG Admin Portal</title>
     
     <!-- Tailwind CSS CDN -->
+    <script>
+        const _originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+            _originalWarn.apply(console, args);
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
