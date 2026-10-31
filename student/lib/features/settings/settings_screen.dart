@@ -7,6 +7,7 @@ import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_card.dart';
 import '../home/data/student_repository.dart';
 import '../login/login_screen.dart';
+import '../auth/presentation/auth_notifier.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -93,10 +94,14 @@ class SettingsScreen extends ConsumerWidget {
 
               // Logout Action Button
               CustomCard(
-                onTap: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  );
+                onTap: () async {
+                  await ref.read(authNotifierProvider.notifier).logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
                 },
                 backgroundColor: AppColors.error.withValues(alpha: 0.05),
                 border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),

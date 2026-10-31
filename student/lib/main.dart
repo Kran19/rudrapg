@@ -21,6 +21,9 @@ void main() async {
     await prefs.setString('auth_token', tokenParam);
   }
 
+  final token = prefs.getString('auth_token');
+  final bool hasToken = token != null && token.isNotEmpty;
+
   Widget initialScreen = const SplashScreen();
   final screenParam = uri.queryParameters['screen'];
   if (screenParam != null) {
@@ -30,20 +33,20 @@ void main() async {
         break;
       case 'dashboard':
       case 'home':
-        initialScreen = const MainLayoutScreen(initialIndex: 0);
+        initialScreen = hasToken ? const MainLayoutScreen(initialIndex: 0) : const LoginScreen();
         break;
       case 'payments':
-        initialScreen = const MainLayoutScreen(initialIndex: 1);
+        initialScreen = hasToken ? const MainLayoutScreen(initialIndex: 1) : const LoginScreen();
         break;
       case 'notifications':
-        initialScreen = const MainLayoutScreen(initialIndex: 2);
+        initialScreen = hasToken ? const MainLayoutScreen(initialIndex: 2) : const LoginScreen();
         break;
       case 'profile':
-        initialScreen = const MainLayoutScreen(initialIndex: 3);
+        initialScreen = hasToken ? const MainLayoutScreen(initialIndex: 3) : const LoginScreen();
         break;
       case 'room':
       case 'my_room':
-        initialScreen = const MyRoomScreen();
+        initialScreen = hasToken ? const MyRoomScreen() : const LoginScreen();
         break;
       case 'support':
         initialScreen = const SupportScreen();

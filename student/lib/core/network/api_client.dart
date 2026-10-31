@@ -62,8 +62,12 @@ final apiClientProvider = Provider<Dio>((ref) {
       }
       return handler.next(options);
     },
-    onError: (DioException e, handler) {
-      // Could handle 401 Unauthorized globally here
+    onError: (DioException e, handler) async {
+      // Handle 401 Unauthorized globally: clear stale or invalidated token
+      if (e.response?.statusCode == 401) {
+        await prefs.remove('auth_token');
+        await prefs.remove('user_role');
+      }
       return handler.next(e);
     }
   ));

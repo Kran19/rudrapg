@@ -5,6 +5,7 @@ import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_card.dart';
 import '../electricity/electricity_screen.dart';
 import '../login/login_screen.dart';
+import '../auth/presentation/auth_notifier.dart';
 import '../resident/my_room_screen.dart';
 import '../settings/settings_screen.dart';
 import '../support/support_screen.dart';
@@ -184,7 +185,7 @@ class ProfileScreen extends ConsumerWidget {
 
               // Logout Button
               CustomCard(
-                onTap: () => _confirmSignOut(context),
+                onTap: () => _confirmSignOut(context, ref),
                 backgroundColor: AppColors.error.withValues(alpha: 0.05),
                 border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                 child: Row(
@@ -276,7 +277,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmSignOut(BuildContext context) {
+  void _confirmSignOut(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -289,11 +290,15 @@ class ProfileScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+              await ref.read(authNotifierProvider.notifier).logout();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
             },
             child: const Text('Sign Out'),
           ),

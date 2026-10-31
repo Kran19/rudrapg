@@ -8,6 +8,7 @@ import '../../core/widgets/section_header.dart';
 import '../../data/models/resident_model.dart';
 import 'data/student_repository.dart';
 import '../electricity/electricity_screen.dart';
+import '../login/login_screen.dart';
 import '../payments/payments_screen.dart';
 import '../resident/my_room_screen.dart';
 import '../support/support_screen.dart';
@@ -300,23 +301,63 @@ class HomeDashboardScreen extends ConsumerWidget {
           ),
         ),
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-          error: (error, stackTrace) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                const SizedBox(height: 16),
-                Text('Failed to load profile', style: AppTypography.titleMedium),
-                const SizedBox(height: 8),
-                Text(error.toString(), style: AppTypography.bodySmall, textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => ref.invalidate(studentProfileProvider),
-                  child: const Text('Retry'),
+          error: (error, stackTrace) {
+            final errStr = error.toString();
+            final isAuthError = errStr.contains('401') || errStr.toLowerCase().contains('unauthor') || errStr.toLowerCase().contains('unauthent');
+
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isAuthError ? Icons.lock_clock_rounded : Icons.error_outline_rounded,
+                      color: isAuthError ? AppColors.warning : AppColors.error,
+                      size: 56,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      isAuthError ? 'Session Expired or Unauthorized' : 'Failed to load profile',
+                      style: AppTypography.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isAuthError
+                          ? 'Your resident session has expired or is invalid. Please sign in again with your credentials to access your room, dues, and notices.'
+                          : errStr,
+                      style: AppTypography.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    if (isAuthError)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            (route) => false,
+                          );
+                        },
+                        icon: const Icon(Icons.login_rounded, size: 18),
+                        label: const Text('Sign In to Portal'),
+                      )
+                    else
+                      ElevatedButton(
+                        onPressed: () => ref.invalidate(studentProfileProvider),
+                        child: const Text('Retry'),
+                      ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

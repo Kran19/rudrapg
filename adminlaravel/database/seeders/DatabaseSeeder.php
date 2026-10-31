@@ -24,8 +24,20 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $upsertUser = function (array $match, array $attributes): User {
+            $user = User::withTrashed()->where($match)->first();
+            if ($user) {
+                if ($user->trashed()) {
+                    $user->restore();
+                }
+                $user->update($attributes);
+                return $user;
+            }
+            return User::create(array_merge($match, $attributes));
+        };
+
         // 1. Super Admin User
-        $superAdmin = User::firstOrCreate(
+        $superAdmin = $upsertUser(
             ['email' => 'admin@rudrapg.com'],
             [
                 'name' => 'Super Administrator',
@@ -37,7 +49,7 @@ class DatabaseSeeder extends Seeder
         );
 
         // 2. Sub Admin User
-        $subAdmin = User::firstOrCreate(
+        $subAdmin = $upsertUser(
             ['email' => 'subadmin.naroda@rudrapg.com'],
             [
                 'name' => 'Suresh Patel (Naroda Manager)',
@@ -49,7 +61,7 @@ class DatabaseSeeder extends Seeder
         );
 
         // 3. Student User
-        $studentUser = User::firstOrCreate(
+        $studentUser = $upsertUser(
             ['email' => 'rahul.sharma@gmail.com'],
             [
                 'name' => 'Rahul Sharma',
@@ -61,7 +73,7 @@ class DatabaseSeeder extends Seeder
         );
 
         // 3b. Demo Resident (Default Flutter UI Credentials: 6354351080 / password123)
-        $demoUser = User::firstOrCreate(
+        $demoUser = $upsertUser(
             ['phone' => '+91 63543 51080'],
             [
                 'name' => 'Resident Demo',
@@ -73,21 +85,23 @@ class DatabaseSeeder extends Seeder
         );
 
         // 4. Naroda Branch Master
-        $branch = Branch::firstOrCreate(
-            ['code' => 'PG-NRD-01'],
-            [
-                'name' => 'Naroda Branch',
-                'address' => '102, Main Highway Road, Opposite Science City Gate, Naroda, Ahmedabad',
-                'city' => 'Ahmedabad',
-                'phone' => '+91 79228 11223',
-                'email' => 'naroda@rudrapg.com',
-                'manager_name' => 'Suresh Patel',
-                'manager_phone' => '+91 98765 43210',
-                'electricity_unit_rate' => 10.00,
-                'qr_code_hash' => 'hash_naroda_88129931',
-                'status' => 'ACTIVE',
-            ]
-        );
+        $branch = Branch::withTrashed()->firstOrNew(['code' => 'PG-NRD-01']);
+        $branch->fill([
+            'name' => 'Naroda Branch',
+            'address' => '102, Main Highway Road, Opposite Science City Gate, Naroda, Ahmedabad',
+            'city' => 'Ahmedabad',
+            'phone' => '+91 79228 11223',
+            'email' => 'naroda@rudrapg.com',
+            'manager_name' => 'Suresh Patel',
+            'manager_phone' => '+91 98765 43210',
+            'electricity_unit_rate' => 10.00,
+            'qr_code_hash' => 'hash_naroda_88129931',
+            'status' => 'ACTIVE',
+        ]);
+        if ($branch->trashed()) {
+            $branch->restore();
+        }
+        $branch->save();
 
         // Assign Sub Admin to Naroda Branch
         $subAdmin->branches()->syncWithoutDetaching([$branch->id]);
@@ -149,7 +163,19 @@ class DatabaseSeeder extends Seeder
         }
 
         // 6. Student Resident Profile
-        $student = Student::firstOrCreate(
+        $upsertStudent = function (array $match, array $attributes): Student {
+            $student = Student::withTrashed()->where($match)->first();
+            if ($student) {
+                if ($student->trashed()) {
+                    $student->restore();
+                }
+                $student->update($attributes);
+                return $student;
+            }
+            return Student::create(array_merge($match, $attributes));
+        };
+
+        $student = $upsertStudent(
             ['app_reference' => 'REG-2026-8812'],
             [
                 'user_id' => $studentUser->id,
@@ -173,7 +199,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $demoStudent = Student::firstOrCreate(
+        $demoStudent = $upsertStudent(
             ['app_reference' => 'REG-2026-6354'],
             [
                 'user_id' => $demoUser->id,

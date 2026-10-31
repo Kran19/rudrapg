@@ -28,8 +28,11 @@ Artisan::command('app:reset-test-data', function () {
     if (\Illuminate\Support\Facades\Schema::hasTable('sub_admin_branch')) \Illuminate\Support\Facades\DB::table('sub_admin_branch')->truncate();
     if (\Illuminate\Support\Facades\Schema::hasTable('branches')) \App\Models\Branch::truncate();
 
-    // Remove demo non-super-admin users
-    \App\Models\User::where('role', '!=', 'SUPER_ADMIN')->delete();
+    // Remove demo non-super-admin users cleanly (permanent deletion to prevent orphaned soft-deleted records)
+    \App\Models\User::where('role', '!=', 'SUPER_ADMIN')->forceDelete();
+    if (\Illuminate\Support\Facades\Schema::hasTable('personal_access_tokens')) {
+        \Illuminate\Support\Facades\DB::table('personal_access_tokens')->truncate();
+    }
 
     \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
