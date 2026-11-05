@@ -3,6 +3,11 @@ set -e
 
 cd /var/www/html
 
+# Ensure storage directories exist and have proper permissions for web server
+mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+
 # Install dependencies if vendor does not exist
 if [ ! -d "vendor" ]; then
     echo "Installing composer dependencies..."

@@ -18,6 +18,9 @@ services:
       DB_DATABASE: "rudrapg_db"
       DB_USERNAME: "rudrapg_user"
       DB_PASSWORD: "RudraSecurePassword2026!"
+      SESSION_DRIVER: "file"
+      SESSION_SECURE_COOKIE: "true"
+      SESSION_SAME_SITE: "lax"
     volumes:
       - ./adminlaravel/storage:/var/www/html/storage
       - ./adminlaravel/.env:/var/www/html/.env
