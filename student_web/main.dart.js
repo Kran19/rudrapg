@@ -99717,6 +99717,7 @@ return null},
 $S:0}
 A.akB.prototype={
 $0(){var s=this.a
+try{window.localStorage.clear();window.sessionStorage.clear();}catch(e){}
 A.c4(s,!1).qs(null)
 A.c4(s,!1).mM(A.ff(new A.akz(),null,t.z))},
 $S:0}
@@ -99966,7 +99967,8 @@ A.apF.prototype={
 $0(){return this.a.acY(this.b,this.c)},
 $S:0}
 A.apG.prototype={
-$0(){A.c4(this.a,!1).mM(A.ff(new A.apA(),null,t.z))},
+$0(){try{window.localStorage.clear();window.sessionStorage.clear();}catch(e){}
+A.c4(this.a,!1).mM(A.ff(new A.apA(),null,t.z))},
 $S:0}
 A.apA.prototype={
 $1(a){return B.em},

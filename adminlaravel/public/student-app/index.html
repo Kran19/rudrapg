@@ -13,6 +13,16 @@
 
   <title>Rudra Group PG</title>
   <link rel="manifest" href="manifest.json">
+  <script>
+    // Handle explicit sign-out or login redirect requests
+    try {
+      var p = new URLSearchParams(window.location.search);
+      if (p.has('logout') || p.get('screen') === 'login') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
