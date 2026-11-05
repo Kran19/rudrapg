@@ -14,8 +14,18 @@
   <title>Rudra Group PG</title>
   <link rel="manifest" href="manifest.json">
   <script>
-    // Handle explicit sign-out or login redirect requests
+    // Invalidate stale Service Worker and Caches to prevent old build loops
     try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var reg of regs) { reg.unregister(); }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (var name of names) { caches.delete(name); }
+        });
+      }
       var p = new URLSearchParams(window.location.search);
       if (p.has('logout') || p.get('screen') === 'login') {
         localStorage.clear();
