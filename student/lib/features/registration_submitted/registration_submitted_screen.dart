@@ -107,12 +107,6 @@ class RegistrationSubmittedScreen extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                const Divider(height: 24),
-                                _buildSummaryRow(
-                                  label: 'Default Login Password:',
-                                  value: 'password123',
-                                  isBold: true,
-                                ),
                               ],
                             ),
                           ),
@@ -128,7 +122,7 @@ class RegistrationSubmittedScreen extends StatelessWidget {
                                 const SizedBox(width: AppSpacing.md),
                                 Expanded(
                                   child: Text(
-                                    'Your registration is submitted! Step 1: Sub-Admin audits your KYC documents. Step 2: Sub-Admin assigns your Room & Bed. Log in using your registered mobile number & default password "password123".',
+                                    'Your registration is submitted! Step 1: Sub-Admin audits your KYC documents. Step 2: Sub-Admin assigns your Room & Bed. Once approved, log in using your registered mobile number & your chosen password.',
                                     style: AppTypography.bodySmall.copyWith(
                                       color: AppColors.primary,
                                       height: 1.4,

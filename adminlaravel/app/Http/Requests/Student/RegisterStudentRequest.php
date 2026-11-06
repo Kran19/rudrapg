@@ -48,7 +48,7 @@ class RegisterStudentRequest extends FormRequest
             'full_name' => ['required', 'string', 'min:3', 'max:255'],
             'phone' => ['required', 'string', 'regex:/^[6-9]\d{9}$/', 'unique:users,phone'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['nullable', 'string', 'min:6'],
+            'password' => ['required', 'string', 'min:6'],
             'aadhaar_number' => ['required', 'string', 'min:8', 'max:20'],
             'pan_number' => ['nullable', 'string', 'min:8', 'max:20'],
             'parent_name' => ['required', 'string', 'min:3', 'max:255'],

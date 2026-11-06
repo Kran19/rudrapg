@@ -99358,7 +99358,7 @@ if(q===$){p=r.$ti
 q=r.ch=A.b7F(r,p.c,p.y[1])}s.eu(q,t.MP).lw(n,m).bv(new A.ayH(o),t.P)},
 I(a){var s,r,q,p,o=this,n=null,m=o.giF().kR($.a47(),t.FB).a===B.oq,l=A.va(a),k=A.cK(A.NS(A.ck(20),A.aOe("assets/icons/logo.png",new A.ayK(),B.kS,76,76),B.bT),n,n),j=A.cK(A.X("Resident Portal Login",n,n,n,$.v0(),n,n),n,n),i=A.cK(A.X("Enter your credentials to access your room, payments & electricity meter audits.",n,n,n,$.dK(),B.cj,n),n,n),h=A.ic(o.w,"e.g. 9876543210",n,B.jU,"Registered Mobile Number",1,!1,B.mh,n,B.bM),g=o.y
 g=A.ic(o.x,"\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",n,B.dc,"Password",1,g,B.L6,A.CJ(n,n,A.fS(g?B.KP:B.KO,B.am,n,n),n,n,new A.ayL(o),n,n,n),B.bM)
-s=A.c_(A.X("Default Password: password123",1,B.q,n,$.dp().atW(B.am,B.c9),n,n),1)
+s=A.c_(A.X("",1,B.q,n,$.dp().atW(B.am,B.c9),n,n),1)
 r=A.aJN(n,n,n,n,n,n,n,n,n,n,n,B.x,B.a0,n,n,n,n,B.xp,n,n)
 q=t.p
 r=A.bu(A.b([s,B.aX,A.y1(A.X("Forgot Password?",n,n,n,$.dp().hi(B.H,B.ba),n,n),new A.ayM(a),r)],q),B.p,B.aL,B.l,0)
@@ -99907,10 +99907,10 @@ l=B.al.b6(0.15)
 k=A.ck(16)
 j=A.fs(B.al.b6(0.4),1)
 i=t.p
-q=A.cE(B.j,h,A.b_(A.b([o,B.bU,n,B.bU,A.b_(A.b([m,B.eM,A.bE(h,A.bu(A.b([B.LV,B.hn,new A.dE(1,B.aK,A.X("Pending Sub Admin Approval",1,B.q,h,$.dp().hi(B.al,B.S),h,h),h)],i),B.p,B.m,B.br,0),B.n,h,h,new A.bc(l,h,j,k,h,h,B.V),h,h,h,B.fC,h,h,h)],i),B.z,B.m,B.l),B.bU,p.Gg(!0,"Default Login Password:","password123")],i),B.p,B.m,B.l),h,q)
+q=A.cE(B.j,h,A.b_(A.b([o,B.bU,n,B.bU,A.b_(A.b([m,B.eM,A.bE(h,A.bu(A.b([B.LV,B.hn,new A.dE(1,B.aK,A.X("Pending Sub Admin Approval",1,B.q,h,$.dp().hi(B.al,B.S),h,h),h)],i),B.p,B.m,B.br,0),B.n,h,h,new A.bc(l,h,j,k,h,h,B.V),h,h,h,B.fC,h,h,h)],i),B.z,B.m,B.l),B.bU,p.Gg(!0,"Account Status:","Pending Approval")],i),B.p,B.m,B.l),h,q)
 p=B.W.b6(0.04)
 k=A.jJ(a)
-return A.lk(new A.d5(new A.ab(0,1/0,f,1/0),new A.Qf(A.b_(A.b([B.jR,s,B.eL,r,B.bn,q,B.bn,A.cE(p,h,A.bu(A.b([B.M5,B.aq,A.c_(A.X('Your registration is submitted! Step 1: Sub-Admin audits your KYC documents. Step 2: Sub-Admin assigns your Room & Bed. Log in using your registered mobile number & default password "password123".',h,h,h,$.dK().KY(B.W,1.4),h,h),1)],i),B.p,B.m,B.l,0),h,k),B.jR,B.bn,A.qP(B.mg,!1,new A.alL(a),!1,"Return to Resident Login"),B.F],i),B.p,B.m,B.l),h),h),g,h)},
+return A.lk(new A.d5(new A.ab(0,1/0,f,1/0),new A.Qf(A.b_(A.b([B.jR,s,B.eL,r,B.bn,q,B.bn,A.cE(p,h,A.bu(A.b([B.M5,B.aq,A.c_(A.X('Your registration is submitted! Step 1: Sub-Admin audits your KYC documents. Step 2: Sub-Admin assigns your Room & Bed. Once approved, log in using your registered mobile number & your chosen password.',h,h,h,$.dK().KY(B.W,1.4),h,h),1)],i),B.p,B.m,B.l,0),h,k),B.jR,B.bn,A.qP(B.mg,!1,new A.alL(a),!1,"Return to Resident Login"),B.F],i),B.p,B.m,B.l),h),h),g,h)},
 $S:670}
 A.alL.prototype={
 $0(){A.c4(this.a,!1).mM(A.ff(new A.alK(),null,t.z))},
@@ -107759,7 +107759,7 @@ B.a1y=new A.bg("Support ticket raised!",null,null,null,null,null,null,null,null)
 B.WS=new A.ey(B.a1y,null,null,null,null,null,null,null,null,null,null,null,null,B.aJ,!1,null,null,null,B.y,null)
 B.a1T=new A.bg("Calling branch manager...",null,null,null,null,null,null,null,null)
 B.WT=new A.ey(B.a1T,null,null,null,null,null,null,null,null,null,null,null,null,B.aJ,!1,null,null,null,B.y,null)
-B.a24=new A.bg("Default registration password is: password123",null,null,null,null,null,null,null,null)
+B.a24=new A.bg("Please contact PG manager to reset your password.",null,null,null,null,null,null,null,null)
 B.WU=new A.ey(B.a24,null,null,null,null,null,null,null,null,null,null,null,null,B.aJ,!1,null,null,null,B.y,null)
 B.a1O=new A.bg("Please enter phone number and password",null,null,null,null,null,null,null,null)
 B.WV=new A.ey(B.a1O,B.b3,null,null,null,null,null,null,null,null,null,null,null,B.aJ,!1,null,null,null,B.y,null)

@@ -30,11 +30,16 @@ class _StudentRegistrationScreenState
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _aadhaarController = TextEditingController();
   final _panController = TextEditingController();
   final _parentNameController = TextEditingController();
   final _parentPhoneController = TextEditingController();
   final _addressController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   XFile? _profilePhoto;
   XFile? _aadhaarFront;
@@ -42,6 +47,21 @@ class _StudentRegistrationScreenState
   XFile? _panCard;
 
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _aadhaarController.dispose();
+    _panController.dispose();
+    _parentNameController.dispose();
+    _parentPhoneController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
 
   void _showError(String message) {
     if (mounted) {
@@ -226,6 +246,16 @@ class _StudentRegistrationScreenState
       _showError('Please enter a valid email address.');
       return;
     }
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+    if (password.length < 6) {
+      _showError('Please enter a password with at least 6 characters.');
+      return;
+    }
+    if (password != confirmPassword) {
+      _showError('Password and Confirm Password do not match.');
+      return;
+    }
     if (aadhaarDigits.length != 12) {
       _showError('Please enter a valid 12-digit Aadhaar card number.');
       return;
@@ -282,7 +312,7 @@ class _StudentRegistrationScreenState
         'full_name': _fullNameController.text.trim(),
         'phone': phoneDigits,
         'email': _emailController.text.trim(),
-        'password': 'password123',
+        'password': password,
         'aadhaar_number': aadhaarDigits,
         'pan_number': panCode,
         'parent_name': _parentNameController.text.trim(),
@@ -489,6 +519,46 @@ class _StudentRegistrationScreenState
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 controller: _emailController,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              CustomTextField(
+                label: 'Create Account Password',
+                hint: 'Minimum 6 characters',
+                prefixIcon: Icons.lock_outline_rounded,
+                obscureText: _obscurePassword,
+                controller: _passwordController,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              CustomTextField(
+                label: 'Confirm Password',
+                hint: 'Re-enter your password',
+                prefixIcon: Icons.lock_reset_rounded,
+                obscureText: _obscureConfirmPassword,
+                controller: _confirmPasswordController,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                ),
               ),
               const SizedBox(height: AppSpacing.xxl),
 

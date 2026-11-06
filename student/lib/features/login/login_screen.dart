@@ -152,20 +152,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   // Responsive Credential Hint & Action
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Expanded(
-                        child: Text(
-                          'Default Password: password123',
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontStyle: FontStyle.italic,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
                       TextButton(
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
@@ -175,7 +163,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Default registration password is: password123'),
+                              content: Text('Please contact your PG Manager or Sub-Admin to reset your password.'),
                             ),
                           );
                         },
