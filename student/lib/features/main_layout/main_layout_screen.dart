@@ -1,20 +1,25 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../home/home_dashboard_screen.dart';
 import '../payments/payments_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../profile/profile_screen.dart';
+import '../home/data/student_repository.dart';
 
-class MainLayoutScreen extends StatefulWidget {
+class MainLayoutScreen extends ConsumerStatefulWidget {
   final int initialIndex;
   const MainLayoutScreen({super.key, this.initialIndex = 0});
 
   @override
-  State<MainLayoutScreen> createState() => _MainLayoutScreenState();
+  ConsumerState<MainLayoutScreen> createState() => _MainLayoutScreenState();
 }
 
-class _MainLayoutScreenState extends State<MainLayoutScreen> {
+class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
+    with WidgetsBindingObserver {
   late int _currentIndex;
+  Timer? _realtimeSyncTimer;
 
   final List<Widget> _screens = const [
     HomeDashboardScreen(),
@@ -27,6 +32,40 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    WidgetsBinding.instance.addObserver(this);
+
+    // Initial background sync
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncRealtimeData();
+    });
+
+    // Real-time background sync every 5 seconds without user having to refresh or re-login
+    _realtimeSyncTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _syncRealtimeData();
+    });
+  }
+
+  void _syncRealtimeData() {
+    if (!mounted) return;
+    ref.invalidate(studentProfileProvider);
+    ref.invalidate(paymentHistoryProvider);
+    ref.invalidate(complaintHistoryProvider);
+    ref.invalidate(electricityHistoryProvider);
+    ref.invalidate(noticeHistoryProvider);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncRealtimeData();
+    }
+  }
+
+  @override
+  void dispose() {
+    _realtimeSyncTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -46,6 +85,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
             setState(() {
               _currentIndex = index;
             });
+            _syncRealtimeData();
           },
           items: const [
             BottomNavigationBarItem(

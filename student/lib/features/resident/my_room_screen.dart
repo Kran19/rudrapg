@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
@@ -6,11 +7,38 @@ import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_card.dart';
 import '../home/data/student_repository.dart';
 
-class MyRoomScreen extends ConsumerWidget {
+class MyRoomScreen extends ConsumerStatefulWidget {
   const MyRoomScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyRoomScreen> createState() => _MyRoomScreenState();
+}
+
+class _MyRoomScreenState extends ConsumerState<MyRoomScreen> {
+  Timer? _realtimeTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(studentProfileProvider);
+    });
+    // Real-time polling every 4 seconds without user refresh or re-login
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) {
+        ref.invalidate(studentProfileProvider);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _realtimeTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profileAsync = ref.watch(studentProfileProvider);
 
     return Scaffold(

@@ -206,9 +206,127 @@
     };
     // Expose alias on document as well
     document.openChangePasswordModal = window.openChangePasswordModal;
+
+    // 4. Background Real-time State Polling & Auto-sync Engine
+    (function() {
+      var lastProfileStatus = null;
+      var lastKycStatus = null;
+      var lastBedCode = null;
+      var lastRentStatus = null;
+      var lastDepositStatus = null;
+      var lastComplaintsHash = null;
+      var lastElectricityHash = null;
+
+      function checkRealtimeUpdates() {
+        var token = localStorage.getItem('flutter.auth_token') || localStorage.getItem('auth_token');
+        if (!token) return;
+        token = token.replace(/^["']|["']$/g, '');
+
+        // 1. Sync Student Profile (KYC, Room/Bed assignment, Rent/Deposit Status)
+        fetch('/api/v1/student/profile', {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        .then(function(res) {
+          if (res.status === 401) return null;
+          return res.json();
+        })
+        .then(function(data) {
+          if (!data) return;
+          var student = data.student || data.data || data;
+          if (!student) return;
+
+          var curStatus = String(student.status || '');
+          var curKyc = String(student.kyc_status || '');
+          var curBed = String((student.bed && student.bed.bed_code) || student.bed_code || '');
+          var curRent = String(student.rent_status || '');
+          var curDeposit = String(student.deposit_status || '');
+
+          if (lastProfileStatus !== null && (
+            lastProfileStatus !== curStatus ||
+            lastKycStatus !== curKyc ||
+            lastBedCode !== curBed ||
+            lastRentStatus !== curRent ||
+            lastDepositStatus !== curDeposit
+          )) {
+            console.log('[Realtime Sync] Profile status updated on server. Auto-updating screen.');
+            window.location.reload();
+            return;
+          }
+
+          lastProfileStatus = curStatus;
+          lastKycStatus = curKyc;
+          lastBedCode = curBed;
+          lastRentStatus = curRent;
+          lastDepositStatus = curDeposit;
+        })
+        .catch(function() {});
+
+        // 2. Sync Complaint Ticket Statuses (e.g. PENDING -> OPEN -> SOLVED)
+        fetch('/api/v1/student/complaints', {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        .then(function(res) {
+          if (res.status === 401) return null;
+          return res.json();
+        })
+        .then(function(data) {
+          if (!data) return;
+          var list = data.data || [];
+          var hash = list.map(function(t) { return t.id + ':' + t.status; }).join('|');
+          if (lastComplaintsHash !== null && lastComplaintsHash !== hash) {
+            console.log('[Realtime Sync] Complaint ticket status updated on server. Auto-updating screen.');
+            window.location.reload();
+            return;
+          }
+          lastComplaintsHash = hash;
+        })
+        .catch(function() {});
+
+        // 3. Sync Electricity Reading Statuses (e.g. PENDING -> APPROVED)
+        fetch('/api/v1/student/electricity-readings', {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        .then(function(res) {
+          if (res.status === 401) return null;
+          return res.json();
+        })
+        .then(function(data) {
+          if (!data) return;
+          var list = data.data || [];
+          var hash = list.map(function(e) { return e.id + ':' + e.status; }).join('|');
+          if (lastElectricityHash !== null && lastElectricityHash !== hash) {
+            console.log('[Realtime Sync] Electricity audit status updated on server. Auto-updating screen.');
+            window.location.reload();
+            return;
+          }
+          lastElectricityHash = hash;
+        })
+        .catch(function() {});
+      }
+
+      // Live polling every 5 seconds
+      setInterval(checkRealtimeUpdates, 5000);
+
+      // Instant sync whenever user switches to or unlocks the browser tab
+      window.addEventListener('focus', checkRealtimeUpdates);
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+          checkRealtimeUpdates();
+        }
+      });
+    })();
   </script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js?v=20261106_04" async></script>
+  <script src="flutter_bootstrap.js?v=20261106_05" async></script>
 </body>
 </html>

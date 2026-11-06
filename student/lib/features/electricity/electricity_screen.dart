@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
   final _readingController = TextEditingController();
   XFile? _meterPhoto;
   bool _isSubmitting = false;
+  Timer? _realtimeTimer;
 
   @override
   void initState() {
@@ -31,10 +33,17 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(electricityHistoryProvider);
     });
+    // Real-time polling every 4 seconds without user refresh or re-login
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) {
+        ref.invalidate(electricityHistoryProvider);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _realtimeTimer?.cancel();
     _readingController.dispose();
     super.dispose();
   }

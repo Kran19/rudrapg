@@ -7,7 +7,7 @@ final studentRepositoryProvider = Provider<StudentRepository>((ref) {
   return StudentRepository(ref.read(apiClientProvider));
 });
 
-final studentProfileProvider = FutureProvider<ResidentModel>((ref) async {
+final studentProfileProvider = FutureProvider.autoDispose<ResidentModel>((ref) async {
   final repository = ref.read(studentRepositoryProvider);
   return repository.getProfile();
 });

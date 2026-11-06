@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
@@ -21,6 +22,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
   final _subjectController = TextEditingController();
   String _category = 'PLUMBING';
   bool _isSubmitting = false;
+  Timer? _realtimeTimer;
 
   @override
   void initState() {
@@ -28,10 +30,17 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(complaintHistoryProvider);
     });
+    // Real-time polling every 4 seconds without user refresh or re-login
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) {
+        ref.invalidate(complaintHistoryProvider);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _realtimeTimer?.cancel();
     _descController.dispose();
     _subjectController.dispose();
     super.dispose();

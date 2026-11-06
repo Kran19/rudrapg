@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
@@ -22,9 +23,27 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   final _utrController = TextEditingController();
   XFile? _proofImage;
   bool _isSubmitting = false;
+  Timer? _realtimeTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(studentProfileProvider);
+      ref.invalidate(paymentHistoryProvider);
+    });
+    // Real-time polling every 4 seconds without user refresh or re-login
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) {
+        ref.invalidate(studentProfileProvider);
+        ref.invalidate(paymentHistoryProvider);
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _realtimeTimer?.cancel();
     _utrController.dispose();
     super.dispose();
   }
