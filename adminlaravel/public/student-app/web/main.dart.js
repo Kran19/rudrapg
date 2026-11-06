@@ -29971,17 +29971,17 @@ break
 case 3:s=5
 return A.o(q.WK("String","auth_token",o),$async$a3Q)
 case 5:case 4:n=p.gNx().i(0,"screen")
-var _tk=window.localStorage.getItem('flutter.auth_token')||window.localStorage.getItem('auth_token');var _hasTk=(_tk&&_tk.length>5);if(n!=null)switch(n){case"login":m=_hasTk?B.mJ:B.em
+var _tk=window.localStorage.getItem('flutter.auth_token');var _hasTk=(_tk&&_tk!=='null'&&_tk!=='undefined'&&_tk.replace(/["']/g,'').trim().length>10);if(n!=null)switch(n){case"login":m=B.em
 break
-case"dashboard":case"home":m=B.mJ
+case"dashboard":case"home":m=_hasTk?B.mJ:B.em
 break
-case"payments":m=B.R6
+case"payments":m=_hasTk?B.R6:B.em
 break
-case"notifications":m=B.R7
+case"notifications":m=_hasTk?B.R7:B.em
 break
-case"profile":m=B.R8
+case"profile":m=_hasTk?B.R8:B.em
 break
-case"room":case"my_room":m=B.mV
+case"room":case"my_room":m=_hasTk?B.mV:B.em
 break
 case"support":m=B.nI
 break
@@ -99325,11 +99325,20 @@ A.adq.prototype={
 $0(){return B.p3},
 $S:34}
 A.adp.prototype={
-$2(a,b){var s=null
-return A.cK(A.b_(A.b([B.LN,B.bn,A.X("Failed to load profile",s,s,s,$.nM(),s,s),B.ch,A.X(J.bC(a),s,s,s,$.dK(),B.cj,s),B.bn,A.C5(B.a1M,new A.adi(this.a),s)],t.p),B.p,B.cw,B.l),s,s)},
+$2(a,b){var s=null,err=J.bC(a)||'';
+if(err.indexOf('401')!==-1||err.toLowerCase().indexOf('unauth')!==-1){
+try{window.localStorage.removeItem('flutter.auth_token');window.localStorage.removeItem('auth_token');window.localStorage.removeItem('user_role');sessionStorage.clear();}catch(e){}
+return A.cK(A.b_(A.b([B.LN,B.bn,A.X("Session Expired",s,s,s,$.nM(),s,s),B.ch,A.X("Your resident session has expired or is invalid. Tap Sign In below to log in with your credentials.",s,s,s,$.dK(),B.cj,s),B.bn,A.C5(B.a1M,new A.adi(this.a),s)],t.p),B.p,B.cw,B.l),s,s);
+}
+return A.cK(A.b_(A.b([B.LN,B.bn,A.X("Failed to load profile",s,s,s,$.nM(),s,s),B.ch,A.X(err,s,s,s,$.dK(),B.cj,s),B.bn,A.C5(B.a1M,new A.adi(this.a),s)],t.p),B.p,B.cw,B.l),s,s)},
 $S:137}
 A.adi.prototype={
-$0(){var s=this.a,r=$.nO()
+$0(){var tk=window.localStorage.getItem('flutter.auth_token');
+if(!tk||tk==='null'||tk==='undefined'||tk.replace(/["']/g,'').trim().length<10){
+try{window.localStorage.removeItem('flutter.auth_token');window.localStorage.removeItem('auth_token');window.localStorage.removeItem('user_role');sessionStorage.clear();}catch(e){}
+window.location.href='/?screen=login';
+return null}
+var s=this.a,r=$.nO()
 if(s.e==null)A.V(A.aa(u.w))
 s.gm7().q7(r)
 return null},
@@ -100081,8 +100090,8 @@ s.toString
 A.Mn(!b,new A.aCT(this,b,a),s,t.z)},
 V3(){var s,r,tk
 if(this.c==null)return
-tk=window.localStorage.getItem('flutter.auth_token')||window.localStorage.getItem('auth_token')
-if(tk&&tk.length>5)s=B.mJ;else s=B.Br
+tk=window.localStorage.getItem('flutter.auth_token')
+if(tk&&tk!=='null'&&tk!=='undefined'&&tk.replace(/["']/g,'').trim().length>10)s=B.mJ;else s=B.Br
 r=this.c
 r.toString
 A.c4(r,!1).mM(A.aPc(new A.aCP(s),B.cs,null,B.J8,new A.aCQ(),t.z))},

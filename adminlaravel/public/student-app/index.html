@@ -222,6 +222,12 @@
             'Accept': 'application/json',
             'Authorization': 'Bearer ' + token
           }
+        }).then(function (res) {
+          if (res.status === 401) {
+            localStorage.removeItem('flutter.auth_token');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_role');
+          }
         }).catch(function () { });
       }
 
@@ -232,7 +238,7 @@
 </head>
 
 <body>
-  <script src="flutter_bootstrap.js?v=20261106_07" async></script>
+  <script src="flutter_bootstrap.js?v=20261106_08" async></script>
 </body>
 
 </html>

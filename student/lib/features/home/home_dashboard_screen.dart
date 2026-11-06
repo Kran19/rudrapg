@@ -339,11 +339,16 @@ class HomeDashboardScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
-                            (route) => false,
-                          );
+                        onPressed: () async {
+                          final prefs = ref.read(sharedPreferencesProvider);
+                          await prefs.remove('auth_token');
+                          await prefs.remove('user_role');
+                          if (context.mounted) {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                              (route) => false,
+                            );
+                          }
                         },
                         icon: const Icon(Icons.login_rounded, size: 18),
                         label: const Text('Sign In to Portal'),

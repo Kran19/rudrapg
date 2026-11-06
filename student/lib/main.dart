@@ -29,7 +29,7 @@ void main() async {
   if (screenParam != null) {
     switch (screenParam) {
       case 'login':
-        initialScreen = hasToken ? const MainLayoutScreen() : const LoginScreen();
+        initialScreen = const LoginScreen();
         break;
       case 'dashboard':
       case 'home':
