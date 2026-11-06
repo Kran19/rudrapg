@@ -92,9 +92,12 @@ class StudentRepository {
       await _dio.post(
         '/student/electricity-reading',
         data: formData,
-        options: Options(contentType: null, headers: {'Accept': 'application/json'}),
       );
     } catch (e) {
+      if (e is DioException && e.response?.data != null && e.response!.data is Map) {
+        final msg = e.response!.data['message'] ?? e.response!.data['error'];
+        if (msg != null) throw Exception(msg.toString());
+      }
       throw Exception('Error submitting reading: $e');
     }
   }

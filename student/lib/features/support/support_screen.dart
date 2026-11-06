@@ -260,12 +260,9 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                         separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
                         itemBuilder: (context, index) {
                           final item = history[index];
-                          final String rawStatus = item['status'] ?? 'PENDING';
-                          final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'Resolved';
-                          final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'In Progress';
-                          final String rawStatus = (item['status'] ?? 'PENDING').toString().toUpperCase();
-                          final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'SOLVED';
-                          final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'INPROGRESS';
+                          final String rawStatus = (item['status_label'] ?? item['status'] ?? 'PENDING').toString().toUpperCase().trim();
+                          final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'SOLVED' || rawStatus == 'APPROVED' || rawStatus == 'CONFIRMED' || rawStatus == 'CLOSED' || item['is_resolved'] == true;
+                          final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'INPROGRESS' || rawStatus == 'IN PROGRESS';
                           final bool isOpen = rawStatus == 'OPEN';
                           
                           Color statusBgColor;
@@ -275,7 +272,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                           if (isResolved) {
                             statusBgColor = AppColors.success.withValues(alpha: 0.1);
                             statusTextColor = AppColors.success;
-                            statusLabel = 'SOLVED';
+                            statusLabel = 'APPROVED & SOLVED';
                           } else if (isInProgress) {
                             statusBgColor = AppColors.info.withValues(alpha: 0.1);
                             statusTextColor = AppColors.info;

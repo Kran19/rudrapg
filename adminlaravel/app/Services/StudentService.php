@@ -122,29 +122,34 @@ class StudentService
 
     public function submitElectricityReading(Student $student, array $data): ElectricityReading
     {
-        $lastReading = ElectricityReading::where('student_id', $student->id)
-            ->orWhere(function ($q) use ($student) {
-                if ($student->room_id) {
-                    $q->where('room_id', $student->room_id);
-                }
-            })
-            ->latest()
-            ->first();
+        $lastReading = ElectricityReading::where(function ($q) use ($student) {
+            $q->where('student_id', $student->id);
+            if ($student->room_id) {
+                $q->orWhere('room_id', $student->room_id);
+            }
+        })
+        ->latest()
+        ->first();
 
         $currReading = (float) $data['current_reading'];
         $prevReading = $lastReading ? (float) $lastReading->current_reading : 0.0;
 
-        if ($currReading < $prevReading && !$lastReading) {
-            $prevReading = 0.0;
+        $units = round(abs($currReading - $prevReading), 2);
+        if ($currReading >= $prevReading) {
+            $units = round($currReading - $prevReading, 2);
         }
 
-        $units = max(0.0, round($currReading - $prevReading, 2));
         $rate = $student->branch ? (float) $student->branch->electricity_unit_rate : 10.0;
         $total = round($units * $rate, 2);
 
+        $roomId = $student->room_id;
+        if (!$roomId && $student->branch_id) {
+            $roomId = \App\Models\Room::where('branch_id', $student->branch_id)->first()?->id;
+        }
+
         return ElectricityReading::create([
             'branch_id' => $student->branch_id,
-            'room_id' => $student->room_id ?? ($student->branch?->rooms()->first()?->id ?? 1),
+            'room_id' => $roomId ?? 1,
             'student_id' => $student->id,
             'reading_month' => date('F Y'),
             'current_reading' => $currReading,

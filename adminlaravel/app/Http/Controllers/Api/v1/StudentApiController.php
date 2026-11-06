@@ -75,15 +75,41 @@ class StudentApiController extends Controller
         ]);
     }
 
-    public function submitElectricityReading(SubmitElectricityReadingRequest $request): JsonResponse
+    public function submitElectricityReading(Request $request): JsonResponse
     {
         $student = $this->studentService->getProfile($request->user());
-        $data = $request->validated();
-
-        if ($request->hasFile('meter_photo_path')) {
-            $path = $request->file('meter_photo_path')->store('uploads/meter', 'public');
-            $data['meter_photo_path'] = $path;
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Resident profile not found.'], 404);
         }
+
+        $currentReading = $request->input('current_reading') ?? $request->input('reading');
+
+        $validator = \Illuminate\Support\Facades\Validator::make(
+            ['current_reading' => $currentReading],
+            ['current_reading' => ['required', 'numeric', 'min:0']]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first('current_reading') ?: 'Current meter reading is required and must be a valid number.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $photoPath = null;
+        if ($request->hasFile('meter_photo_path')) {
+            $photoPath = $request->file('meter_photo_path')->store('uploads/meter', 'public');
+        } elseif ($request->hasFile('meter_photo')) {
+            $photoPath = $request->file('meter_photo')->store('uploads/meter', 'public');
+        } elseif ($request->filled('meter_photo_path') && is_string($request->input('meter_photo_path')) && !str_starts_with($request->input('meter_photo_path'), 'blob:')) {
+            $photoPath = $request->input('meter_photo_path');
+        }
+
+        $data = [
+            'current_reading' => (float) $currentReading,
+            'meter_photo_path' => $photoPath,
+        ];
 
         $reading = $this->studentService->submitElectricityReading($student, $data);
 
@@ -97,6 +123,10 @@ class StudentApiController extends Controller
     public function createComplaint(CreateComplaintRequest $request): JsonResponse
     {
         $student = $this->studentService->getProfile($request->user());
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Resident profile not found.'], 404);
+        }
+
         $complaint = $this->studentService->createComplaint($student, $request->validated());
 
         return response()->json([
@@ -109,6 +139,10 @@ class StudentApiController extends Controller
     public function notices(Request $request): JsonResponse
     {
         $student = $this->studentService->getProfile($request->user());
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Resident profile not found.'], 404);
+        }
+
         $notices = $this->studentService->getNotices($student);
 
         return response()->json([
@@ -120,9 +154,18 @@ class StudentApiController extends Controller
     public function electricityReadings(Request $request): JsonResponse
     {
         $student = $this->studentService->getProfile($request->user());
-        $readings = \App\Models\ElectricityReading::where('student_id', $student->id)
-            ->latest()
-            ->get();
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Resident profile not found.'], 404);
+        }
+
+        $readings = \App\Models\ElectricityReading::where(function ($query) use ($student) {
+            $query->where('student_id', $student->id);
+            if ($student->room_id) {
+                $query->orWhere('room_id', $student->room_id);
+            }
+        })
+        ->latest()
+        ->get();
 
         return response()->json([
             'status' => 'success',
@@ -133,6 +176,10 @@ class StudentApiController extends Controller
     public function payments(Request $request): JsonResponse
     {
         $student = $this->studentService->getProfile($request->user());
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Resident profile not found.'], 404);
+        }
+
         $payments = \App\Models\Payment::with('proof')
             ->where('student_id', $student->id)
             ->latest()
@@ -147,9 +194,18 @@ class StudentApiController extends Controller
     public function complaints(Request $request): JsonResponse
     {
         $student = $this->studentService->getProfile($request->user());
-        $complaints = \App\Models\Complaint::where('student_id', $student->id)
-            ->latest()
-            ->get();
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Resident profile not found.'], 404);
+        }
+
+        $complaints = \App\Models\Complaint::where(function ($query) use ($student) {
+            $query->where('student_id', $student->id);
+            if ($student->room_id) {
+                $query->orWhere('room_id', $student->room_id);
+            }
+        })
+        ->latest()
+        ->get();
 
         return response()->json([
             'status' => 'success',

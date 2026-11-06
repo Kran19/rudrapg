@@ -81,25 +81,30 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter current reading.')));
       return;
     }
-    if (_meterPhoto == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please capture a meter photo.')));
-      return;
-    }
 
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      final formData = FormData.fromMap({
+      final Map<String, dynamic> map = {
         'current_reading': reading,
-        'meter_photo_path': MultipartFile.fromBytes(await _meterPhoto!.readAsBytes(), filename: 'meter_photo.jpg', contentType: MediaType('image', 'jpeg')),
-      });
+      };
+      if (_meterPhoto != null) {
+        map['meter_photo_path'] = MultipartFile.fromBytes(
+          await _meterPhoto!.readAsBytes(),
+          filename: 'meter_photo.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        );
+      }
+      final formData = FormData.fromMap(map);
 
       await ref.read(studentRepositoryProvider).submitElectricityReading(formData);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reading submitted! Sub Admin will audit.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reading submitted successfully! Sub Admin will audit.')),
+        );
         _readingController.clear();
         setState(() {
           _meterPhoto = null;
@@ -108,7 +113,8 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        String msg = e.toString().replaceFirst('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) {
@@ -174,6 +180,26 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                ),
+                                historyAsync.maybeWhen(
+                                  data: (history) {
+                                    if (history.isEmpty) return const SizedBox();
+                                    final latest = history.first;
+                                    final rawStatus = (latest['status_label'] ?? latest['status'] ?? '').toString().toUpperCase();
+                                    final bool isApproved = rawStatus.contains('APPROVED') || rawStatus.contains('CONFIRMED') || latest['is_approved'] == true;
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isApproved ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        isApproved ? '✓ APPROVED & CONFIRMED' : 'AUDIT PENDING',
+                                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                      ),
+                                    );
+                                  },
+                                  orElse: () => const SizedBox(),
                                 ),
                               ],
                             ),
@@ -277,6 +303,18 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                         itemBuilder: (context, index) {
                           final item = history[index];
                           final amount = (double.tryParse(item['total_amount']?.toString() ?? '0') ?? 0).toInt();
+                          final String rawStatus = (item['status_label'] ?? item['status'] ?? 'PENDING').toString().toUpperCase().trim();
+                          final bool isApproved = rawStatus.contains('APPROVED') || rawStatus.contains('CONFIRMED') || rawStatus == 'PAID' || item['is_approved'] == true;
+                          final bool isRejected = rawStatus.contains('REJECT');
+
+                          final Color badgeBg = isApproved
+                              ? AppColors.success.withValues(alpha: 0.1)
+                              : (isRejected ? AppColors.error.withValues(alpha: 0.1) : AppColors.warning.withValues(alpha: 0.1));
+                          final Color badgeText = isApproved
+                              ? AppColors.success
+                              : (isRejected ? AppColors.error : AppColors.warning);
+                          final String label = isApproved ? 'APPROVED & CONFIRMED' : (isRejected ? 'REJECTED' : 'PENDING AUDIT');
+
                           return CustomCard(
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -307,7 +345,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                                   children: [
                                     Text(
                                       '₹$amount',
-                                      style: AppTypography.titleSmall.copyWith(color: AppColors.success),
+                                      style: AppTypography.titleSmall.copyWith(color: isApproved ? AppColors.success : AppColors.textPrimary),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -315,12 +353,12 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: AppColors.success.withValues(alpha: 0.1),
+                                        color: badgeBg,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
-                                        item['status'] ?? 'PENDING',
-                                        style: AppTypography.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
+                                        label,
+                                        style: AppTypography.caption.copyWith(color: badgeText, fontWeight: FontWeight.bold),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),

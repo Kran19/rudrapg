@@ -54,8 +54,8 @@ Route::prefix('v1')->group(function () {
             \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
             $output[] = 'Artisan migrate --force: ' . trim(\Illuminate\Support\Facades\Artisan::output());
 
-            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'DatabaseSeeder', '--force' => true]);
-            $output[] = 'Artisan db:seed: ' . trim(\Illuminate\Support\Facades\Artisan::output());
+            // db:seed removed to preserve live student data, approvals, and tickets on deploy
+            $output[] = 'Artisan db:seed: skipped to preserve live data';
         } catch (\Exception $e) {
             $output[] = 'Artisan error: ' . $e->getMessage();
         }

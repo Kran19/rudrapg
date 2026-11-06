@@ -1,4 +1,4 @@
-(function dartProgram(){function copyProperties(a,b){var s=Object.keys(a)
+﻿(function dartProgram(){function copyProperties(a,b){var s=Object.keys(a)
 for(var r=0;r<s.length;r++){var q=s[r]
 b[q]=a[q]}}function mixinPropertiesHard(a,b){var s=Object.keys(a)
 for(var r=0;r<s.length;r++){var q=s[r]
@@ -98790,11 +98790,16 @@ if(k==null)k="Month"
 r=t.p
 k=A.c_(A.b_(A.b([A.X(k,1,B.q,n,$.eD(),n,n),B.aY,A.X("Reading: "+A.j(l.i(m,"current_reading"))+" kWh ("+A.j(l.i(m,"units_consumed"))+" Units)",1,B.q,n,$.dK(),n,n)],r),B.z,B.m,B.l),1)
 q=A.X("\u20b9"+s,1,B.q,n,$.eD().aU(B.C),n,n)
-p=B.C.b6(0.1)
 o=A.ck(12)
-l=l.i(m,"status")
-if(l==null)l="PENDING"
-return A.cE(n,n,A.bu(A.b([k,B.aq,A.b_(A.b([q,B.bK,A.bE(n,A.X(l,1,B.q,n,$.dp().hi(B.C,B.S),n,n),B.n,n,n,new A.bc(p,n,n,o,n,n,B.V),n,n,n,B.fD,n,n,n)],r),B.ds,B.m,B.l)],r),B.p,B.aL,B.l,0),n,n)},
+var _rawStat=l.i(m,"status_label")||l.i(m,"status")
+if(_rawStat==null)_rawStat="PENDING"
+var _sStat=(_rawStat+"").toUpperCase()
+var _isApp=_sStat.indexOf("APPROVED")!==-1||_sStat.indexOf("CONFIRMED")!==-1||_sStat==="PAID"||l.i(m,"is_approved")===!0
+var _isRej=_sStat.indexOf("REJECT")!==-1
+var _statCol=_isApp?B.C:(_isRej?B.b1:B.al)
+p=_statCol.b6(0.1)
+var _statTxt=_isApp?"APPROVED & CONFIRMED":(_isRej?"REJECTED":"PENDING AUDIT")
+return A.cE(n,n,A.bu(A.b([k,B.aq,A.b_(A.b([q,B.bK,A.bE(n,A.X(_statTxt,1,B.q,n,$.dp().hi(_statCol,B.S),n,n),B.n,n,n,new A.bc(p,n,n,o,n,n,B.V),n,n,n,B.fD,n,n,n)],r),B.ds,B.m,B.l)],r),B.p,B.aL,B.l,0),n,n)},
 $S:72}
 A.awu.prototype={
 $0(){return B.d0},
@@ -98990,7 +98995,7 @@ var $async$yX=A.v(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:q=3
 m=t.z
 s=6
-return A.o(o.a.El("/student/electricity-reading",a,A.ajp(null,A.ak(["Accept","application/json"],t.N,m)),m),$async$yX)
+return A.o(o.a.El("/student/electricity-reading",a,null,m),$async$yX)
 case 6:q=1
 s=5
 break
@@ -100517,14 +100522,15 @@ A.aDu.prototype={
 $2(a,b){return B.F},
 $S:71}
 A.aDt.prototype={
-$2(a,a0){var s,r,q,p,o,n,m,l,k,j,i,h,g,f=null,e="resolution_remarks",d=J.aR(this.a,a0),c=J.aZ(d),b=c.i(d,"status")
+$2(a,a0){var s,r,q,p,o,n,m,l,k,j,i,h,g,f=null,e="resolution_remarks",d=J.aR(this.a,a0),c=J.aZ(d),b=c.i(d,"status_label")||c.i(d,"status")
 if(b==null)b="PENDING"
-s=b==="RESOLVED"||b==="Resolved"||b==="SOLVED"
-r=b==="IN_PROGRESS"||b==="In Progress"
-var v_open=b==="OPEN"||b==="Open"
+var _sb=(b+"").toUpperCase()
+s=_sb==="RESOLVED"||_sb==="SOLVED"||_sb==="APPROVED"||_sb==="CONFIRMED"||_sb==="CLOSED"||c.i(d,"is_resolved")===!0
+r=_sb==="IN_PROGRESS"||_sb==="IN PROGRESS"||_sb==="INPROGRESS"
+var v_open=_sb==="OPEN"
 if(s){q=B.C.b6(0.1)
 p=B.C
-o="SOLVED"}else if(r){q=B.fo.b6(0.1)
+o="APPROVED & SOLVED"}else if(r){q=B.fo.b6(0.1)
 p=B.fo
 o="IN PROGRESS"}else if(v_open){q=B.fo.b6(0.1)
 p=B.fo
