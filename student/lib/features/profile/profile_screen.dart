@@ -9,6 +9,7 @@ import '../auth/presentation/auth_notifier.dart';
 import '../resident/my_room_screen.dart';
 import '../settings/settings_screen.dart';
 import '../support/support_screen.dart';
+import 'widgets/change_password_dialog.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../home/data/student_repository.dart';
@@ -165,6 +166,15 @@ class ProfileScreen extends ConsumerWidget {
                         Navigator.of(context).push(
                           MaterialPageRoute(builder: (context) => const SupportScreen()),
                         );
+                      },
+                    ),
+                    const Divider(height: 20),
+                    _buildNavTile(
+                      icon: Icons.lock_reset_rounded,
+                      title: 'Change Password',
+                      subtitle: 'Update your account login password',
+                      onTap: () {
+                        ChangePasswordDialog.show(context);
                       },
                     ),
                     const Divider(height: 20),

@@ -175,4 +175,30 @@ class StudentRepository {
       throw Exception('Error deleting account: $e');
     }
   }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await _dio.post('/student/change-password', data: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'confirm_password': confirmPassword,
+      });
+      if (response.statusCode != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to update password');
+      }
+    } catch (e) {
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ??
+            e.response?.data?['errors']?['current_password']?[0] ??
+            e.response?.data?['errors']?['password']?[0] ??
+            e.message;
+        throw Exception(message);
+      }
+      rethrow;
+    }
+  }
 }

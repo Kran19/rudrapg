@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_spacing.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_card.dart';
+import '../profile/widgets/change_password_dialog.dart';
 import '../home/data/student_repository.dart';
 import '../login/login_screen.dart';
 import '../auth/presentation/auth_notifier.dart';
@@ -79,6 +80,13 @@ class SettingsScreen extends ConsumerWidget {
                           const SnackBar(content: Text('Opening Help Desk...')),
                         );
                       },
+                    ),
+                    const Divider(height: 20),
+                    _buildSettingsTile(
+                      icon: Icons.lock_reset_rounded,
+                      title: 'Change Password',
+                      subtitle: 'Update your resident account login password',
+                      onTap: () => ChangePasswordDialog.show(context),
                     ),
                     const Divider(height: 20),
                     _buildSettingsTile(
