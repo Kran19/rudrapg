@@ -26,6 +26,14 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(electricityHistoryProvider);
+    });
+  }
+
+  @override
   void dispose() {
     _readingController.dispose();
     super.dispose();
@@ -325,7 +333,6 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
           ),
         ),
       ),
-    );
     );
   }
 }

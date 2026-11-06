@@ -23,6 +23,14 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(complaintHistoryProvider);
+    });
+  }
+
+  @override
   void dispose() {
     _descController.dispose();
     _subjectController.dispose();
@@ -92,6 +100,9 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+            child: SingleChildScrollView(
+              padding: AppSpacing.responsivePagePadding(context),
+              child: Column(
             child: RefreshIndicator(
               onRefresh: () async {
                 ref.invalidate(complaintHistoryProvider);
@@ -240,6 +251,9 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                         separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
                         itemBuilder: (context, index) {
                           final item = history[index];
+                          final String rawStatus = item['status'] ?? 'PENDING';
+                          final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'Resolved';
+                          final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'In Progress';
                           final String rawStatus = (item['status'] ?? 'PENDING').toString().toUpperCase();
                           final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'SOLVED';
                           final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'INPROGRESS';
@@ -384,7 +398,6 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
           ),
         ),
       ),
-    );
     );
   }
 }
