@@ -29971,7 +29971,7 @@ break
 case 3:s=5
 return A.o(q.WK("String","auth_token",o),$async$a3Q)
 case 5:case 4:n=p.gNx().i(0,"screen")
-if(n!=null)switch(n){case"login":m=B.em
+var _tk=window.localStorage.getItem('flutter.auth_token')||window.localStorage.getItem('auth_token');var _hasTk=(_tk&&_tk.length>5);if(n!=null)switch(n){case"login":m=_hasTk?B.mJ:B.em
 break
 case"dashboard":case"home":m=B.mJ
 break
@@ -29985,7 +29985,7 @@ case"room":case"my_room":m=B.mV
 break
 case"support":m=B.nI
 break
-default:m=B.Cz}else m=B.Cz
+default:m=_hasTk?B.mJ:B.Cz}else m=_hasTk?B.mJ:B.Cz
 l=$.a4a()
 l=A.b([new A.RW(l,new A.u4(q,null,null,null,null,null,l.$ti.h("u4<1>")))],t.AT)
 if($.a2==null)A.aK3()
@@ -100079,9 +100079,10 @@ if(r>q)return!1}return!1},
 ap7(a,b){var s=this.c
 s.toString
 A.Mn(!b,new A.aCT(this,b,a),s,t.z)},
-V3(){var s,r
+V3(){var s,r,tk
 if(this.c==null)return
-s=B.Br
+tk=window.localStorage.getItem('flutter.auth_token')||window.localStorage.getItem('auth_token')
+if(tk&&tk.length>5)s=B.mJ;else s=B.Br
 r=this.c
 r.toString
 A.c4(r,!1).mM(A.aPc(new A.aCP(s),B.cs,null,B.J8,new A.aCQ(),t.z))},

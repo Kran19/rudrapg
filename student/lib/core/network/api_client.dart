@@ -56,17 +56,22 @@ final apiClientProvider = Provider<Dio>((ref) {
         options.headers.remove('Content-Type');
         options.headers.remove('content-type');
       }
-      final token = prefs.getString('auth_token');
-      if (token != null && token.isNotEmpty) {
-        options.headers['Authorization'] = 'Bearer $token';
+      final rawToken = prefs.getString('auth_token');
+      if (rawToken != null && rawToken.trim().isNotEmpty) {
+        final cleanToken = rawToken.trim().replaceAll(RegExp(r'^["\']|["\']$'), '');
+        options.headers['Authorization'] = 'Bearer $cleanToken';
       }
       return handler.next(options);
     },
     onError: (DioException e, handler) async {
-      // Handle 401 Unauthorized globally: clear stale or invalidated token
+      // Handle 401 Unauthorized globally: only wipe session if user is actually authenticated
+      // and server explicitly rejected the token as invalid or revoked
       if (e.response?.statusCode == 401) {
-        await prefs.remove('auth_token');
-        await prefs.remove('user_role');
+        final path = e.requestOptions.path;
+        if (!path.contains('/auth/login') && !path.contains('/branch/')) {
+          await prefs.remove('auth_token');
+          await prefs.remove('user_role');
+        }
       }
       return handler.next(e);
     }

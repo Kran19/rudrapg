@@ -131,8 +131,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
   void _navigateToNextScreen() {
     if (!mounted) return;
-    // Always land on the gate/login screen on startup so users are never trapped in an automatic dashboard session
-    const Widget nextScreen = QRScannerGateScreen();
+    // Check if user already has an active authenticated resident session
+    final prefs = ref.read(sharedPreferencesProvider);
+    final rawToken = prefs.getString('auth_token');
+    final bool hasToken = rawToken != null && rawToken.trim().isNotEmpty;
+
+    final Widget nextScreen = hasToken ? const MainLayoutScreen() : const QRScannerGateScreen();
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(

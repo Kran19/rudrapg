@@ -22,14 +22,14 @@ void main() async {
   }
 
   final token = prefs.getString('auth_token');
-  final bool hasToken = token != null && token.isNotEmpty;
+  final bool hasToken = token != null && token.trim().isNotEmpty;
 
-  Widget initialScreen = const SplashScreen();
+  Widget initialScreen = hasToken ? const MainLayoutScreen() : const SplashScreen();
   final screenParam = uri.queryParameters['screen'];
   if (screenParam != null) {
     switch (screenParam) {
       case 'login':
-        initialScreen = const LoginScreen();
+        initialScreen = hasToken ? const MainLayoutScreen() : const LoginScreen();
         break;
       case 'dashboard':
       case 'home':
