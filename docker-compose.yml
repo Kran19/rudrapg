@@ -24,10 +24,6 @@ services:
     volumes:
       - ./adminlaravel/storage:/var/www/html/storage
       - ./adminlaravel/.env:/var/www/html/.env
-      - ./adminlaravel/public:/var/www/html/public
-      - ./adminlaravel/app:/var/www/html/app
-      - ./adminlaravel/routes:/var/www/html/routes
-      - ./adminlaravel/resources:/var/www/html/resources
     depends_on:
       db:
         condition: service_healthy
