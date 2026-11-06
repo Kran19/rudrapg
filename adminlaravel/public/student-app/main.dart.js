@@ -29884,10 +29884,12 @@ aCU:function aCU(){},
 M5:function M5(){},
 tQ:function tQ(a,b){this.d=a
 this.a=b},
-KU:function KU(a,b,c,d,e,f,g,h){var _=this
+KU:function KU(a,b,c,d,e,f,g,h,i,j){var _=this
 _.w=a
 _.x=b
 _.y=c
+_.pwd=i||new A.fJ(B.bt,$.aq())
+_.cnf=j||new A.fJ(B.bt,$.aq())
 _.z=d
 _.Q=e
 _.as=f
@@ -100150,7 +100152,7 @@ this.cm()
 this.hd()}}
 A.tQ.prototype={
 ag(){var s=$.aq()
-return new A.KU(new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s))}}
+return new A.KU(new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s),new A.fJ(B.bt,s))}}
 A.KU.prototype={
 io(a){var s=null,r=this.c
 if(r!=null)r.ac(t.J).f.eA(A.xM(s,s,s,B.b3,s,B.y,s,A.bu(A.b([B.LK,B.aX,A.c_(A.X(a,s,s,s,B.jY,s,s),1)],t.p),B.p,B.m,B.l,0),s,B.aJ,s,s,s,s,s,s,s,s,s,s))},
@@ -100192,7 +100194,9 @@ break}a5=m.y
 d=a5.a.a
 if(!B.c.v(d,"@")||!B.c.v(d,".")){m.io("Please enter a valid email address.")
 s=1
-break}if(J.cj(a6)!==12){m.io("Please enter a valid 12-digit Aadhaar card number.")
+break}var _p1=B.c.cv(m.pwd.a.a);var _p2=B.c.cv(m.cnf.a.a);
+if(_p1.length<6){m.io("Please enter a password with at least 6 characters.");s=1;break;}
+if(_p1!==_p2){m.io("Password and Confirm Password do not match.");s=1;break;}if(J.cj(a6)!==12){m.io("Please enter a valid 12-digit Aadhaar card number.")
 s=1
 break}if(J.cj(a7)!==0){d=A.bf("^[A-Z]{5}[0-9]{4}[A-Z]{1}$",!1,!1)
 d=!d.b.test(a7)}else d=!1
@@ -100223,7 +100227,7 @@ b=b==null?null:J.bC(b)
 a=b
 l=a==null?"PG-NRD-01":a
 b=t.z
-k=A.aIP(A.ak(["branch_code",l,"full_name",B.c.cv(a4.a.a),"phone",a2,"email",B.c.cv(a5.a.a),"password","password123","aadhaar_number",a6,"pan_number",a7,"parent_name",B.c.cv(d.a.a),"parent_phone",a3,"current_address",B.c.cv(c.a.a)],t.N,b))
+k=A.aIP(A.ak(["branch_code",l,"full_name",B.c.cv(a4.a.a),"phone",a2,"email",B.c.cv(a5.a.a),"password",_p1,"aadhaar_number",a6,"pan_number",a7,"parent_name",B.c.cv(d.a.a),"parent_phone",a3,"current_address",B.c.cv(c.a.a)],t.N,b))
 a4=m.ay
 s=a4!=null?7:8
 break
@@ -100322,7 +100326,7 @@ l=A.X("Personal Details",h,h,h,$.dV(),h,h)
 m=A.ic(i.w,"Enter your legal name",h,B.dc,"Full Name",1,!1,B.qG,h,B.bM)
 n=$.aUi()
 j=t.VS
-k=A.b([o,B.ar,l,B.F,m,B.F,A.ic(i.x,g,A.b([n,new A.wC(10,h)],j),B.jU,"Mobile Number",1,!1,B.mh,h,B.bM),B.F,A.ic(i.y,"name@domain.com",h,B.CX,"Email Address",1,!1,B.qv,h,B.bM),B.ar,A.X("KYC Identification",h,h,h,$.dV(),h,h),B.F,A.ic(i.z,"12-digit Aadhaar Number",A.b([n,new A.wC(12,h)],j),B.CW,"Aadhaar Card Number",1,!1,B.qt,h,B.bM),B.F,A.ic(i.Q,"10-character PAN (e.g. ABCDE1234F)",h,B.dc,"PAN Card Number",1,!1,B.qz,h,B.Xy),B.ar,A.X("Parent / Guardian Contact",h,h,h,$.dV(),h,h),B.F,A.ic(i.as,"Father or Guardian Full Name",h,B.dc,"Parent / Guardian Name",1,!1,B.qA,h,B.bM),B.F,A.ic(i.at,g,A.b([n,new A.wC(10,h)],j),B.jU,"Parent / Guardian Phone",1,!1,B.qH,h,B.bM),B.F,A.ic(i.ax,"House No, Street, City, Pincode",h,B.dc,"Permanent Address",2,!1,B.iT,h,B.bM),B.ar,A.X("Document Attachments",h,h,h,$.dV(),h,h),B.F,i.zx(i.ay,B.KR,new A.aDn(i),"Student Profile Passport Photo"),B.F,i.zx(i.ch,B.qB,new A.aDo(i),"Aadhaar Card (Front)"),B.F,i.zx(i.CW,B.qB,new A.aDp(i),"Aadhaar Card (Back)"),B.F,i.zx(i.cx,B.KV,new A.aDq(i),"PAN Card Attachment"),B.WI],k)
+k=A.b([o,B.ar,l,B.F,m,B.F,A.ic(i.x,g,A.b([n,new A.wC(10,h)],j),B.jU,"Mobile Number",1,!1,B.mh,h,B.bM),B.F,A.ic(i.y,"name@domain.com",h,B.CX,"Email Address",1,!1,B.qv,h,B.bM),B.F,A.ic(i.pwd,"Minimum 6 characters",h,B.dc,"Create Account Password",1,!0,B.L6,h,B.bM),B.F,A.ic(i.cnf,"Re-enter your password",h,B.dc,"Confirm Password",1,!0,B.KM,h,B.bM),B.ar,A.X("KYC Identification",h,h,h,$.dV(),h,h),B.F,A.ic(i.z,"12-digit Aadhaar Number",A.b([n,new A.wC(12,h)],j),B.CW,"Aadhaar Card Number",1,!1,B.qt,h,B.bM),B.F,A.ic(i.Q,"10-character PAN (e.g. ABCDE1234F)",h,B.dc,"PAN Card Number",1,!1,B.qz,h,B.Xy),B.ar,A.X("Parent / Guardian Contact",h,h,h,$.dV(),h,h),B.F,A.ic(i.as,"Father or Guardian Full Name",h,B.dc,"Parent / Guardian Name",1,!1,B.qA,h,B.bM),B.F,A.ic(i.at,g,A.b([n,new A.wC(10,h)],j),B.jU,"Parent / Guardian Phone",1,!1,B.qH,h,B.bM),B.F,A.ic(i.ax,"House No, Street, City, Pincode",h,B.dc,"Permanent Address",2,!1,B.iT,h,B.bM),B.ar,A.X("Document Attachments",h,h,h,$.dV(),h,h),B.F,i.zx(i.ay,B.KR,new A.aDn(i),"Student Profile Passport Photo"),B.F,i.zx(i.ch,B.qB,new A.aDo(i),"Aadhaar Card (Front)"),B.F,i.zx(i.CW,B.qB,new A.aDp(i),"Aadhaar Card (Back)"),B.F,i.zx(i.cx,B.KV,new A.aDq(i),"PAN Card Attachment"),B.WI],k)
 if(i.cy)k.push(B.p3)
 else k.push(A.qP(B.KT,!1,i.gapB(),!1,"Submit Resident Registration"))
 k.push(B.eL)
