@@ -315,8 +315,10 @@ class StudentApiController extends Controller
                 \App\Models\Complaint::create([
                     'student_id' => $student->id,
                     'branch_id' => $student->branch_id,
+                    'room_id' => $student->room_id,
+                    'ticket_number' => 'TKT-'.date('Y').'-'.rand(1000, 9999),
                     'category' => 'GENERAL',
-                    'title' => 'Resident Account Deletion & Exit Request',
+                    'subject' => 'Resident Account Deletion & Exit Request',
                     'description' => 'Resident initiated account deletion via mobile app. Notice period and security deposit settlement required.',
                     'status' => 'OPEN',
                     'priority' => 'HIGH',
@@ -339,5 +341,25 @@ class StudentApiController extends Controller
             'status' => 'success',
             'message' => 'Account deletion request processed successfully. Personal session tokens have been revoked.',
         ]);
+    }
+
+    public function viewDocument(Request $request, int $id): \Symfony\Component\HttpFoundation\Response
+    {
+        $student = $this->studentService->getProfile($request->user());
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Resident profile not found.'], 404);
+        }
+
+        $doc = \App\Models\StudentDocument::where('student_id', $student->id)->findOrFail($id);
+        $cleanPath = ltrim(str_replace('storage/', '', $doc->file_path), '/');
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->response($cleanPath);
+        }
+        if (\Illuminate\Support\Facades\Storage::disk('local')->exists($cleanPath)) {
+            return \Illuminate\Support\Facades\Storage::disk('local')->response($cleanPath);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Document not found.'], 404);
     }
 }

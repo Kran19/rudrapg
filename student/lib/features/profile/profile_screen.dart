@@ -31,8 +31,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(studentProfileProvider);
     });
-    // Real-time polling every 5 seconds without user refresh or re-login
-    _realtimeTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    // Real-time polling every 12 seconds without user refresh or re-login
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       if (mounted) {
         ref.invalidate(studentProfileProvider);
       }

@@ -27,7 +27,7 @@ class StudentService
                 'name' => $data['full_name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
-                'password' => Hash::make($data['password']),
+                'password' => Hash::make($data['password'] ?? 'password123'),
                 'role' => 'STUDENT',
                 'status' => 'ACTIVE',
             ]);
@@ -122,6 +122,12 @@ class StudentService
 
     public function submitElectricityReading(Student $student, array $data): ElectricityReading
     {
+        $lastReading = ElectricityReading::where('student_id', $student->id)->latest()->first();
+        $prevReading = $lastReading ? $lastReading->current_reading : 14475;
+        $currReading = (int) $data['current_reading'];
+        $units = max(0, $currReading - $prevReading);
+        $rate = $student->branch ? $student->branch->electricity_unit_rate : 10.0;
+        $total = $units * $rate;
         $lastReading = ElectricityReading::where(function ($q) use ($student) {
             $q->where('student_id', $student->id);
             if ($student->room_id) {

@@ -23,8 +23,8 @@ class _MyRoomScreenState extends ConsumerState<MyRoomScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(studentProfileProvider);
     });
-    // Real-time polling every 4 seconds without user refresh or re-login
-    _realtimeTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    // Real-time polling every 12 seconds without user refresh or re-login
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       if (mounted) {
         ref.invalidate(studentProfileProvider);
       }

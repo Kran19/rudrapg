@@ -20,6 +20,25 @@ use Illuminate\Support\Facades\DB;
 
 class SubAdminController extends Controller
 {
+    protected function getAuthorizedBranchIds(): array
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return [];
+        }
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            return Branch::pluck('id')->toArray();
+        }
+        if (method_exists($user, 'branches')) {
+            $branchIds = $user->branches()->pluck('branches.id')->toArray();
+            if (!empty($branchIds)) {
+                return $branchIds;
+            }
+        }
+        $defaultBranch = Branch::first();
+        return $defaultBranch ? [$defaultBranch->id] : [];
+    }
+
     public function dashboard()
     {
         $branch = Auth::user() && method_exists(Auth::user(), 'branches') 
@@ -191,6 +210,9 @@ class SubAdminController extends Controller
     public function approveKycOnly($id)
     {
         $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+        if (!in_array($requestRecord->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to manage records for this branch.'], 403);
+        }
 
         DB::transaction(function () use ($requestRecord) {
             $requestRecord->update(['status' => 'KYC_APPROVED', 'processed_by' => Auth::id()]);
@@ -216,6 +238,9 @@ class SubAdminController extends Controller
     public function assignBedOnly(Request $request, $id)
     {
         $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+        if (!in_array($requestRecord->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to manage records for this branch.'], 403);
+        }
         
         $student = $requestRecord->student;
         if (!$student || ($student->kyc_status !== 'APPROVED' && $student->status !== 'KYC_APPROVED' && $student->status !== 'BED_ALLOCATED' && $student->status !== 'APPROVED')) {
@@ -278,19 +303,27 @@ class SubAdminController extends Controller
             ->orWhere('id', $id)
             ->firstOrFail();
 
+        if (!in_array($requestRecord->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to manage records for this branch.'], 403);
+        }
+
         $student = $requestRecord->student;
         if (!$student) {
             return response()->json(['status' => 'error', 'message' => 'Applicant profile not found.'], 404);
         }
 
-        // Auto-assign first available bed if not yet allocated
+        // Auto-assign first available bed if not yet allocated (scoped strictly to student's branch)
         $selectedBedId = $request->input('bed_id') ?? $student->bed_id;
         if (!$selectedBedId) {
-            $availableBed = Bed::where('status', 'AVAILABLE')->first();
+            $availableBed = Bed::where('status', 'AVAILABLE')
+                ->whereHas('room', function ($q) use ($student) {
+                    $q->where('branch_id', $student->branch_id);
+                })
+                ->first();
             if ($availableBed) {
                 $selectedBedId = $availableBed->id;
             } else {
-                return response()->json(['status' => 'error', 'message' => 'No available beds in branch. Please assign a bed first.'], 422);
+                return response()->json(['status' => 'error', 'message' => 'No available beds in this branch. Please add or free a bed first.'], 422);
             }
         }
 
@@ -370,6 +403,9 @@ class SubAdminController extends Controller
     public function rejectVerification($id)
     {
         $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+        if (!in_array($requestRecord->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to manage records for this branch.'], 403);
+        }
 
         DB::transaction(function () use ($requestRecord) {
             $requestRecord->update([
@@ -509,6 +545,9 @@ class SubAdminController extends Controller
     public function verifyPayment($id)
     {
         $payment = Payment::where('id', $id)->orWhere('tx_reference', $id)->firstOrFail();
+        if (!in_array($payment->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to verify payments for this branch.'], 403);
+        }
 
         DB::transaction(function () use ($payment) {
             $payment->update([
@@ -547,6 +586,9 @@ class SubAdminController extends Controller
     public function rejectPayment($id)
     {
         $payment = Payment::where('id', $id)->orWhere('tx_reference', $id)->firstOrFail();
+        if (!in_array($payment->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to verify payments for this branch.'], 403);
+        }
 
         DB::transaction(function () use ($payment) {
             $payment->update([
@@ -682,6 +724,9 @@ class SubAdminController extends Controller
     public function approveElectricityReading($id)
     {
         $reading = ElectricityReading::findOrFail($id);
+        if (!in_array($reading->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to audit readings for this branch.'], 403);
+        }
 
         $reading->update([
             'status' => 'APPROVED',
@@ -705,6 +750,9 @@ class SubAdminController extends Controller
     public function rejectElectricityReading($id)
     {
         $reading = ElectricityReading::findOrFail($id);
+        if (!in_array($reading->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to audit readings for this branch.'], 403);
+        }
 
         $reading->update([
             'status' => 'REJECTED',
@@ -789,6 +837,9 @@ class SubAdminController extends Controller
     public function updateComplaint(Request $request, $id)
     {
         $complaint = Complaint::findOrFail($id);
+        if (!in_array($complaint->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to manage complaints for this branch.'], 403);
+        }
 
         $validated = $request->validate([
             'status' => ['required', 'string', 'in:PENDING,OPEN,IN_PROGRESS,RESOLVED'],
@@ -829,6 +880,10 @@ class SubAdminController extends Controller
     public function destroyComplaint($id)
     {
         $complaint = Complaint::findOrFail($id);
+        if (!in_array($complaint->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to delete complaints for this branch.'], 403);
+        }
+
         $complaint->delete();
 
         AuditLog::create([
@@ -957,5 +1012,43 @@ class SubAdminController extends Controller
         });
 
         return response()->json($ticketsData);
+    }
+
+    public function viewDocument($id)
+    {
+        $doc = StudentDocument::with('student')->findOrFail($id);
+        $student = $doc->student;
+        if (!$student || !in_array($student->branch_id, $this->getAuthorizedBranchIds())) {
+            abort(403, 'Unauthorized access to document.');
+        }
+
+        $cleanPath = ltrim(str_replace('storage/', '', $doc->file_path), '/');
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->response($cleanPath);
+        }
+        if (\Illuminate\Support\Facades\Storage::disk('local')->exists($cleanPath)) {
+            return \Illuminate\Support\Facades\Storage::disk('local')->response($cleanPath);
+        }
+
+        abort(404, 'Document file not found.');
+    }
+
+    public function viewPaymentProof($id)
+    {
+        $proof = PaymentProof::with('payment')->findOrFail($id);
+        $payment = $proof->payment;
+        if (!$payment || !in_array($payment->branch_id, $this->getAuthorizedBranchIds())) {
+            abort(403, 'Unauthorized access to payment proof.');
+        }
+
+        $cleanPath = ltrim(str_replace('storage/', '', $proof->screenshot_path), '/');
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->response($cleanPath);
+        }
+        if (\Illuminate\Support\Facades\Storage::disk('local')->exists($cleanPath)) {
+            return \Illuminate\Support\Facades\Storage::disk('local')->response($cleanPath);
+        }
+
+        abort(404, 'Payment proof file not found.');
     }
 }

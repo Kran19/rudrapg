@@ -85,6 +85,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/complaint', [StudentApiController::class, 'createComplaint']);
             Route::get('/complaints', [StudentApiController::class, 'complaints']);
             Route::get('/notices', [StudentApiController::class, 'notices']);
+            Route::get('/documents/{id}/view', [StudentApiController::class, 'viewDocument']);
             Route::delete('/account', [StudentApiController::class, 'deleteAccount']);
         });
 

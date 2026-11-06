@@ -97,5 +97,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::post('/complaints/{id}/update', [SubAdminController::class, 'updateComplaint'])->name('complaints.update');
     Route::delete('/complaints/{id}', [SubAdminController::class, 'destroyComplaint'])->name('complaints.destroy');
     Route::get('/complaints-data', [SubAdminController::class, 'getComplaintsData'])->name('complaints_data');
+    Route::get('/documents/{id}/view', [SubAdminController::class, 'viewDocument'])->name('documents.view');
+    Route::get('/payment-proofs/{id}/view', [SubAdminController::class, 'viewPaymentProof'])->name('payment_proofs.view');
     Route::post('/change-password', [WebAuthController::class, 'changePassword'])->name('change_password');
 });

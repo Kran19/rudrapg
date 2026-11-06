@@ -39,8 +39,8 @@ class _MainLayoutScreenState extends ConsumerState<MainLayoutScreen>
       _syncRealtimeData();
     });
 
-    // Real-time background sync every 5 seconds without user having to refresh or re-login
-    _realtimeSyncTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    // Real-time background sync every 12 seconds without user having to refresh or re-login
+    _realtimeSyncTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       _syncRealtimeData();
     });
   }

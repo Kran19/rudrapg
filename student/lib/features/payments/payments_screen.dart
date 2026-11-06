@@ -32,8 +32,8 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
       ref.invalidate(studentProfileProvider);
       ref.invalidate(paymentHistoryProvider);
     });
-    // Real-time polling every 4 seconds without user refresh or re-login
-    _realtimeTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+    // Real-time polling every 12 seconds without user refresh or re-login
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       if (mounted) {
         ref.invalidate(studentProfileProvider);
         ref.invalidate(paymentHistoryProvider);
