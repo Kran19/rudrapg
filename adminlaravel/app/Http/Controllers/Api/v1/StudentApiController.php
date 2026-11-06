@@ -78,7 +78,14 @@ class StudentApiController extends Controller
     public function submitElectricityReading(SubmitElectricityReadingRequest $request): JsonResponse
     {
         $student = $this->studentService->getProfile($request->user());
-        $reading = $this->studentService->submitElectricityReading($student, $request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('meter_photo_path')) {
+            $path = $request->file('meter_photo_path')->store('uploads/meter', 'public');
+            $data['meter_photo_path'] = $path;
+        }
+
+        $reading = $this->studentService->submitElectricityReading($student, $data);
 
         return response()->json([
             'status' => 'success',

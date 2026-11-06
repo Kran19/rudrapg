@@ -122,12 +122,25 @@ class StudentService
 
     public function submitElectricityReading(Student $student, array $data): ElectricityReading
     {
-        $lastReading = ElectricityReading::where('student_id', $student->id)->latest()->first();
-        $prevReading = $lastReading ? $lastReading->current_reading : 14475;
-        $currReading = (int) $data['current_reading'];
-        $units = max(0, $currReading - $prevReading);
-        $rate = $student->branch ? $student->branch->electricity_unit_rate : 10.0;
-        $total = $units * $rate;
+        $lastReading = ElectricityReading::where('student_id', $student->id)
+            ->orWhere(function ($q) use ($student) {
+                if ($student->room_id) {
+                    $q->where('room_id', $student->room_id);
+                }
+            })
+            ->latest()
+            ->first();
+
+        $currReading = (float) $data['current_reading'];
+        $prevReading = $lastReading ? (float) $lastReading->current_reading : 0.0;
+
+        if ($currReading < $prevReading && !$lastReading) {
+            $prevReading = 0.0;
+        }
+
+        $units = max(0.0, round($currReading - $prevReading, 2));
+        $rate = $student->branch ? (float) $student->branch->electricity_unit_rate : 10.0;
+        $total = round($units * $rate, 2);
 
         return ElectricityReading::create([
             'branch_id' => $student->branch_id,

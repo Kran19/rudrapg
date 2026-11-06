@@ -145,6 +145,7 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Ticket Status</label>
                         <select name="status" required x-model="editForm.raw_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="PENDING">PENDING</option>
                             <option value="OPEN">OPEN</option>
                             <option value="IN_PROGRESS">IN PROGRESS</option>
                             <option value="RESOLVED">RESOLVED</option>
@@ -204,6 +205,8 @@
             {title: "Status", field: "status", minWidth: 100, formatter: function(cell){
                 var s = cell.getValue();
                 if(s === 'Resolved' || s === 'RESOLVED' || s === 'Solved') return '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Solved</span>';
+                if(s === 'In Progress' || s === 'IN_PROGRESS') return '<span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">In Progress</span>';
+                if(s === 'Open' || s === 'OPEN') return '<span class="bg-cyan-100 text-cyan-700 text-xs font-bold px-2.5 py-1 rounded-full">Open</span>';
                 return '<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
             }},
             {title: "Actions", field: "db_id", minWidth: 90, formatter: function(cell){

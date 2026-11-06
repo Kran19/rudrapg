@@ -25,9 +25,9 @@ class ElectricityReading extends Model
     ];
 
     protected $casts = [
-        'current_reading' => 'integer',
-        'previous_reading' => 'integer',
-        'units_consumed' => 'integer',
+        'current_reading' => 'float',
+        'previous_reading' => 'float',
+        'units_consumed' => 'float',
         'unit_rate' => 'float',
         'total_amount' => 'float',
     ];

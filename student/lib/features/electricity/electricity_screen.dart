@@ -115,14 +115,27 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh Readings',
+            onPressed: () => ref.invalidate(electricityHistoryProvider),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
-            child: SingleChildScrollView(
-              padding: AppSpacing.responsivePagePadding(context),
-              child: Column(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(electricityHistoryProvider);
+                await ref.read(electricityHistoryProvider.future);
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: AppSpacing.responsivePagePadding(context),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Current Reading Summary Card
@@ -312,6 +325,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
           ),
         ),
       ),
+    );
     );
   }
 }

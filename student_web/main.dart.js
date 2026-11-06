@@ -100505,13 +100505,16 @@ $S:71}
 A.aDt.prototype={
 $2(a,a0){var s,r,q,p,o,n,m,l,k,j,i,h,g,f=null,e="resolution_remarks",d=J.aR(this.a,a0),c=J.aZ(d),b=c.i(d,"status")
 if(b==null)b="PENDING"
-s=b==="RESOLVED"||b==="Resolved"
+s=b==="RESOLVED"||b==="Resolved"||b==="SOLVED"
 r=b==="IN_PROGRESS"||b==="In Progress"
+var v_open=b==="OPEN"||b==="Open"
 if(s){q=B.C.b6(0.1)
 p=B.C
 o="SOLVED"}else if(r){q=B.fo.b6(0.1)
 p=B.fo
-o="IN PROGRESS"}else{q=B.al.b6(0.1)
+o="IN PROGRESS"}else if(v_open){q=B.fo.b6(0.1)
+p=B.fo
+o="OPEN"}else{q=B.al.b6(0.1)
 p=B.al
 o="PENDING"}n=A.jJ(a)
 m=A.c_(A.X(A.j(c.i(d,"ticket_number"))+" \u2022 "+A.j(c.i(d,"category")),1,B.q,f,$.eD(),f,f),1)

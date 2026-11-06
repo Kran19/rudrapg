@@ -14,7 +14,8 @@ class SubmitElectricityReadingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_reading' => ['required', 'integer', 'min:0'],
+            'current_reading' => ['required', 'numeric', 'min:0'],
+            'meter_photo_path' => ['nullable'],
         ];
     }
 }

@@ -12,22 +12,22 @@ final studentProfileProvider = FutureProvider<ResidentModel>((ref) async {
   return repository.getProfile();
 });
 
-final electricityHistoryProvider = FutureProvider<List<dynamic>>((ref) async {
+final electricityHistoryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final repository = ref.read(studentRepositoryProvider);
   return repository.getElectricityReadings();
 });
 
-final paymentHistoryProvider = FutureProvider<List<dynamic>>((ref) async {
+final paymentHistoryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final repository = ref.read(studentRepositoryProvider);
   return repository.getPayments();
 });
 
-final complaintHistoryProvider = FutureProvider<List<dynamic>>((ref) async {
+final complaintHistoryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final repository = ref.read(studentRepositoryProvider);
   return repository.getComplaints();
 });
 
-final noticeHistoryProvider = FutureProvider<List<dynamic>>((ref) async {
+final noticeHistoryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final repository = ref.read(studentRepositoryProvider);
   return repository.getNotices();
 });

@@ -80,14 +80,27 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh Tickets',
+            onPressed: () => ref.invalidate(complaintHistoryProvider),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
-            child: SingleChildScrollView(
-              padding: AppSpacing.responsivePagePadding(context),
-              child: Column(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(complaintHistoryProvider);
+                await ref.read(complaintHistoryProvider.future);
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: AppSpacing.responsivePagePadding(context),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Contact Branch Manager Actions
@@ -227,9 +240,10 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                         separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.md),
                         itemBuilder: (context, index) {
                           final item = history[index];
-                          final String rawStatus = item['status'] ?? 'PENDING';
-                          final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'Resolved';
-                          final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'In Progress';
+                          final String rawStatus = (item['status'] ?? 'PENDING').toString().toUpperCase();
+                          final bool isResolved = rawStatus == 'RESOLVED' || rawStatus == 'SOLVED';
+                          final bool isInProgress = rawStatus == 'IN_PROGRESS' || rawStatus == 'INPROGRESS';
+                          final bool isOpen = rawStatus == 'OPEN';
                           
                           Color statusBgColor;
                           Color statusTextColor;
@@ -243,6 +257,10 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
                             statusBgColor = AppColors.info.withValues(alpha: 0.1);
                             statusTextColor = AppColors.info;
                             statusLabel = 'IN PROGRESS';
+                          } else if (isOpen) {
+                            statusBgColor = const Color(0xFF0284C7).withValues(alpha: 0.1);
+                            statusTextColor = const Color(0xFF0284C7);
+                            statusLabel = 'OPEN';
                           } else {
                             statusBgColor = AppColors.warning.withValues(alpha: 0.1);
                             statusTextColor = AppColors.warning;
@@ -366,6 +384,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
           ),
         ),
       ),
+    );
     );
   }
 }

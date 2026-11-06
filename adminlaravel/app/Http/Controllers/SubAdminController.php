@@ -730,8 +730,8 @@ class SubAdminController extends Controller
         $reading = ElectricityReading::findOrFail($id);
 
         $validated = $request->validate([
-            'previous_reading' => ['required', 'integer', 'min:0'],
-            'current_reading' => ['required', 'integer', 'gte:previous_reading'],
+            'previous_reading' => ['required', 'numeric', 'min:0'],
+            'current_reading' => ['required', 'numeric', 'gte:previous_reading'],
             'unit_rate' => ['required', 'numeric', 'min:0'],
             'status' => ['required', 'string', 'in:PENDING,APPROVED,REJECTED'],
         ]);
@@ -774,7 +774,7 @@ class SubAdminController extends Controller
                 'title' => $complaint->subject,
                 'priority' => ucfirst(strtolower($complaint->priority)),
                 'date' => $complaint->created_at ? $complaint->created_at->format('d M Y') : 'N/A',
-                'status' => $complaint->status == 'RESOLVED' ? 'Resolved' : ($complaint->status == 'IN_PROGRESS' ? 'In Progress' : 'Open'),
+                'status' => in_array($complaint->status, ['RESOLVED', 'Resolved', 'SOLVED', 'Solved']) ? 'Resolved' : (in_array($complaint->status, ['IN_PROGRESS', 'In Progress']) ? 'In Progress' : (in_array($complaint->status, ['OPEN', 'Open']) ? 'Open' : 'Pending')),
                 'db_id' => $complaint->id,
                 'raw_status' => $complaint->status,
                 'raw_priority' => $complaint->priority,
@@ -791,7 +791,7 @@ class SubAdminController extends Controller
         $complaint = Complaint::findOrFail($id);
 
         $validated = $request->validate([
-            'status' => ['required', 'string', 'in:OPEN,IN_PROGRESS,RESOLVED'],
+            'status' => ['required', 'string', 'in:PENDING,OPEN,IN_PROGRESS,RESOLVED'],
             'priority' => ['required', 'string', 'in:LOW,MEDIUM,HIGH'],
             'resolution_remarks' => ['nullable', 'string'],
         ]);
@@ -947,7 +947,7 @@ class SubAdminController extends Controller
                 'title' => $complaint->subject,
                 'priority' => ucfirst(strtolower($complaint->priority)),
                 'date' => $complaint->created_at ? $complaint->created_at->format('d M Y') : 'N/A',
-                'status' => $complaint->status == 'RESOLVED' ? 'Resolved' : ($complaint->status == 'IN_PROGRESS' ? 'In Progress' : 'Open'),
+                'status' => in_array($complaint->status, ['RESOLVED', 'Resolved', 'SOLVED', 'Solved']) ? 'Resolved' : (in_array($complaint->status, ['IN_PROGRESS', 'In Progress']) ? 'In Progress' : (in_array($complaint->status, ['OPEN', 'Open']) ? 'Open' : 'Pending')),
                 'db_id' => $complaint->id,
                 'raw_status' => $complaint->status,
                 'raw_priority' => $complaint->priority,
