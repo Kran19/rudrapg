@@ -65,7 +65,7 @@
                             <div class=\"text-xs font-bold text-slate-500 uppercase mb-1\">New Active Password:</div>
                             <div class=\"flex items-center justify-between bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-base font-bold text-blue-600 dark:text-blue-400\">
                                 <span>${pwd}</span>
-                                <button type=\"button\" onclick=\"navigator.clipboard.writeText('${pwd}'); toastr.success('Password copied to clipboard!');\" class=\"text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1\">
+                                <button type=\"button\" onclick=\"window.copyPasswordText('${pwd}');\" class=\"text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1\">
                                     <i class=\"fa-regular fa-copy\"></i> Copy
                                 </button>
                             </div>
@@ -130,7 +130,7 @@
                             <div class=\"text-xs font-bold text-slate-500 uppercase mb-1\">New Active Password:</div>
                             <div class=\"flex items-center justify-between bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-base font-bold text-blue-600 dark:text-blue-400\">
                                 <span>${pwd}</span>
-                                <button type=\"button\" onclick=\"navigator.clipboard.writeText('${pwd}'); toastr.success('Password copied to clipboard!');\" class=\"text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1\">
+                                <button type=\"button\" onclick=\"window.copyPasswordText('${pwd}');\" class=\"text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1\">
                                     <i class=\"fa-regular fa-copy\"></i> Copy
                                 </button>
                             </div>

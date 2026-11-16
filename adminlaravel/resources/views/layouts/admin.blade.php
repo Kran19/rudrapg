@@ -716,6 +716,31 @@
         @endforeach
     @endif
 
+    // Global Safe Clipboard Copy Helper
+    window.copyPasswordText = function(pwd) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(pwd).then(() => {
+                toastr.success('Password copied to clipboard!');
+            }).catch(() => {
+                prompt('Copy password:', pwd);
+            });
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = pwd;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                toastr.success('Password copied to clipboard!');
+            } catch(e) {
+                prompt('Copy password:', pwd);
+            }
+            document.body.removeChild(ta);
+        }
+    };
+
     // Real-Time Sidebar & Notification Count Badges Update
     function updateSidebarBadges() {
         const isSubAdmin = window.location.pathname.includes('/sub-admin');

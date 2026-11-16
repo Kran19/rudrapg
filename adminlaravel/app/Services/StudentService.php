@@ -170,7 +170,9 @@ class StudentService
 
     public function createComplaint(Student $student, array $data): Complaint
     {
-        $ticket = 'TKT-'.date('Y').'-'.rand(100, 999);
+        do {
+            $ticket = 'TKT-'.date('Y').'-'.rand(10000, 99999);
+        } while (Complaint::where('ticket_number', $ticket)->exists());
 
         return Complaint::create([
             'branch_id' => $student->branch_id,

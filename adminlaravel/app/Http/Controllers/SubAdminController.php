@@ -1142,21 +1142,61 @@ class SubAdminController extends Controller
         }
 
         $user = $student->user;
+        if (!$user && $student->phone) {
+            $last10 = substr(preg_replace('/[^0-9]/', '', $student->phone), -10);
+            $user = User::whereRaw('SUBSTR(REPLACE(REPLACE(REPLACE(phone, "+", ""), " ", ""), "-", ""), -10) = ?', [$last10])->first();
+            if ($user) {
+                $student->user_id = $user->id;
+                $student->save();
+            }
+        }
+        if (!$user && $student->email) {
+            $user = User::where('email', $student->email)->first();
+            if ($user) {
+                $student->user_id = $user->id;
+                $student->save();
+            }
+        }
         if (!$user) {
-            return back()->with('error', 'Student user account not found.');
+            $user = User::create([
+                'name' => $student->full_name,
+                'email' => $student->email ?: ($student->phone . '@rudrapg.com'),
+                'phone' => $student->phone,
+                'password' => Hash::make($validated['new_password']),
+                'role' => 'STUDENT',
+                'status' => 'ACTIVE',
+            ]);
+            $student->user_id = $user->id;
+            $student->save();
         }
 
         $user->password = Hash::make($validated['new_password']);
         $user->tokens()->delete();
         $user->save();
 
-        PasswordResetRequest::where('user_id', $user->id)
+        $pendingReq = PasswordResetRequest::where('user_id', $user->id)
             ->where('status', 'PENDING')
-            ->update([
+            ->first();
+
+        if ($pendingReq) {
+            $pendingReq->update([
                 'status' => 'RESOLVED',
                 'resolved_by' => Auth::id(),
                 'resolved_at' => now(),
+                'notes' => 'Resolved directly by ' . Auth::user()->name,
             ]);
+        } else {
+            PasswordResetRequest::create([
+                'user_id' => $user->id,
+                'student_id' => $student->id,
+                'branch_id' => $student->branch_id,
+                'phone' => $user->phone ?? $student->phone,
+                'status' => 'RESOLVED',
+                'notes' => 'Direct password update by ' . Auth::user()->name,
+                'resolved_by' => Auth::id(),
+                'resolved_at' => now(),
+            ]);
+        }
 
         AuditLog::create([
             'user_id' => Auth::id(),

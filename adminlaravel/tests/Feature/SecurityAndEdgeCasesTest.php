@@ -417,5 +417,10 @@ class SecurityAndEdgeCasesTest extends TestCase
             ->assertJsonPath('new_password', 'NewRudra@2026');
 
         $this->assertTrue(Hash::check('NewRudra@2026', $user->fresh()->password));
+        $this->assertDatabaseHas('password_reset_requests', [
+            'user_id' => $user->id,
+            'student_id' => $student->id,
+            'status' => 'RESOLVED',
+        ]);
     }
 }
