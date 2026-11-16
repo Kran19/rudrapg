@@ -58,7 +58,11 @@ final apiClientProvider = Provider<Dio>((ref) {
       }
       final rawToken = prefs.getString('auth_token');
       if (rawToken != null && rawToken.trim().isNotEmpty) {
-        final cleanToken = rawToken.trim().replaceAll(RegExp(r'^["\']|["\']$'), '');
+        var cleanToken = rawToken.trim();
+        if ((cleanToken.startsWith('"') && cleanToken.endsWith('"')) ||
+            (cleanToken.startsWith("'") && cleanToken.endsWith("'"))) {
+          cleanToken = cleanToken.substring(1, cleanToken.length - 1).trim();
+        }
         options.headers['Authorization'] = 'Bearer $cleanToken';
       }
       return handler.next(options);

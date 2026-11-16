@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,7 @@ class PaymentsScreen extends ConsumerStatefulWidget {
 class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   final _utrController = TextEditingController();
   XFile? _proofImage;
+  Uint8List? _proofImageBytes;
   bool _isSubmitting = false;
   Timer? _realtimeTimer;
 
@@ -57,8 +59,10 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
       maxHeight: 1200,
     );
     if (image != null) {
+      final bytes = await image.readAsBytes();
       setModalState(() {
         _proofImage = image;
+        _proofImageBytes = bytes;
       });
     }
   }
@@ -69,7 +73,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter UTR number.')));
       return;
     }
-    if (_proofImage == null) {
+    if (_proofImageBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a payment screenshot.')));
       return;
     }
@@ -81,7 +85,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     try {
       final formData = FormData.fromMap({
         'utr_number': utr,
-        'screenshot_path': MultipartFile.fromBytes(await _proofImage!.readAsBytes(), filename: 'payment_proof.jpg', contentType: MediaType('image', 'jpeg')),
+        'screenshot_path': MultipartFile.fromBytes(_proofImageBytes!, filename: 'payment_proof.jpg', contentType: MediaType('image', 'jpeg')),
       });
 
       await ref.read(studentRepositoryProvider).submitPaymentProof(formData);

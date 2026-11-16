@@ -106,23 +106,20 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
-            child: SingleChildScrollView(
-              padding: AppSpacing.responsivePagePadding(context),
-              child: Column(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(complaintHistoryProvider);
-                await ref.read(complaintHistoryProvider.future);
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: AppSpacing.responsivePagePadding(context),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(complaintHistoryProvider);
+            await ref.read(complaintHistoryProvider.future);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: AppSpacing.responsivePagePadding(context),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
                 child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   // Contact Branch Manager Actions
                   Text('Direct Manager Contact', style: AppTypography.titleLarge),
                   const SizedBox(height: AppSpacing.md),
@@ -404,6 +401,7 @@ class _SupportScreenState extends ConsumerState<SupportScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

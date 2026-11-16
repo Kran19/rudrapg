@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
@@ -42,9 +43,16 @@ class _StudentRegistrationScreenState
   bool _obscureConfirmPassword = true;
 
   XFile? _profilePhoto;
+  Uint8List? _profilePhotoBytes;
+
   XFile? _aadhaarFront;
+  Uint8List? _aadhaarFrontBytes;
+
   XFile? _aadhaarBack;
+  Uint8List? _aadhaarBackBytes;
+
   XFile? _panCard;
+  Uint8List? _panCardBytes;
 
   bool _isLoading = false;
 
@@ -93,6 +101,7 @@ class _StudentRegistrationScreenState
     BuildContext context,
     String title,
     XFile file,
+    Uint8List? bytes,
   ) {
     showDialog(
       context: context,
@@ -134,9 +143,11 @@ class _StudentRegistrationScreenState
               child: InteractiveViewer(
                 minScale: 0.5,
                 maxScale: 4.0,
-                child: kIsWeb
-                    ? Image.network(file.path, fit: BoxFit.contain)
-                    : Image.file(File(file.path), fit: BoxFit.contain),
+                child: bytes != null
+                    ? Image.memory(bytes, fit: BoxFit.contain)
+                    : (kIsWeb
+                        ? Image.network(file.path, fit: BoxFit.contain)
+                        : Image.file(File(file.path), fit: BoxFit.contain)),
               ),
             ),
           ],
@@ -147,7 +158,7 @@ class _StudentRegistrationScreenState
 
   Future<void> _pickImage(
     ImageSource source,
-    void Function(XFile?) onPicked,
+    void Function(XFile?, Uint8List?) onPicked,
   ) async {
     if (!kIsWeb) {
       if (source == ImageSource.camera) {
@@ -159,31 +170,37 @@ class _StudentRegistrationScreenState
       }
     }
 
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: source,
-      imageQuality: 70,
-      maxWidth: 1200,
-      maxHeight: 1200,
-    );
-    if (image != null) {
-      final bytes = await image.length();
-      if (bytes > 10 * 1024 * 1024) {
-        _showError(
-          'Image size exceeds 10MB limit. Please select a smaller photo.',
-        );
-        return;
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        imageQuality: 70,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      if (image != null) {
+        // Read raw bytes immediately into memory to prevent blob revocation in Web
+        final Uint8List bytes = await image.readAsBytes();
+        if (bytes.length > 10 * 1024 * 1024) {
+          _showError(
+            'Image size exceeds 10MB limit. Please select a smaller photo.',
+          );
+          return;
+        }
+        setState(() {
+          onPicked(image, bytes);
+        });
       }
-      setState(() {
-        onPicked(image);
-      });
+    } catch (e) {
+      _showError('Error reading selected image: $e');
     }
   }
 
   void _showPickerModal(
     String title,
     XFile? currentFile,
-    void Function(XFile?) onPicked,
+    Uint8List? currentBytes,
+    void Function(XFile?, Uint8List?) onPicked,
   ) {
     showModalBottomSheet(
       context: context,
@@ -191,7 +208,7 @@ class _StudentRegistrationScreenState
         return SafeArea(
           child: Wrap(
             children: <Widget>[
-              if (currentFile != null)
+              if (currentFile != null || currentBytes != null)
                 ListTile(
                   leading: const Icon(
                     Icons.zoom_in_rounded,
@@ -200,7 +217,14 @@ class _StudentRegistrationScreenState
                   title: const Text('View Full Screen (Zoom)'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    _showZoomableImageViewer(context, title, currentFile);
+                    if (currentFile != null) {
+                      _showZoomableImageViewer(
+                        context,
+                        title,
+                        currentFile,
+                        currentBytes,
+                      );
+                    }
                   },
                 ),
               ListTile(
@@ -285,19 +309,19 @@ class _StudentRegistrationScreenState
       return;
     }
 
-    if (_profilePhoto == null) {
+    if (_profilePhotoBytes == null) {
       _showError('Please upload your Student Profile Passport Photo.');
       return;
     }
-    if (_aadhaarFront == null) {
+    if (_aadhaarFrontBytes == null) {
       _showError('Please upload your Aadhaar Card (Front) image.');
       return;
     }
-    if (_aadhaarBack == null) {
+    if (_aadhaarBackBytes == null) {
       _showError('Please upload your Aadhaar Card (Back) image.');
       return;
     }
-    if (_panCard == null) {
+    if (_panCardBytes == null) {
       _showError('Please upload your PAN Card Attachment.');
       return;
     }
@@ -320,48 +344,48 @@ class _StudentRegistrationScreenState
         'current_address': _addressController.text.trim(),
       });
 
-      if (_profilePhoto != null) {
+      if (_profilePhotoBytes != null) {
         formData.files.add(
           MapEntry(
             'profile_photo',
             MultipartFile.fromBytes(
-              await _profilePhoto!.readAsBytes(),
+              _profilePhotoBytes!,
               filename: 'profile_photo.jpg',
               contentType: MediaType('image', 'jpeg'),
             ),
           ),
         );
       }
-      if (_aadhaarFront != null) {
+      if (_aadhaarFrontBytes != null) {
         formData.files.add(
           MapEntry(
             'aadhaar_front',
             MultipartFile.fromBytes(
-              await _aadhaarFront!.readAsBytes(),
+              _aadhaarFrontBytes!,
               filename: 'aadhaar_front.jpg',
               contentType: MediaType('image', 'jpeg'),
             ),
           ),
         );
       }
-      if (_aadhaarBack != null) {
+      if (_aadhaarBackBytes != null) {
         formData.files.add(
           MapEntry(
             'aadhaar_back',
             MultipartFile.fromBytes(
-              await _aadhaarBack!.readAsBytes(),
+              _aadhaarBackBytes!,
               filename: 'aadhaar_back.jpg',
               contentType: MediaType('image', 'jpeg'),
             ),
           ),
         );
       }
-      if (_panCard != null) {
+      if (_panCardBytes != null) {
         formData.files.add(
           MapEntry(
             'pan_card',
             MultipartFile.fromBytes(
-              await _panCard!.readAsBytes(),
+              _panCardBytes!,
               filename: 'pan_card.jpg',
               contentType: MediaType('image', 'jpeg'),
             ),
@@ -623,44 +647,64 @@ class _StudentRegistrationScreenState
               _buildUploadCard(
                 title: 'Student Profile Passport Photo',
                 file: _profilePhoto,
+                bytes: _profilePhotoBytes,
                 icon: Icons.account_box_rounded,
                 onTap: () => _showPickerModal(
                   'Profile Photo',
                   _profilePhoto,
-                  (img) => _profilePhoto = img,
+                  _profilePhotoBytes,
+                  (img, bytes) {
+                    _profilePhoto = img;
+                    _profilePhotoBytes = bytes;
+                  },
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               _buildUploadCard(
                 title: 'Aadhaar Card (Front)',
                 file: _aadhaarFront,
+                bytes: _aadhaarFrontBytes,
                 icon: Icons.file_present_rounded,
                 onTap: () => _showPickerModal(
                   'Aadhaar Front',
                   _aadhaarFront,
-                  (img) => _aadhaarFront = img,
+                  _aadhaarFrontBytes,
+                  (img, bytes) {
+                    _aadhaarFront = img;
+                    _aadhaarFrontBytes = bytes;
+                  },
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               _buildUploadCard(
                 title: 'Aadhaar Card (Back)',
                 file: _aadhaarBack,
+                bytes: _aadhaarBackBytes,
                 icon: Icons.file_present_rounded,
                 onTap: () => _showPickerModal(
                   'Aadhaar Back',
                   _aadhaarBack,
-                  (img) => _aadhaarBack = img,
+                  _aadhaarBackBytes,
+                  (img, bytes) {
+                    _aadhaarBack = img;
+                    _aadhaarBackBytes = bytes;
+                  },
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               _buildUploadCard(
                 title: 'PAN Card Attachment',
                 file: _panCard,
+                bytes: _panCardBytes,
                 icon: Icons.badge_rounded,
                 onTap: () => _showPickerModal(
                   'PAN Card',
                   _panCard,
-                  (img) => _panCard = img,
+                  _panCardBytes,
+                  (img, bytes) {
+                    _panCard = img;
+                    _panCardBytes = bytes;
+                  },
                 ),
               ),
               const SizedBox(height: AppSpacing.xxxl),
@@ -688,10 +732,11 @@ class _StudentRegistrationScreenState
   Widget _buildUploadCard({
     required String title,
     required XFile? file,
+    required Uint8List? bytes,
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    final isUploaded = file != null;
+    final isUploaded = file != null || bytes != null;
     return CustomCard(
       onTap: onTap,
       backgroundColor: isUploaded
@@ -731,7 +776,7 @@ class _StudentRegistrationScreenState
                 const SizedBox(height: 2),
                 Text(
                   isUploaded
-                      ? 'Attached: ${file.name} (Tap to Zoom)'
+                      ? 'Attached: ${file?.name ?? 'Document'} (Tap to Zoom)'
                       : 'Tap to select document file',
                   style: AppTypography.bodySmall.copyWith(
                     color: isUploaded
@@ -747,10 +792,10 @@ class _StudentRegistrationScreenState
               ],
             ),
           ),
-          if (isUploaded)
+          if (isUploaded && file != null)
             IconButton(
               icon: const Icon(Icons.zoom_in_rounded, color: AppColors.primary),
-              onPressed: () => _showZoomableImageViewer(context, title, file),
+              onPressed: () => _showZoomableImageViewer(context, title, file, bytes),
             )
           else
             const Icon(

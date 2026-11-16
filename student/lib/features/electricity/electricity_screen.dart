@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class ElectricityScreen extends ConsumerStatefulWidget {
 class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
   final _readingController = TextEditingController();
   XFile? _meterPhoto;
+  Uint8List? _meterPhotoBytes;
   bool _isSubmitting = false;
   Timer? _realtimeTimer;
 
@@ -69,8 +71,10 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
       maxHeight: 1200,
     );
     if (image != null) {
+      final bytes = await image.readAsBytes();
       setState(() {
         _meterPhoto = image;
+        _meterPhotoBytes = bytes;
       });
     }
   }
@@ -90,9 +94,9 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
       final Map<String, dynamic> map = {
         'current_reading': reading,
       };
-      if (_meterPhoto != null) {
+      if (_meterPhotoBytes != null) {
         map['meter_photo_path'] = MultipartFile.fromBytes(
-          await _meterPhoto!.readAsBytes(),
+          _meterPhotoBytes!,
           filename: 'meter_photo.jpg',
           contentType: MediaType('image', 'jpeg'),
         );
@@ -380,6 +384,7 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -103,3 +103,4 @@ return new class extends Migration
         // Safe no-op down to preserve room data
     }
 };
+
