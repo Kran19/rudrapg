@@ -4,157 +4,9 @@
 @section('page_title', 'Student Password Requests & Reset Desk')
 
 @section('content')
-<div x-data="{ 
-    resetModalOpen: false, 
-    directModalOpen: false,
-    selectedReq: { id: '', student_name: '', phone: '', room: '', branch: '' },
-    selectedStudentId: '',
-    newPassword: '',
-    confirmPassword: '',
-    copied: false,
-    isSubmitting: false,
-    generatePassword() {
-        const words = ['Rudra', 'Stay', 'Prime', 'Smart', 'Living'];
-        const word = words[Math.floor(Math.random() * words.length)];
-        const num = Math.floor(1000 + Math.random() * 9000);
-        this.newPassword = `${word}@${num}`;
-        this.confirmPassword = this.newPassword;
-    },
-    copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
-        this.copied = true;
-        setTimeout(() => this.copied = false, 2500);
-        toastr.success('Password copied to clipboard!');
-    },
-    submitRequestReset() {
-        if (!this.newPassword || this.newPassword.length < 6) {
-            toastr.warning('Password must be at least 6 characters.');
-            return;
-        }
-        this.isSubmitting = true;
-        const targetUrl = '{{ url('/sub-admin/password-requests') }}/' + this.selectedReq.id + '/reset';
-        const residentName = this.selectedReq.student_name;
-        const residentPhone = this.selectedReq.phone;
-        const pwd = this.newPassword;
-
-        fetch(targetUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({ new_password: pwd })
-        })
-        .then(async res => {
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Failed to update password.');
-            return data;
-        })
-        .then(data => {
-            this.resetModalOpen = false;
-            toastr.success('Password updated successfully!');
-            Swal.fire({
-                icon: 'success',
-                title: 'Password Updated!',
-                html: `
-                    <div class=\"text-left bg-slate-50 dark:bg-slate-700/60 p-4 rounded-xl border border-slate-200 dark:border-slate-600 mt-3 space-y-2\">
-                        <div class=\"text-sm\"><span class=\"font-bold text-slate-700 dark:text-slate-300\">Resident:</span> <span class=\"font-semibold text-slate-900 dark:text-white\">${residentName}</span></div>
-                        <div class=\"text-sm\"><span class=\"font-bold text-slate-700 dark:text-slate-300\">Mobile:</span> <span class=\"font-semibold text-slate-900 dark:text-white\">${residentPhone}</span></div>
-                        <div class=\"mt-3 pt-3 border-t border-slate-200 dark:border-slate-600\">
-                            <div class=\"text-xs font-bold text-slate-500 uppercase mb-1\">New Active Password:</div>
-                            <div class=\"flex items-center justify-between bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-base font-bold text-blue-600 dark:text-blue-400\">
-                                <span>${pwd}</span>
-                                <button type=\"button\" onclick=\"window.copyPasswordText('${pwd}');\" class=\"text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1\">
-                                    <i class=\"fa-regular fa-copy\"></i> Copy
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <p class=\"text-xs text-slate-500 mt-3\">Share this password with the resident so they can sign in immediately.</p>
-                `,
-                confirmButtonText: 'Done',
-                confirmButtonColor: '#2563eb'
-            }).then(() => {
-                window.location.reload();
-            });
-        })
-        .catch(err => {
-            toastr.error(err.message || 'An error occurred.');
-            Swal.fire('Error', err.message || 'An error occurred.', 'error');
-        })
-        .finally(() => {
-            this.isSubmitting = false;
-        });
-    },
-    submitDirectReset() {
-        const select = document.getElementById('direct-student-select');
-        const studentId = select ? select.value : '';
-        if (!studentId) {
-            toastr.warning('Please choose a resident first.');
-            return;
-        }
-        if (!this.newPassword || this.newPassword.length < 6) {
-            toastr.warning('Password must be at least 6 characters.');
-            return;
-        }
-        this.isSubmitting = true;
-        const residentLabel = select.options[select.selectedIndex]?.text || 'Resident';
-        const targetUrl = '{{ url('/sub-admin/students') }}/' + studentId + '/reset-password';
-        const pwd = this.newPassword;
-
-        fetch(targetUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({ new_password: pwd })
-        })
-        .then(async res => {
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Failed to update password.');
-            return data;
-        })
-        .then(data => {
-            this.directModalOpen = false;
-            toastr.success('Password updated successfully!');
-            Swal.fire({
-                icon: 'success',
-                title: 'Password Updated!',
-                html: `
-                    <div class=\"text-left bg-slate-50 dark:bg-slate-700/60 p-4 rounded-xl border border-slate-200 dark:border-slate-600 mt-3 space-y-2\">
-                        <div class=\"text-sm\"><span class=\"font-bold text-slate-700 dark:text-slate-300\">Resident:</span> <span class=\"font-semibold text-slate-900 dark:text-white\">${residentLabel}</span></div>
-                        <div class=\"mt-3 pt-3 border-t border-slate-200 dark:border-slate-600\">
-                            <div class=\"text-xs font-bold text-slate-500 uppercase mb-1\">New Active Password:</div>
-                            <div class=\"flex items-center justify-between bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-base font-bold text-blue-600 dark:text-blue-400\">
-                                <span>${pwd}</span>
-                                <button type=\"button\" onclick=\"window.copyPasswordText('${pwd}');\" class=\"text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1\">
-                                    <i class=\"fa-regular fa-copy\"></i> Copy
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <p class=\"text-xs text-slate-500 mt-3\">Share this password with the resident so they can sign in immediately.</p>
-                `,
-                confirmButtonText: 'Done',
-                confirmButtonColor: '#2563eb'
-            }).then(() => {
-                window.location.reload();
-            });
-        })
-        .catch(err => {
-            toastr.error(err.message || 'An error occurred.');
-            Swal.fire('Error', err.message || 'An error occurred.', 'error');
-        })
-        .finally(() => {
-            this.isSubmitting = false;
-        });
-    }
-}" 
-@open-reset-modal.window="selectedReq = $event.detail; newPassword = ''; confirmPassword = ''; resetModalOpen = true;"
-class="space-y-6">
+<div x-data="subAdminPasswordDesk()" 
+     @open-reset-modal.window="selectedReq = $event.detail; newPassword = ''; confirmPassword = ''; resetModalOpen = true;"
+     class="space-y-6">
 
     <!-- Header Actions & Search -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -354,6 +206,158 @@ class="space-y-6">
 
 @section('scripts')
 <script>
+    function subAdminPasswordDesk() {
+        return {
+            resetModalOpen: false, 
+            directModalOpen: false,
+            selectedReq: { id: '', student_name: '', phone: '', room: '', branch: '' },
+            selectedStudentId: '',
+            newPassword: '',
+            confirmPassword: '',
+            copied: false,
+            isSubmitting: false,
+            generatePassword() {
+                const words = ['Rudra', 'Stay', 'Prime', 'Smart', 'Living'];
+                const word = words[Math.floor(Math.random() * words.length)];
+                const num = Math.floor(1000 + Math.random() * 9000);
+                this.newPassword = `${word}@${num}`;
+                this.confirmPassword = this.newPassword;
+            },
+            copyToClipboard(text) {
+                navigator.clipboard.writeText(text);
+                this.copied = true;
+                setTimeout(() => this.copied = false, 2500);
+                toastr.success('Password copied to clipboard!');
+            },
+            submitRequestReset() {
+                if (!this.newPassword || this.newPassword.length < 6) {
+                    toastr.warning('Password must be at least 6 characters.');
+                    return;
+                }
+                this.isSubmitting = true;
+                const targetUrl = '{{ url('/sub-admin/password-requests') }}/' + this.selectedReq.id + '/reset';
+                const residentName = this.selectedReq.student_name;
+                const residentPhone = this.selectedReq.phone;
+                const pwd = this.newPassword;
+
+                fetch(targetUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ new_password: pwd })
+                })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Failed to update password.');
+                    return data;
+                })
+                .then(data => {
+                    this.resetModalOpen = false;
+                    toastr.success('Password updated successfully!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Password Updated!',
+                        html: `
+                            <div class="text-left bg-slate-50 dark:bg-slate-700/60 p-4 rounded-xl border border-slate-200 dark:border-slate-600 mt-3 space-y-2">
+                                <div class="text-sm"><span class="font-bold text-slate-700 dark:text-slate-300">Resident:</span> <span class="font-semibold text-slate-900 dark:text-white">${residentName}</span></div>
+                                <div class="text-sm"><span class="font-bold text-slate-700 dark:text-slate-300">Mobile:</span> <span class="font-semibold text-slate-900 dark:text-white">${residentPhone}</span></div>
+                                <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600">
+                                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">New Active Password:</div>
+                                    <div class="flex items-center justify-between bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-base font-bold text-blue-600 dark:text-blue-400">
+                                        <span>${pwd}</span>
+                                        <button type="button" onclick="window.copyPasswordText('${pwd}');" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1">
+                                            <i class="fa-regular fa-copy"></i> Copy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-3">Share this password with the resident so they can sign in immediately.</p>
+                        `,
+                        confirmButtonText: 'Done',
+                        confirmButtonColor: '#2563eb'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                })
+                .catch(err => {
+                    toastr.error(err.message || 'An error occurred.');
+                    Swal.fire('Error', err.message || 'An error occurred.', 'error');
+                })
+                .finally(() => {
+                    this.isSubmitting = false;
+                });
+            },
+            submitDirectReset() {
+                const select = document.getElementById('direct-student-select');
+                const studentId = select ? select.value : '';
+                if (!studentId) {
+                    toastr.warning('Please choose a resident first.');
+                    return;
+                }
+                if (!this.newPassword || this.newPassword.length < 6) {
+                    toastr.warning('Password must be at least 6 characters.');
+                    return;
+                }
+                this.isSubmitting = true;
+                const residentLabel = select.options[select.selectedIndex]?.text || 'Resident';
+                const targetUrl = '{{ url('/sub-admin/students') }}/' + studentId + '/reset-password';
+                const pwd = this.newPassword;
+
+                fetch(targetUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ new_password: pwd })
+                })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Failed to update password.');
+                    return data;
+                })
+                .then(data => {
+                    this.directModalOpen = false;
+                    toastr.success('Password updated successfully!');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Password Updated!',
+                        html: `
+                            <div class="text-left bg-slate-50 dark:bg-slate-700/60 p-4 rounded-xl border border-slate-200 dark:border-slate-600 mt-3 space-y-2">
+                                <div class="text-sm"><span class="font-bold text-slate-700 dark:text-slate-300">Resident:</span> <span class="font-semibold text-slate-900 dark:text-white">${residentLabel}</span></div>
+                                <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-600">
+                                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">New Active Password:</div>
+                                    <div class="flex items-center justify-between bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-base font-bold text-blue-600 dark:text-blue-400">
+                                        <span>${pwd}</span>
+                                        <button type="button" onclick="window.copyPasswordText('${pwd}');" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1">
+                                            <i class="fa-regular fa-copy"></i> Copy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-3">Share this password with the resident so they can sign in immediately.</p>
+                        `,
+                        confirmButtonText: 'Done',
+                        confirmButtonColor: '#2563eb'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                })
+                .catch(err => {
+                    toastr.error(err.message || 'An error occurred.');
+                    Swal.fire('Error', err.message || 'An error occurred.', 'error');
+                })
+                .finally(() => {
+                    this.isSubmitting = false;
+                });
+            }
+        };
+    }
+
     const requestsData = [
         @foreach($requests as $req)
         {
