@@ -1142,23 +1142,23 @@ class SubAdminController extends Controller
             abort(403, 'Unauthorized access: Cannot reset password for resident of another branch.');
         }
 
-        $user = $student->user;
-        if (!$user && $student->phone) {
-            $last10 = substr(preg_replace('/[^0-9]/', '', $student->phone), -10);
-            $user = User::whereRaw('SUBSTR(REPLACE(REPLACE(REPLACE(phone, "+", ""), " ", ""), "-", ""), -10) = ?', [$last10])->first();
-            if ($user) {
-                $student->user_id = $user->id;
-                $student->save();
-            }
+        $last10 = $student->phone ? substr(preg_replace('/[^0-9]/', '', $student->phone), -10) : null;
+
+        $matchingUsers = collect();
+        if ($student->user) {
+            $matchingUsers->push($student->user);
         }
-        if (!$user && $student->email) {
-            $user = User::where('email', $student->email)->first();
-            if ($user) {
-                $student->user_id = $user->id;
-                $student->save();
-            }
+        if ($last10) {
+            $byPhone = User::whereRaw('SUBSTR(REPLACE(REPLACE(REPLACE(phone, "+", ""), " ", ""), "-", ""), -10) = ?', [$last10])->get();
+            $matchingUsers = $matchingUsers->merge($byPhone);
         }
-        if (!$user) {
+        if ($student->email) {
+            $byEmail = User::where('email', $student->email)->get();
+            $matchingUsers = $matchingUsers->merge($byEmail);
+        }
+        $matchingUsers = $matchingUsers->unique('id');
+
+        if ($matchingUsers->isEmpty()) {
             $user = User::create([
                 'name' => $student->full_name,
                 'email' => $student->email ?: ($student->phone . '@rudrapg.com'),
@@ -1169,11 +1169,31 @@ class SubAdminController extends Controller
             ]);
             $student->user_id = $user->id;
             $student->save();
-        }
+        } else {
+            $primaryUser = $matchingUsers->firstWhere('id', $student->user_id) 
+                        ?? $matchingUsers->firstWhere('role', 'STUDENT') 
+                        ?? $matchingUsers->first();
 
-        $user->password = Hash::make($validated['new_password']);
-        $user->tokens()->delete();
-        $user->save();
+            if ($student->user_id !== $primaryUser->id) {
+                $student->user_id = $primaryUser->id;
+                $student->save();
+            }
+
+            if (str_contains(strtolower($primaryUser->name), 'demo') || str_contains(strtolower($primaryUser->email), 'demo')) {
+                $primaryUser->name = $student->full_name;
+                if ($student->email && !str_contains($student->email, 'demo')) {
+                    $primaryUser->email = $student->email;
+                }
+            }
+
+            foreach ($matchingUsers as $u) {
+                $u->password = Hash::make($validated['new_password']);
+                $u->status = 'ACTIVE';
+                $u->tokens()->delete();
+                $u->save();
+            }
+            $user = $primaryUser;
+        }
 
         $pendingReq = PasswordResetRequest::where('user_id', $user->id)
             ->where('status', 'PENDING')

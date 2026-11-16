@@ -14,7 +14,7 @@ class AuthService
         $digits = preg_replace('/\D+/', '', $loginId);
         $phone10 = strlen($digits) >= 10 ? substr($digits, -10) : null;
 
-        $user = User::where(function ($query) use ($loginId, $phone10) {
+        $candidates = User::where(function ($query) use ($loginId, $phone10) {
             $query->where('email', $loginId)
                   ->orWhere('phone', $loginId);
 
@@ -25,7 +25,22 @@ class AuthService
                       ->orWhere('phone', '91' . $phone10)
                       ->orWhereRaw("SUBSTR(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), -10) = ?", [$phone10]);
             }
-        })->first();
+        })
+        ->orderByRaw("CASE WHEN id IN (SELECT user_id FROM students WHERE user_id IS NOT NULL) THEN 0 ELSE 1 END")
+        ->orderBy('id', 'desc')
+        ->get();
+
+        $user = null;
+        foreach ($candidates as $candidate) {
+            if (Hash::check($credentials['password'], $candidate->password)) {
+                $user = $candidate;
+                break;
+            }
+        }
+
+        if (! $user) {
+            $user = $candidates->first();
+        }
 
         $passwordMatches = $user && Hash::check($credentials['password'], $user->password);
 

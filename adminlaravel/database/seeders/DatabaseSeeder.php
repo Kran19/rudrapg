@@ -72,13 +72,13 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 3b. Demo Resident (Default Flutter UI Credentials: 6354351080 / password123)
+        // 3b. Resident User (No hardcoded default password123)
         $demoUser = $upsertUser(
             ['phone' => '+91 63543 51080'],
             [
-                'name' => 'Resident Demo',
-                'email' => 'demo.student@rudrapg.com',
-                'password' => Hash::make('password123'),
+                'name' => 'Karan Resident',
+                'email' => 'karan@rudrapg.com',
+                'password' => Hash::make('123456'),
                 'role' => 'STUDENT',
                 'status' => 'ACTIVE',
             ]
