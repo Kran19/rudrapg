@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Student Verification Desk - Rudra Group PG')
-@section('page_title', 'Student Verification Desk (Naroda Branch)')
+@section('title', 'Student Verification Desk - ' . (isset($activeBranch) && $activeBranch ? $activeBranch->name : 'Rudra Group PG'))
+@section('page_title', 'Student Verification Desk' . (isset($activeBranch) && $activeBranch ? ' (' . $activeBranch->name . ')' : ''))
 
 @section('content')
 <div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: (window.availableBedsData || []), lightboxOpen: false, lightboxSrc: '', lightboxTitle: '', isEditingRoom: false }"

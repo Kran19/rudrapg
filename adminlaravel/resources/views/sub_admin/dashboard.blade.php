@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Sub Admin Dashboard - Naroda Branch')
-@section('page_title', 'Naroda Branch Operational Dashboard')
+@section('title', 'Sub Admin Dashboard - ' . ($branchInfo['name'] ?? 'Branch Operations'))
+@section('page_title', ($branchInfo['name'] ?? 'Branch') . ' Operational Dashboard')
 
 @section('content')
 <!-- Key Metric Cards Grid -->

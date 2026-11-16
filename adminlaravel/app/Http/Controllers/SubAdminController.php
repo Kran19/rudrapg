@@ -23,6 +23,60 @@ use Illuminate\Support\Facades\Hash;
 
 class SubAdminController extends Controller
 {
+    protected function getActiveBranch(?Request $request = null): ?Branch
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return Branch::first();
+        }
+
+        // If Super Admin, allow query parameter branch_id or default to first branch
+        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+            $reqBranchId = request()->query('branch_id');
+            if ($reqBranchId) {
+                $b = Branch::find($reqBranchId);
+                if ($b) {
+                    return $b;
+                }
+            }
+            return Branch::first();
+        }
+
+        // For Sub Admin: prioritize their assigned branch from relationship
+        if (method_exists($user, 'branches') && $user->branches()->exists()) {
+            return $user->branches()->first();
+        }
+
+        // Direct DB query on pivot
+        $pivot = DB::table('sub_admin_branch')->where('user_id', $user->id)->first();
+        if ($pivot) {
+            $branch = Branch::find($pivot->branch_id);
+            if ($branch) {
+                return $branch;
+            }
+        }
+
+        // Heuristic match: match user email or name with branch name/code
+        if ($user->email || $user->name) {
+            $prefix = explode('@', $user->email)[0];
+            $matched = Branch::where('name', 'LIKE', "%{$prefix}%")
+                ->orWhere('code', 'LIKE', "%{$prefix}%")
+                ->orWhere('name', 'LIKE', "%{$user->name}%")
+                ->first();
+            if ($matched) {
+                DB::table('sub_admin_branch')->insertOrIgnore([
+                    'user_id' => $user->id,
+                    'branch_id' => $matched->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                return $matched;
+            }
+        }
+
+        return Branch::first();
+    }
+
     protected function getAuthorizedBranchIds(): array
     {
         $user = Auth::user();
@@ -32,47 +86,76 @@ class SubAdminController extends Controller
         if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
             return Branch::pluck('id')->toArray();
         }
-        if (method_exists($user, 'branches')) {
-            $branchIds = $user->branches()->pluck('branches.id')->toArray();
-            if (!empty($branchIds)) {
-                return $branchIds;
-            }
-        }
-        $defaultBranch = Branch::first();
-        return $defaultBranch ? [$defaultBranch->id] : [];
+
+        $activeBranch = $this->getActiveBranch();
+        return $activeBranch ? [$activeBranch->id] : [];
     }
 
     public function dashboard()
     {
-        $branch = Auth::user() && method_exists(Auth::user(), 'branches') 
-            ? (Auth::user()->branches()->first() ?? Branch::first())
-            : Branch::first();
+        $branch = $this->getActiveBranch();
         $branchId = $branch ? $branch->id : null;
+        $branchIds = $branchId ? [$branchId] : $this->getAuthorizedBranchIds();
 
         $branchInfo = [
-            'name' => $branch ? $branch->name : 'All Branches',
-            'code' => $branch ? $branch->code : 'PG-ALL',
-            'manager' => $branch ? $branch->manager_name : 'N/A',
-            'total_rooms' => $branchId ? Room::where('branch_id', $branchId)->count() : Room::count(),
-            'total_beds' => $branchId ? Bed::whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::count(),
-            'occupied_beds' => $branchId ? Bed::where('status', 'OCCUPIED')->whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::where('status', 'OCCUPIED')->count(),
-            'available_beds' => $branchId ? Bed::where('status', 'AVAILABLE')->whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::where('status', 'AVAILABLE')->count(),
-            'pending_verifications' => ($branchId 
-                ? (RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->where('branch_id', $branchId)->count() + PaymentProof::whereIn('status', ['PENDING', 'pending'])->whereHas('payment', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count())
-                : (RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->count() + PaymentProof::whereIn('status', ['PENDING', 'pending'])->count())),
-            'overdue_rents' => $branchId 
-                ? Student::where('rent_status', 'DUE')->where('branch_id', $branchId)->count() 
-                : Student::where('rent_status', 'DUE')->count(),
-            'open_complaints' => $branchId ? Complaint::whereIn('status', ['PENDING', 'IN_PROGRESS'])->where('branch_id', $branchId)->count() : Complaint::whereIn('status', ['PENDING', 'IN_PROGRESS'])->count(),
+            'name' => $branch ? $branch->name : 'Branch Operations',
+            'code' => $branch ? $branch->code : 'PG-01',
+            'manager' => $branch ? ($branch->manager_name ?: 'N/A') : 'N/A',
+            'total_rooms' => $branchId ? Room::where('branch_id', $branchId)->count() : Room::whereIn('branch_id', $branchIds)->count(),
+            'total_beds' => Bed::whereHas('room', function($q) use ($branchId, $branchIds) {
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                } else {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })->count(),
+            'occupied_beds' => Bed::where('status', 'OCCUPIED')->whereHas('room', function($q) use ($branchId, $branchIds) {
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                } else {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })->count(),
+            'available_beds' => Bed::where('status', 'AVAILABLE')->whereHas('room', function($q) use ($branchId, $branchIds) {
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                } else {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })->count(),
+            'pending_verifications' => RegistrationRequest::whereIn('status', ['PENDING', 'pending'])
+                ->where(function($q) use ($branchId, $branchIds) {
+                    if ($branchId) $q->where('branch_id', $branchId);
+                    else $q->whereIn('branch_id', $branchIds);
+                })->count()
+                + PaymentProof::whereIn('status', ['PENDING', 'pending'])->whereHas('payment', function($q) use ($branchId, $branchIds) {
+                    if ($branchId) $q->where('branch_id', $branchId);
+                    else $q->whereIn('branch_id', $branchIds);
+                })->count(),
+            'overdue_rents' => Student::where('rent_status', 'DUE')
+                ->where(function($q) use ($branchId, $branchIds) {
+                    if ($branchId) $q->where('branch_id', $branchId);
+                    else $q->whereIn('branch_id', $branchIds);
+                })->count(),
+            'open_complaints' => Complaint::whereIn('status', ['PENDING', 'IN_PROGRESS'])
+                ->where(function($q) use ($branchId, $branchIds) {
+                    if ($branchId) $q->where('branch_id', $branchId);
+                    else $q->whereIn('branch_id', $branchIds);
+                })->count(),
         ];
 
         // Add calculated stats
         $totalBeds = $branchInfo['total_beds'];
         $branchInfo['occupancy_rate'] = $totalBeds > 0 ? round(($branchInfo['occupied_beds'] / $totalBeds) * 100, 1) . '%' : '0%';
         
-        $monthlyRevenue = $branchId 
-            ? Payment::where('branch_id', $branchId)->whereIn('status', ['PAID', 'VERIFIED'])->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount')
-            : Payment::whereIn('status', ['PAID', 'VERIFIED'])->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount');
+        $monthlyRevenue = Payment::where(function($q) use ($branchId, $branchIds) {
+                if ($branchId) $q->where('branch_id', $branchId);
+                else $q->whereIn('branch_id', $branchIds);
+            })
+            ->whereIn('status', ['PAID', 'VERIFIED'])
+            ->whereMonth('payment_date', now()->month)
+            ->whereYear('payment_date', now()->year)
+            ->sum('amount');
         
         $branchInfo['monthly_revenue'] = '₹' . number_format($monthlyRevenue);
 
@@ -84,19 +167,17 @@ class SubAdminController extends Controller
             $monthVal = $date->month;
             $yearVal = $date->year;
 
-            $collected = $branchId
-                ? Payment::where('branch_id', $branchId)
-                    ->whereIn('status', ['PAID', 'VERIFIED'])
-                    ->whereMonth('payment_date', $monthVal)
-                    ->whereYear('payment_date', $yearVal)
-                    ->sum('amount')
-                : Payment::whereIn('status', ['PAID', 'VERIFIED'])
-                    ->whereMonth('payment_date', $monthVal)
-                    ->whereYear('payment_date', $yearVal)
-                    ->sum('amount');
+            $collected = Payment::where(function($q) use ($branchId, $branchIds) {
+                    if ($branchId) $q->where('branch_id', $branchId);
+                    else $q->whereIn('branch_id', $branchIds);
+                })
+                ->whereIn('status', ['PAID', 'VERIFIED'])
+                ->whereMonth('payment_date', $monthVal)
+                ->whereYear('payment_date', $yearVal)
+                ->sum('amount');
             
             // Set a benchmark target (beds capacity * average rent)
-            $target = $totalBeds > 0 ? $totalBeds * 6500 * 0.75 : 0;
+            $target = $totalBeds > 0 ? $totalBeds * 6000 * 0.75 : 0;
 
             $collectionsTrend[] = [
                 'month' => $monthName,
@@ -107,8 +188,12 @@ class SubAdminController extends Controller
 
         $pendingVerifications = RegistrationRequest::with(['student.documents', 'student.room', 'student.bed'])
             ->where('status', 'PENDING')
-            ->when($branchId, function($q) use ($branchId) {
-                $q->where('branch_id', $branchId);
+            ->where(function($q) use ($branchId, $branchIds) {
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
             })
             ->latest()
             ->get()
@@ -125,12 +210,22 @@ class SubAdminController extends Controller
                 ];
             });
 
-        return view('sub_admin.dashboard', compact('branchInfo', 'pendingVerifications', 'collectionsTrend'));
+        return view('sub_admin.dashboard', compact('branchInfo', 'pendingVerifications', 'collectionsTrend', 'branch'));
     }
 
     public function verifications()
     {
+        $branch = $this->getActiveBranch();
+        $branchIds = $this->getAuthorizedBranchIds();
+
         $queue = RegistrationRequest::with(['student.documents', 'student.payments.proof', 'student.room', 'student.bed', 'branch'])
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
             ->latest()
             ->get()
             ->map(function ($req) {
@@ -199,6 +294,13 @@ class SubAdminController extends Controller
 
         $availableBeds = Bed::with('room')
             ->where('status', 'AVAILABLE')
+            ->whereHas('room', function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
             ->get()
             ->map(function ($b) {
                 return [
@@ -207,7 +309,11 @@ class SubAdminController extends Controller
                 ];
             });
 
-        return view('sub_admin.verifications', compact('queue', 'availableBeds'));
+        return view('sub_admin.verifications', [
+            'queue' => $queue,
+            'availableBeds' => $availableBeds,
+            'activeBranch' => $branch,
+        ]);
     }
 
     public function approveKycOnly($id)
@@ -437,10 +543,20 @@ class SubAdminController extends Controller
 
     public function bedMap(Request $request)
     {
+        $branch = $this->getActiveBranch();
+        $branchIds = $this->getAuthorizedBranchIds();
+
         $roomsPaginated = Room::with('beds.student')
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
             ->orderBy('floor_number')
             ->orderBy('room_number')
-            ->paginate(10);
+            ->paginate(50);
 
         $roomsData = collect($roomsPaginated->items())->map(function ($room) {
             $totalBeds = $room->beds->count() > 0 ? $room->beds->count() : $room->max_beds;
@@ -448,10 +564,18 @@ class SubAdminController extends Controller
             $availableBeds = max(0, $totalBeds - $occupiedBeds);
 
             $bedsData = $room->beds->map(function ($bed) {
+                $student = $bed->student;
                 return [
+                    'id' => $bed->id,
                     'code' => $bed->bed_code,
                     'status' => strtolower($bed->status),
-                    'student_name' => $bed->student ? $bed->student->full_name : null,
+                    'student_name' => $student ? $student->full_name : null,
+                    'student_phone' => $student ? $student->phone : null,
+                    'student_email' => $student ? $student->email : null,
+                    'student_kyc' => $student ? $student->kyc_status : null,
+                    'student_rent_status' => $student ? $student->rent_status : null,
+                    'monthly_rent' => (int) $bed->monthly_rent,
+                    'security_deposit' => (int) $bed->security_deposit,
                 ];
             })->toArray();
 
@@ -470,32 +594,61 @@ class SubAdminController extends Controller
 
         return view('sub_admin.bed_map', [
             'rooms' => $roomsData,
-            'paginator' => $roomsPaginated
+            'paginator' => $roomsPaginated,
+            'activeBranch' => $branch,
+            'branch' => $branch,
         ]);
     }
 
     public function rentLedger()
     {
-        $duesData = Payment::with(['student', 'branch', 'proof'])->latest()->get()->map(function ($payment) {
-            return [
-                'id' => $payment->id,
-                'resident_id' => $payment->student ? $payment->student->app_reference : 'N/A',
-                'student_name' => $payment->student ? $payment->student->full_name : 'Resident',
-                'room' => $payment->student && $payment->student->room ? $payment->student->room->room_number.' ('.($payment->student->bed ? $payment->student->bed->bed_code : 'Unassigned').')' : 'Unassigned',
-                'rent' => '₹'.number_format($payment->amount),
-                'amount' => $payment->amount,
-                'due_date' => $payment->due_date ? $payment->due_date->format('d M Y') : 'N/A',
-                'raw_due_date' => $payment->due_date ? $payment->due_date->toDateString() : '',
-                'status' => $payment->status == 'VERIFIED' ? 'Paid' : ($payment->status == 'PENDING' ? 'Pending Verification' : $payment->status),
-                'raw_status' => $payment->status,
-                'payment_mode' => $payment->payment_mode ?? 'UPI Transfer',
-                'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
-            ];
-        });
+        $branch = $this->getActiveBranch();
+        $branchIds = $this->getAuthorizedBranchIds();
 
-        $students = Student::with(['room', 'bed'])->where('status', 'APPROVED')->get();
+        $duesData = Payment::with(['student', 'branch', 'proof'])
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
+            ->latest()
+            ->get()
+            ->map(function ($payment) {
+                return [
+                    'id' => $payment->id,
+                    'resident_id' => $payment->student ? $payment->student->app_reference : 'N/A',
+                    'student_name' => $payment->student ? $payment->student->full_name : 'Resident',
+                    'room' => $payment->student && $payment->student->room ? $payment->student->room->room_number.' ('.($payment->student->bed ? $payment->student->bed->bed_code : 'Unassigned').')' : 'Unassigned',
+                    'rent' => '₹'.number_format($payment->amount),
+                    'amount' => $payment->amount,
+                    'due_date' => $payment->due_date ? $payment->due_date->format('d M Y') : 'N/A',
+                    'raw_due_date' => $payment->due_date ? $payment->due_date->toDateString() : '',
+                    'status' => $payment->status == 'VERIFIED' ? 'Paid' : ($payment->status == 'PENDING' ? 'Pending Verification' : $payment->status),
+                    'raw_status' => $payment->status,
+                    'payment_mode' => $payment->payment_mode ?? 'UPI Transfer',
+                    'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
+                ];
+            });
 
-        return view('sub_admin.rent_ledger', ['dues' => $duesData, 'students' => $students]);
+        $students = Student::with(['room', 'bed'])
+            ->where('status', 'APPROVED')
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
+            ->get();
+
+        return view('sub_admin.rent_ledger', [
+            'dues' => $duesData,
+            'students' => $students,
+            'activeBranch' => $branch,
+            'branch' => $branch,
+        ]);
     }
 
     public function recordCashPayment(Request $request)
@@ -686,6 +839,9 @@ class SubAdminController extends Controller
 
     public function electricityAudit()
     {
+        $branch = $this->getActiveBranch();
+        $branchIds = $this->getAuthorizedBranchIds();
+
         $formatUrl = function (?string $path) {
             if (!$path) return null;
             if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
@@ -697,31 +853,45 @@ class SubAdminController extends Controller
             return null;
         };
 
-        $readingsData = ElectricityReading::with(['student', 'room', 'branch'])->latest()->get()->map(function ($reading) use ($formatUrl) {
-            $photo = $formatUrl($reading->meter_photo_path);
-            if (!$photo) {
-                $photo = 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80';
-            }
+        $readingsData = ElectricityReading::with(['student', 'room', 'branch'])
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
+            ->latest()
+            ->get()
+            ->map(function ($reading) use ($formatUrl) {
+                $photo = $formatUrl($reading->meter_photo_path);
+                if (!$photo) {
+                    $photo = 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80';
+                }
 
-            return [
-                'id' => $reading->id,
-                'code' => 'E-2026-'.str_pad($reading->id, 3, '0', STR_PAD_LEFT),
-                'student' => $reading->student ? $reading->student->full_name : 'Resident',
-                'room' => $reading->room ? $reading->room->room_number : 'N/A',
-                'prev_reading' => $reading->previous_reading,
-                'curr_reading' => $reading->current_reading,
-                'units' => $reading->units_consumed,
-                'rate' => '₹'.number_format($reading->unit_rate, 2),
-                'raw_rate' => $reading->unit_rate,
-                'total' => '₹'.number_format($reading->total_amount),
-                'photo_url' => $photo,
-                'date' => $reading->created_at ? $reading->created_at->format('d M Y') : 'N/A',
-                'status' => $reading->status == 'APPROVED' ? 'Approved' : ($reading->status == 'REJECTED' ? 'Rejected' : 'Pending Audit'),
-                'raw_status' => $reading->status,
-            ];
-        });
+                return [
+                    'id' => $reading->id,
+                    'code' => 'E-2026-'.str_pad($reading->id, 3, '0', STR_PAD_LEFT),
+                    'student' => $reading->student ? $reading->student->full_name : 'Resident',
+                    'room' => $reading->room ? $reading->room->room_number : 'N/A',
+                    'prev_reading' => $reading->previous_reading,
+                    'curr_reading' => $reading->current_reading,
+                    'units' => $reading->units_consumed,
+                    'rate' => '₹'.number_format($reading->unit_rate, 2),
+                    'raw_rate' => $reading->unit_rate,
+                    'total' => '₹'.number_format($reading->total_amount),
+                    'photo_url' => $photo,
+                    'date' => $reading->created_at ? $reading->created_at->format('d M Y') : 'N/A',
+                    'status' => $reading->status == 'APPROVED' ? 'Approved' : ($reading->status == 'REJECTED' ? 'Rejected' : 'Pending Audit'),
+                    'raw_status' => $reading->status,
+                ];
+            });
 
-        return view('sub_admin.electricity_audit', ['readings' => $readingsData]);
+        return view('sub_admin.electricity_audit', [
+            'readings' => $readingsData,
+            'activeBranch' => $branch,
+            'branch' => $branch,
+        ]);
     }
 
     public function approveElectricityReading($id)
@@ -816,25 +986,42 @@ class SubAdminController extends Controller
 
     public function complaints()
     {
-        $ticketsData = Complaint::with(['student', 'room', 'branch'])->latest()->get()->map(function ($complaint) {
-            return [
-                'ticket' => $complaint->ticket_number,
-                'student' => $complaint->student ? $complaint->student->full_name : 'Resident',
-                'room' => $complaint->room ? $complaint->room->room_number : 'N/A',
-                'category' => $complaint->category,
-                'title' => $complaint->subject,
-                'priority' => ucfirst(strtolower($complaint->priority)),
-                'date' => $complaint->created_at ? $complaint->created_at->format('d M Y') : 'N/A',
-                'status' => in_array($complaint->status, ['RESOLVED', 'Resolved', 'SOLVED', 'Solved']) ? 'Resolved' : (in_array($complaint->status, ['IN_PROGRESS', 'In Progress']) ? 'In Progress' : (in_array($complaint->status, ['OPEN', 'Open']) ? 'Open' : 'Pending')),
-                'db_id' => $complaint->id,
-                'raw_status' => $complaint->status,
-                'raw_priority' => $complaint->priority,
-                'description' => $complaint->description,
-                'resolution_remarks' => $complaint->resolution_remarks,
-            ];
-        });
+        $branch = $this->getActiveBranch();
+        $branchIds = $this->getAuthorizedBranchIds();
 
-        return view('sub_admin.complaints', ['tickets' => $ticketsData]);
+        $ticketsData = Complaint::with(['student', 'room', 'branch'])
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
+            ->latest()
+            ->get()
+            ->map(function ($complaint) {
+                return [
+                    'ticket' => $complaint->ticket_number,
+                    'student' => $complaint->student ? $complaint->student->full_name : 'Resident',
+                    'room' => $complaint->room ? $complaint->room->room_number : 'N/A',
+                    'category' => $complaint->category,
+                    'title' => $complaint->subject,
+                    'priority' => ucfirst(strtolower($complaint->priority)),
+                    'date' => $complaint->created_at ? $complaint->created_at->format('d M Y') : 'N/A',
+                    'status' => in_array($complaint->status, ['RESOLVED', 'Resolved', 'SOLVED', 'Solved']) ? 'Resolved' : (in_array($complaint->status, ['IN_PROGRESS', 'In Progress']) ? 'In Progress' : (in_array($complaint->status, ['OPEN', 'Open']) ? 'Open' : 'Pending')),
+                    'db_id' => $complaint->id,
+                    'raw_status' => $complaint->status,
+                    'raw_priority' => $complaint->priority,
+                    'description' => $complaint->description,
+                    'resolution_remarks' => $complaint->resolution_remarks,
+                ];
+            });
+
+        return view('sub_admin.complaints', [
+            'tickets' => $ticketsData,
+            'activeBranch' => $branch,
+            'branch' => $branch,
+        ]);
     }
 
     public function updateComplaint(Request $request, $id)
@@ -912,7 +1099,7 @@ class SubAdminController extends Controller
             'is_important' => ['nullable', 'boolean'],
         ]);
 
-        $branch = Branch::first();
+        $branch = $this->getActiveBranch();
 
         $announcement = Announcement::create([
             'branch_id' => $branch ? $branch->id : null,
@@ -959,35 +1146,70 @@ class SubAdminController extends Controller
 
     public function getSidebarCounts()
     {
-        $branch = Auth::user() && method_exists(Auth::user(), 'branches') 
-            ? (Auth::user()->branches()->first() ?? Branch::first())
-            : Branch::first();
+        $branch = $this->getActiveBranch();
         $branchId = $branch ? $branch->id : null;
+        $branchIds = $branchId ? [$branchId] : $this->getAuthorizedBranchIds();
 
-        // Calculate counts
-        $totalBeds = $branchId ? Bed::whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::count();
-        $occupiedBeds = $branchId ? Bed::where('status', 'OCCUPIED')->whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::where('status', 'OCCUPIED')->count();
-        $availableBeds = $branchId ? Bed::where('status', 'AVAILABLE')->whereHas('room', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : Bed::where('status', 'AVAILABLE')->count();
+        // Calculate counts strictly scoped to the active branch
+        $totalBeds = Bed::whereHas('room', function($q) use ($branchId, $branchIds) {
+            if ($branchId) $q->where('branch_id', $branchId);
+            else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+        })->count();
 
-        $pendingRegs = $branchId ? RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->where('branch_id', $branchId)->count() : RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->count();
-        $pendingProofs = $branchId ? PaymentProof::whereIn('status', ['PENDING', 'pending'])->whereHas('payment', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : PaymentProof::whereIn('status', ['PENDING', 'pending'])->count();
+        $occupiedBeds = Bed::where('status', 'OCCUPIED')->whereHas('room', function($q) use ($branchId, $branchIds) {
+            if ($branchId) $q->where('branch_id', $branchId);
+            else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+        })->count();
 
-        $overdueRents = $branchId ? Student::where('rent_status', 'DUE')->where('branch_id', $branchId)->count() : Student::where('rent_status', 'DUE')->count();
-        $pendingPasswordResets = $branchId 
-            ? PasswordResetRequest::where('status', 'PENDING')->where('branch_id', $branchId)->count() 
-            : PasswordResetRequest::where('status', 'PENDING')->count();
+        $availableBeds = Bed::where('status', 'AVAILABLE')->whereHas('room', function($q) use ($branchId, $branchIds) {
+            if ($branchId) $q->where('branch_id', $branchId);
+            else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+        })->count();
 
-        $monthlyRevenue = $branchId 
-            ? Payment::where('branch_id', $branchId)->whereIn('status', ['PAID', 'VERIFIED'])->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount')
-            : Payment::whereIn('status', ['PAID', 'VERIFIED'])->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount');
+        $pendingRegs = RegistrationRequest::whereIn('status', ['PENDING', 'pending'])
+            ->where(function($q) use ($branchId, $branchIds) {
+                if ($branchId) $q->where('branch_id', $branchId);
+                else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+            })->count();
+
+        $pendingProofs = PaymentProof::whereIn('status', ['PENDING', 'pending'])
+            ->whereHas('payment', function($q) use ($branchId, $branchIds) {
+                if ($branchId) $q->where('branch_id', $branchId);
+                else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+            })->count();
+
+        $overdueRents = Student::where('rent_status', 'DUE')
+            ->where(function($q) use ($branchId, $branchIds) {
+                if ($branchId) $q->where('branch_id', $branchId);
+                else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+            })->count();
+
+        $pendingPasswordResets = PasswordResetRequest::where('status', 'PENDING')
+            ->where(function($q) use ($branchId, $branchIds) {
+                if ($branchId) $q->where('branch_id', $branchId);
+                else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+            })->count();
+
+        $pendingComplaints = Complaint::whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])
+            ->where(function($q) use ($branchId, $branchIds) {
+                if ($branchId) $q->where('branch_id', $branchId);
+                else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+            })->count();
+
+        $monthlyRevenue = Payment::where(function($q) use ($branchId, $branchIds) {
+                if ($branchId) $q->where('branch_id', $branchId);
+                else if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+            })
+            ->whereIn('status', ['PAID', 'VERIFIED'])
+            ->whereMonth('payment_date', now()->month)
+            ->whereYear('payment_date', now()->year)
+            ->sum('amount');
 
         return response()->json([
             'pending_registrations' => $pendingRegs,
             'pending_payments' => $pendingProofs,
-            'pending_complaints' => \App\Models\Complaint::whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])->count(),
+            'pending_complaints' => $pendingComplaints,
             'pending_password_resets' => $pendingPasswordResets,
-            
-            // Dashboard KPI values
             'occupied_beds' => $occupiedBeds,
             'available_beds' => $availableBeds,
             'total_beds' => $totalBeds,
@@ -1000,23 +1222,36 @@ class SubAdminController extends Controller
 
     public function getComplaintsData()
     {
-        $ticketsData = Complaint::with(['student', 'room', 'branch'])->latest()->get()->map(function ($complaint) {
-            return [
-                'ticket' => $complaint->ticket_number,
-                'student' => $complaint->student ? $complaint->student->full_name : 'Resident',
-                'room' => $complaint->room ? $complaint->room->room_number : 'N/A',
-                'category' => $complaint->category,
-                'title' => $complaint->subject,
-                'priority' => ucfirst(strtolower($complaint->priority)),
-                'date' => $complaint->created_at ? $complaint->created_at->format('d M Y') : 'N/A',
-                'status' => in_array($complaint->status, ['RESOLVED', 'Resolved', 'SOLVED', 'Solved']) ? 'Resolved' : (in_array($complaint->status, ['IN_PROGRESS', 'In Progress']) ? 'In Progress' : (in_array($complaint->status, ['OPEN', 'Open']) ? 'Open' : 'Pending')),
-                'db_id' => $complaint->id,
-                'raw_status' => $complaint->status,
-                'raw_priority' => $complaint->priority,
-                'description' => $complaint->description,
-                'resolution_remarks' => $complaint->resolution_remarks,
-            ];
-        });
+        $branch = $this->getActiveBranch();
+        $branchIds = $this->getAuthorizedBranchIds();
+
+        $ticketsData = Complaint::with(['student', 'room', 'branch'])
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
+            ->latest()
+            ->get()
+            ->map(function ($complaint) {
+                return [
+                    'ticket' => $complaint->ticket_number,
+                    'student' => $complaint->student ? $complaint->student->full_name : 'Resident',
+                    'room' => $complaint->room ? $complaint->room->room_number : 'N/A',
+                    'category' => $complaint->category,
+                    'title' => $complaint->subject,
+                    'priority' => ucfirst(strtolower($complaint->priority)),
+                    'date' => $complaint->created_at ? $complaint->created_at->format('d M Y') : 'N/A',
+                    'status' => in_array($complaint->status, ['RESOLVED', 'Resolved', 'SOLVED', 'Solved']) ? 'Resolved' : (in_array($complaint->status, ['IN_PROGRESS', 'In Progress']) ? 'In Progress' : (in_array($complaint->status, ['OPEN', 'Open']) ? 'Open' : 'Pending')),
+                    'db_id' => $complaint->id,
+                    'raw_status' => $complaint->status,
+                    'raw_priority' => $complaint->priority,
+                    'description' => $complaint->description,
+                    'resolution_remarks' => $complaint->resolution_remarks,
+                ];
+            });
 
         return response()->json($ticketsData);
     }
@@ -1062,14 +1297,14 @@ class SubAdminController extends Controller
     public function passwordRequests(Request $request)
     {
         $branchIds = $this->getAuthorizedBranchIds();
+        $branch = $this->getActiveBranch();
 
         $requests = PasswordResetRequest::with(['user', 'student.room', 'student.bed', 'branch', 'resolver'])
             ->where(function ($q) use ($branchIds) {
                 $q->whereIn('branch_id', $branchIds)
                   ->orWhereHas('student', function ($sq) use ($branchIds) {
                       $sq->whereIn('branch_id', $branchIds);
-                  })
-                  ->orWhereNull('branch_id');
+                  });
             })
             ->latest()
             ->get();
@@ -1080,7 +1315,12 @@ class SubAdminController extends Controller
             ->orderBy('full_name')
             ->get();
 
-        return view('sub_admin.password_requests', compact('requests', 'branchStudents'));
+        return view('sub_admin.password_requests', [
+            'requests' => $requests,
+            'branchStudents' => $branchStudents,
+            'activeBranch' => $branch,
+            'branch' => $branch,
+        ]);
     }
 
     public function resetPasswordRequest($id, Request $request)
