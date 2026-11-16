@@ -25,11 +25,12 @@ docker cp adminlaravel/artisan rudrapg_app:/var/www/html/artisan
 docker cp adminlaravel/composer.json rudrapg_app:/var/www/html/composer.json
 
 echo "=========================================================="
-echo "🗄️ [4/5] Running database migrations & cache clearing..."
+echo "🗄️ [4/5] Setting container permissions & database migrations..."
 echo "=========================================================="
+docker exec -u 0:0 rudrapg_app chown -R www-data:www-data /var/www/html/ || true
+docker exec -u 0:0 rudrapg_app chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache || true
 docker exec rudrapg_app php artisan migrate --force
 docker exec rudrapg_app php artisan optimize:clear
-docker exec rudrapg_app chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
 
 echo "=========================================================="
 echo "🔄 [5/5] Restarting rudrapg_app container..."
