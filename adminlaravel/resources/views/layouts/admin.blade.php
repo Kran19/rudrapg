@@ -18,11 +18,9 @@
     <title>@yield('title', 'Rudra Group PG Admin Portal')</title>
     
     <!-- Official Rudra Group PG Favicon & App Icons -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v=20261116">
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v=20261116">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}?v=20261116">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}?v=20261116">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=20261116">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     
     <!-- Tailwind CSS CDN -->
     <script>
@@ -696,8 +694,27 @@
         "closeButton": true,
         "progressBar": true,
         "positionClass": "toast-top-right",
-        "timeOut": "3000"
+        "timeOut": "4000"
     };
+
+    // Automatic Session Flash Notifications
+    @if(session('success'))
+        toastr.success({!! json_encode(session('success')) !!});
+    @endif
+    @if(session('error'))
+        toastr.error({!! json_encode(session('error')) !!});
+    @endif
+    @if(session('warning'))
+        toastr.warning({!! json_encode(session('warning')) !!});
+    @endif
+    @if(session('info'))
+        toastr.info({!! json_encode(session('info')) !!});
+    @endif
+    @if(isset($errors) && $errors->any())
+        @foreach($errors->all() as $err)
+            toastr.error({!! json_encode($err) !!}, "Validation Error");
+        @endforeach
+    @endif
 
     // Real-Time Sidebar & Notification Count Badges Update
     function updateSidebarBadges() {

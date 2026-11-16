@@ -12,6 +12,7 @@
     newPassword: '',
     confirmPassword: '',
     copied: false,
+    isSubmitting: false,
     generatePassword() {
         const words = ['Rudra', 'Stay', 'Prime', 'Smart', 'Living'];
         const word = words[Math.floor(Math.random() * words.length)];
@@ -24,6 +25,132 @@
         this.copied = true;
         setTimeout(() => this.copied = false, 2500);
         toastr.success('Password copied to clipboard!');
+    },
+    submitRequestReset() {
+        if (!this.newPassword || this.newPassword.length < 6) {
+            toastr.warning('Password must be at least 6 characters.');
+            return;
+        }
+        this.isSubmitting = true;
+        const targetUrl = '{{ url('/super-admin/password-requests') }}/' + this.selectedReq.id + '/reset';
+        const residentName = this.selectedReq.student_name;
+        const residentPhone = this.selectedReq.phone;
+        const pwd = this.newPassword;
+
+        fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ new_password: pwd })
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to update password.');
+            return data;
+        })
+        .then(data => {
+            this.resetModalOpen = false;
+            toastr.success('Password updated successfully!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Password Updated!',
+                html: `
+                    <div class=\"text-left bg-slate-50 dark:bg-slate-700/60 p-4 rounded-xl border border-slate-200 dark:border-slate-600 mt-3 space-y-2\">
+                        <div class=\"text-sm\"><span class=\"font-bold text-slate-700 dark:text-slate-300\">Resident:</span> <span class=\"font-semibold text-slate-900 dark:text-white\">${residentName}</span></div>
+                        <div class=\"text-sm\"><span class=\"font-bold text-slate-700 dark:text-slate-300\">Mobile:</span> <span class=\"font-semibold text-slate-900 dark:text-white\">${residentPhone}</span></div>
+                        <div class=\"mt-3 pt-3 border-t border-slate-200 dark:border-slate-600\">
+                            <div class=\"text-xs font-bold text-slate-500 uppercase mb-1\">New Active Password:</div>
+                            <div class=\"flex items-center justify-between bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-base font-bold text-blue-600 dark:text-blue-400\">
+                                <span>${pwd}</span>
+                                <button type=\"button\" onclick=\"navigator.clipboard.writeText('${pwd}'); toastr.success('Password copied to clipboard!');\" class=\"text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1\">
+                                    <i class=\"fa-regular fa-copy\"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class=\"text-xs text-slate-500 mt-3\">Share this password with the resident so they can sign in immediately.</p>
+                `,
+                confirmButtonText: 'Done',
+                confirmButtonColor: '#2563eb'
+            }).then(() => {
+                window.location.reload();
+            });
+        })
+        .catch(err => {
+            toastr.error(err.message || 'An error occurred.');
+            Swal.fire('Error', err.message || 'An error occurred.', 'error');
+        })
+        .finally(() => {
+            this.isSubmitting = false;
+        });
+    },
+    submitDirectReset() {
+        const select = document.getElementById('super-direct-student-select');
+        const studentId = select ? select.value : '';
+        if (!studentId) {
+            toastr.warning('Please choose a resident first.');
+            return;
+        }
+        if (!this.newPassword || this.newPassword.length < 6) {
+            toastr.warning('Password must be at least 6 characters.');
+            return;
+        }
+        this.isSubmitting = true;
+        const residentLabel = select.options[select.selectedIndex]?.text || 'Resident';
+        const targetUrl = '{{ url('/super-admin/students') }}/' + studentId + '/reset-password';
+        const pwd = this.newPassword;
+
+        fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ new_password: pwd })
+        })
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to update password.');
+            return data;
+        })
+        .then(data => {
+            this.directModalOpen = false;
+            toastr.success('Password updated successfully!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Password Updated!',
+                html: `
+                    <div class=\"text-left bg-slate-50 dark:bg-slate-700/60 p-4 rounded-xl border border-slate-200 dark:border-slate-600 mt-3 space-y-2\">
+                        <div class=\"text-sm\"><span class=\"font-bold text-slate-700 dark:text-slate-300\">Resident:</span> <span class=\"font-semibold text-slate-900 dark:text-white\">${residentLabel}</span></div>
+                        <div class=\"mt-3 pt-3 border-t border-slate-200 dark:border-slate-600\">
+                            <div class=\"text-xs font-bold text-slate-500 uppercase mb-1\">New Active Password:</div>
+                            <div class=\"flex items-center justify-between bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-base font-bold text-blue-600 dark:text-blue-400\">
+                                <span>${pwd}</span>
+                                <button type=\"button\" onclick=\"navigator.clipboard.writeText('${pwd}'); toastr.success('Password copied to clipboard!');\" class=\"text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1 rounded-md font-sans font-semibold flex items-center gap-1\">
+                                    <i class=\"fa-regular fa-copy\"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class=\"text-xs text-slate-500 mt-3\">Share this password with the resident so they can sign in immediately.</p>
+                `,
+                confirmButtonText: 'Done',
+                confirmButtonColor: '#2563eb'
+            }).then(() => {
+                window.location.reload();
+            });
+        })
+        .catch(err => {
+            toastr.error(err.message || 'An error occurred.');
+            Swal.fire('Error', err.message || 'An error occurred.', 'error');
+        })
+        .finally(() => {
+            this.isSubmitting = false;
+        });
     }
 }" 
 @open-reset-modal.window="selectedReq = $event.detail; newPassword = ''; confirmPassword = ''; resetModalOpen = true;"
@@ -113,7 +240,7 @@ class="space-y-6">
                 </button>
             </div>
 
-            <form :action="'{{ url('/super-admin/password-requests') }}/' + selectedReq.id + '/reset'" method="POST" class="mt-4 space-y-4">
+            <form @submit.prevent="submitRequestReset()" method="POST" class="mt-4 space-y-4">
                 @csrf
                 <div class="bg-blue-50 dark:bg-blue-900/20 p-3.5 rounded-xl border border-blue-200 dark:border-blue-800/40 text-xs text-slate-700 dark:text-slate-300 space-y-1">
                     <p><span class="font-semibold text-slate-900 dark:text-slate-100">Resident:</span> <span x-text="selectedReq.student_name"></span></p>
@@ -143,8 +270,14 @@ class="space-y-6">
 
                 <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-700">
                     <button type="button" @click="resetModalOpen = false" class="px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md flex items-center gap-1.5">
-                        <i class="fa-solid fa-check"></i> Save & Activate Password
+                    <button type="button" @click="submitRequestReset()" :disabled="isSubmitting"
+                            class="px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-md flex items-center gap-1.5 transition-all">
+                        <template x-if="!isSubmitting">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-check"></i> Save & Activate Password</span>
+                        </template>
+                        <template x-if="isSubmitting">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-notch fa-spin"></i> Activating Password...</span>
+                        </template>
                     </button>
                 </div>
             </form>
@@ -171,8 +304,7 @@ class="space-y-6">
                 </button>
             </div>
 
-            <form action="{{ route('super_admin.students.reset_password', 0) }}" id="super-direct-reset-form" method="POST" class="mt-4 space-y-4"
-                  onsubmit="const sid = document.getElementById('super-direct-student-select').value; this.action = this.action.replace('/0/', '/' + sid + '/');">
+            <form @submit.prevent="submitDirectReset()" id="super-direct-reset-form" method="POST" class="mt-4 space-y-4">
                 @csrf
                 <div>
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Select Resident</label>
@@ -204,8 +336,14 @@ class="space-y-6">
 
                 <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-700">
                     <button type="button" @click="directModalOpen = false" class="px-4 py-2 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md flex items-center gap-1.5">
-                        <i class="fa-solid fa-key"></i> Update Password
+                    <button type="button" @click="submitDirectReset()" :disabled="isSubmitting"
+                            class="px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-md flex items-center gap-1.5 transition-all">
+                        <template x-if="!isSubmitting">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-key"></i> Update Password</span>
+                        </template>
+                        <template x-if="isSubmitting">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-notch fa-spin"></i> Updating Password...</span>
+                        </template>
                     </button>
                 </div>
             </form>

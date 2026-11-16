@@ -376,4 +376,46 @@ class SecurityAndEdgeCasesTest extends TestCase
         // Must be rejected with 403 Forbidden!
         $res->assertStatus(403);
     }
+
+    public function test_sub_admin_direct_reset_returns_json_with_success_and_new_password(): void
+    {
+        $branch = Branch::first();
+        $subAdmin = User::where('email', 'subadmin.naroda@rudrapg.com')->first();
+        $subAdmin->branches()->sync([$branch->id]);
+
+        $user = User::create([
+            'name' => 'Direct Reset Resident',
+            'email' => 'direct.res@example.com',
+            'phone' => '9444455555',
+            'password' => Hash::make('OldPass@123'),
+            'role' => 'STUDENT',
+            'status' => 'ACTIVE',
+        ]);
+
+        $student = Student::create([
+            'user_id' => $user->id,
+            'branch_id' => $branch->id,
+            'app_reference' => 'REG-DIR-01',
+            'full_name' => 'Direct Reset Resident',
+            'phone' => '9444455555',
+            'email' => 'direct.res@example.com',
+            'aadhaar_number' => '112233445566',
+            'parent_name' => 'Parent Name',
+            'parent_phone' => '9444455550',
+            'emergency_contact' => '9444455550',
+            'current_address' => 'Test Address',
+            'status' => 'APPROVED',
+        ]);
+
+        // JSON Request
+        $res = $this->actingAs($subAdmin)->postJson("/sub-admin/students/{$student->id}/reset-password", [
+            'new_password' => 'NewRudra@2026',
+        ]);
+
+        $res->assertStatus(200)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('new_password', 'NewRudra@2026');
+
+        $this->assertTrue(Hash::check('NewRudra@2026', $user->fresh()->password));
+    }
 }
