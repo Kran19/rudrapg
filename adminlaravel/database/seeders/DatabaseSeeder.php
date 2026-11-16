@@ -162,6 +162,55 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        // 5b. Odhav Branch Master & Rooms 401 - 428 (3 beds per room)
+        $odhavBranch = Branch::withTrashed()->firstOrNew(['code' => 'PG-ODH-01']);
+        $odhavBranch->fill([
+            'name' => 'Odhav Branch',
+            'address' => 'Opposite Odhav Ring Road, Odhav, Ahmedabad',
+            'city' => 'Ahmedabad',
+            'phone' => '+91 79228 11999',
+            'email' => 'odhav@rudrapg.com',
+            'manager_name' => 'Ramesh Patel',
+            'manager_phone' => '+91 98765 43220',
+            'electricity_unit_rate' => 10.00,
+            'qr_code_hash' => 'hash_odhav_88291024',
+            'status' => 'ACTIVE',
+        ]);
+        if ($odhavBranch->trashed()) {
+            $odhavBranch->restore();
+        }
+        $odhavBranch->save();
+
+        for ($r = 401; $r <= 428; $r++) {
+            $oRoom = Room::firstOrCreate(
+                [
+                    'branch_id' => $odhavBranch->id,
+                    'room_number' => (string) $r,
+                ],
+                [
+                    'floor_number' => 4,
+                    'sharing_type' => '3-Sharing AC',
+                    'max_beds' => 3,
+                    'is_ac' => true,
+                    'status' => 'AVAILABLE',
+                ]
+            );
+
+            foreach (['A', 'B', 'C'] as $char) {
+                Bed::firstOrCreate(
+                    [
+                        'room_id' => $oRoom->id,
+                        'bed_code' => 'Bed ' . $r . '-' . $char,
+                    ],
+                    [
+                        'monthly_rent' => 6000.00,
+                        'security_deposit' => 10000.00,
+                        'status' => 'AVAILABLE',
+                    ]
+                );
+            }
+        }
+
         // 6. Student Resident Profile
         $upsertStudent = function (array $match, array $attributes): Student {
             $student = Student::withTrashed()->where($match)->first();

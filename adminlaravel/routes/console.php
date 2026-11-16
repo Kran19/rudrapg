@@ -7,6 +7,15 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+Artisan::command('branch:list', function () {
+    $this->table(['id', 'name', 'code'], \App\Models\Branch::all(['id', 'name', 'code'])->toArray());
+});
+
+Artisan::command('room:stats', function () {
+    $this->info('Rooms: ' . \App\Models\Room::count() . ', Beds: ' . \App\Models\Bed::count());
+    $this->table(['Room', 'Floor', 'Beds', 'Sharing'], \App\Models\Room::take(5)->get(['room_number', 'floor_number', 'max_beds', 'sharing_type'])->toArray());
+});
+
 Artisan::command('app:reset-test-data', function () {
     $this->info('Resetting test data to clean slate (zero state)...');
 

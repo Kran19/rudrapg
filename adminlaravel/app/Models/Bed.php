@@ -30,6 +30,16 @@ class Bed extends Model
 
     public function student()
     {
-        return $this->hasOne(Student::class);
+        return $this->hasOne(Student::class, 'bed_id');
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(RoomAllocation::class, 'bed_id');
+    }
+
+    public function activeAllocation()
+    {
+        return $this->hasOne(RoomAllocation::class, 'bed_id')->where('status', 'ACTIVE');
     }
 }
