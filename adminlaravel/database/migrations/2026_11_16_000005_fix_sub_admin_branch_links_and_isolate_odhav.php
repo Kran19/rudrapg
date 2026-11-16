@@ -55,8 +55,9 @@ return new class extends Migration
             }
         }
 
-        // 2. Ensure rooms 401 to 428 and their beds are assigned to canonical Odhav branch
-        Room::whereBetween('room_number', [401, 428])->update(['branch_id' => $canonicalOdhav->id]);
+        // 2. Ensure rooms 401 to 428 and their beds are assigned to canonical Odhav branch using string comparison
+        $odhavRoomNumbers = array_map('strval', range(401, 428));
+        Room::whereIn('room_number', $odhavRoomNumbers)->update(['branch_id' => $canonicalOdhav->id]);
 
         // 3. Connect all Odhav Sub-Admins to canonical Odhav Branch in pivot table
         $odhavSubAdmins = User::where('role', 'SUB_ADMIN')
@@ -83,3 +84,4 @@ return new class extends Migration
         // Safe no-op
     }
 };
+
