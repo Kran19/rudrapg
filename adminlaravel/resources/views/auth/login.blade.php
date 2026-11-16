@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In - Rudra Group PG Admin Portal</title>
     
+    <!-- Official Rudra Group PG Favicon & App Icons -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v=20261116">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('favicon.ico') }}?v=20261116">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}?v=20261116">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}?v=20261116">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v=20261116">
+    
     <!-- Tailwind CSS CDN -->
     <script>
         const _originalWarn = console.warn;

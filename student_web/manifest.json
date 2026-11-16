@@ -1,11 +1,11 @@
 {
-    "name": "rudraboyspg",
-    "short_name": "rudraboyspg",
+    "name": "Rudra Group PG",
+    "short_name": "Rudra PG",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#ffffff",
+    "theme_color": "#1e3a8a",
+    "description": "Official resident portal and companion app for Rudra Group PG.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
