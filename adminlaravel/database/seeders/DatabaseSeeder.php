@@ -140,7 +140,7 @@ class DatabaseSeeder extends Seeder
                     [
                         'monthly_rent' => 6500.00,
                         'security_deposit' => 10000.00,
-                        'status' => 'OCCUPIED',
+                        'status' => ($floor === 1 && $r === 1) ? 'OCCUPIED' : 'AVAILABLE',
                     ]
                 );
 

@@ -573,13 +573,29 @@ class SuperAdminController extends Controller
             $totalBeds = $room->beds->count() > 0 ? $room->beds->count() : $room->max_beds;
 
             $bedsData = $room->beds->map(function ($bed) use ($room) {
+                // Find real student attached to this bed
                 $student = $bed->student ?? $bed->activeAllocation?->student;
-                if (!$student && $room->students) {
+
+                // Check active allocation records directly
+                if (!$student) {
+                    $alloc = RoomAllocation::where('bed_id', $bed->id)->where('status', 'ACTIVE')->latest()->first()
+                        ?? RoomAllocation::where('bed_id', $bed->id)->latest()->first();
+                    if ($alloc && $alloc->student) {
+                        $student = $alloc->student;
+                    }
+                }
+
+                // Check room students if student has matching bed_id or is assigned to this room
+                if (!$student && $room->students && $room->students->isNotEmpty()) {
                     $student = $room->students->firstWhere('bed_id', $bed->id);
+                    if (!$student && $room->students->count() === 1 && $room->beds->count() <= 2) {
+                        // Single student in room, link to this bed
+                        $student = $room->students->first();
+                    }
                 }
 
                 $studentData = null;
-                $isOccupied = in_array(strtoupper($bed->status), ['OCCUPIED', 'RESERVED']) || ($student !== null);
+                $isOccupied = ($student !== null);
 
                 if ($student) {
                     $profileDoc = $student->documents ? $student->documents->firstWhere('doc_type', 'PROFILE_PHOTO') : null;
@@ -624,7 +640,7 @@ class SuperAdminController extends Controller
                 return [
                     'id' => $bed->id,
                     'bed_code' => $bed->bed_code,
-                    'status' => $bed->status,
+                    'status' => $isOccupied ? 'OCCUPIED' : 'AVAILABLE',
                     'monthly_rent' => (int) $bed->monthly_rent,
                     'security_deposit' => (int) $bed->security_deposit,
                     'is_occupied' => $isOccupied,

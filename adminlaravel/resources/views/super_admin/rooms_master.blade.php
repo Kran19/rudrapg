@@ -198,8 +198,8 @@
                 </button>
             </div>
 
-            <!-- Modal Body: OCCUPIED CASE (Full Resident Profile) -->
-            <template x-if="activeBed && activeBed.is_occupied && activeResident">
+            <!-- Modal Body: OCCUPIED CASE (Full Real Customer Profile) -->
+            <template x-if="activeResident">
                 <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                     <!-- Resident Profile Banner -->
                     <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700">
@@ -290,50 +290,36 @@
                 </div>
             </template>
 
-            <!-- Modal Body: OCCUPIED BUT GENERIC/SEED CASE -->
-            <template x-if="activeBed && activeBed.is_occupied && !activeResident">
-                <div class="p-6 space-y-4">
-                    <div class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-center">
-                        <i class="fa-solid fa-user-lock text-3xl text-amber-600 mb-2"></i>
-                        <h5 class="font-bold text-sm text-slate-900 dark:text-slate-100">Occupied Bed: <span x-text="activeBed.bed_code"></span></h5>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">This bed is marked as OCCUPIED in the database inventory.</p>
-                        <div class="mt-3 inline-block px-3 py-1 bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-bold text-xs rounded-lg">
-                            Monthly Rent: ₹<span x-text="Number(activeBed.monthly_rent).toLocaleString()"></span> • Deposit: ₹<span x-text="Number(activeBed.security_deposit).toLocaleString()"></span>
-                        </div>
-                    </div>
-                    <div class="flex justify-end pt-2">
-                        <button type="button" @click="residentModalOpen = false" class="px-5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl cursor-pointer">
-                            Close
-                        </button>
-                    </div>
-                </div>
-            </template>
-
-            <!-- Modal Body: VACANT / AVAILABLE BED CASE -->
-            <template x-if="activeBed && !activeBed.is_occupied">
+            <!-- Modal Body: VACANT / AVAILABLE BED CASE (No Dummy Data) -->
+            <template x-if="!activeResident">
                 <div class="p-6 space-y-4">
                     <div class="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center">
                         <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
                             <i class="fa-solid fa-bed"></i>
                         </div>
-                        <h5 class="font-bold text-base text-slate-900 dark:text-slate-100">Bed <span x-text="activeBed.bed_code"></span> is Available</h5>
+                        <h5 class="font-bold text-base text-slate-900 dark:text-slate-100">
+                            Bed <span x-text="activeBed ? activeBed.bed_code : ''"></span> is Vacant & Available
+                        </h5>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            This bed in <span class="font-bold" x-text="'Room ' + (activeRoom ? activeRoom.room_number : '')"></span> is vacant and ready for new resident registration & allocation.
+                            This bed in <span class="font-bold" x-text="'Room ' + (activeRoom ? activeRoom.room_number : '')"></span> (<span x-text="currentBranchName()"></span>) is ready for student allocation.
                         </p>
                         
                         <div class="grid grid-cols-2 gap-3 mt-4 text-left">
                             <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
                                 <span class="text-[10px] font-bold uppercase text-slate-400 block">Monthly Rent</span>
-                                <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400" x-text="'₹' + Number(activeBed.monthly_rent).toLocaleString()"></span>
+                                <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400" x-text="'₹' + Number(activeBed ? activeBed.monthly_rent : 0).toLocaleString()"></span>
                             </div>
                             <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
                                 <span class="text-[10px] font-bold uppercase text-slate-400 block">Security Deposit</span>
-                                <span class="text-sm font-bold text-blue-600 dark:text-blue-400" x-text="'₹' + Number(activeBed.security_deposit).toLocaleString()"></span>
+                                <span class="text-sm font-bold text-blue-600 dark:text-blue-400" x-text="'₹' + Number(activeBed ? activeBed.security_deposit : 0).toLocaleString()"></span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-3 pt-2">
+                    <div class="flex items-center justify-between pt-2">
+                        <a href="{{ route('super_admin.students') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors">
+                            <i class="fa-solid fa-user-plus"></i> Allocate in Student Directory
+                        </a>
                         <button type="button" @click="residentModalOpen = false" class="px-5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl cursor-pointer">
                             Close
                         </button>
