@@ -51,7 +51,7 @@ class User extends Authenticatable
 
     public function branches()
     {
-        return $this->belongsToMany(Branch::class, 'sub_admin_branch', 'user_id', 'branch_id');
+        return $this->belongsToMany(Branch::class, 'sub_admin_branch', 'user_id', 'branch_id')->withTimestamps();
     }
 
     public function studentProfile()

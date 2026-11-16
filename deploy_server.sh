@@ -4,6 +4,7 @@ set -e
 echo "=========================================================="
 echo "🚀 [1/5] Pulling latest updates from GitHub..."
 echo "=========================================================="
+git checkout -- adminlaravel/public/student-app/ || true
 git pull origin main
 
 echo "=========================================================="

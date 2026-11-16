@@ -382,63 +382,77 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'digits:10'],
+            'phone' => ['required', 'string', 'digits:10', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:6'],
             'branches' => ['required', 'array', 'size:1'],
             'branches.*' => [
                 'exists:branches,id',
                 function ($attribute, $value, $fail) {
-                    $hasSubAdmin = \Illuminate\Support\Facades\DB::table('sub_admin_branch')->where('branch_id', $value)->exists();
+                    $hasSubAdmin = \Illuminate\Support\Facades\DB::table('sub_admin_branch')
+                        ->join('users', 'sub_admin_branch.user_id', '=', 'users.id')
+                        ->where('sub_admin_branch.branch_id', $value)
+                        ->whereNull('users.deleted_at')
+                        ->where('users.status', 'ACTIVE')
+                        ->exists();
                     if ($hasSubAdmin) {
-                        $fail('This branch already has a sub-admin assigned to it.');
+                        $fail('This branch already has an active sub-admin assigned to it.');
                     }
                 }
             ],
+        ], [
+            'email.unique' => 'A user account with this email address already exists. Please choose another email.',
+            'phone.unique' => 'A user account with this mobile number already exists.',
+            'phone.digits' => 'Mobile number must be exactly 10 digits.',
+            'branches.size' => 'Please select exactly 1 branch to assign.',
         ]);
 
-        DB::transaction(function () use ($validated, &$user) {
-            $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
-                'password' => Hash::make($validated['password']),
-                'role' => 'SUB_ADMIN',
-                'status' => 'ACTIVE',
+        try {
+            DB::transaction(function () use ($validated, &$user) {
+                $user = User::create([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'phone' => $validated['phone'],
+                    'password' => Hash::make($validated['password']),
+                    'role' => 'SUB_ADMIN',
+                    'status' => 'ACTIVE',
+                ]);
+
+                $user->branches()->sync($validated['branches']);
+            });
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Created Sub Admin: '.$user->email,
+                'module' => 'USERS',
+                'record_id' => $user->id,
+                'ip_address' => $request->ip(),
             ]);
 
-            $user->branches()->sync($validated['branches']);
-        });
+            $responseData = [
+                'id' => 'SA-'.str_pad($user->id, 4, '0', STR_PAD_LEFT),
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'assigned_branches' => $user->branches->pluck('name')->toArray(),
+                'status' => 'Active',
+                'raw_status' => 'ACTIVE',
+                'branch_ids' => $user->branches->pluck('id')->toArray(),
+                'created_at' => $user->created_at->format('d M Y'),
+                'db_id' => $user->id,
+            ];
 
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'Created Sub Admin: '.$user->email,
-            'module' => 'USERS',
-            'record_id' => $user->id,
-            'ip_address' => $request->ip(),
-        ]);
-
-        $responseData = [
-            'id' => 'SA-'.str_pad($user->id, 4, '0', STR_PAD_LEFT),
-            'name' => $user->name,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'assigned_branches' => $user->branches->pluck('name')->toArray(),
-            'status' => 'Active',
-            'raw_status' => 'ACTIVE',
-            'branch_ids' => $user->branches->pluck('id')->toArray(),
-            'created_at' => $user->created_at->format('d M Y'),
-            'db_id' => $user->id,
-        ];
-
-        if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Sub Admin account created successfully! Account is now active.',
                 'data' => $responseData,
             ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to create sub admin: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to create sub admin: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return redirect()->back()->with('success', 'Sub Admin account created successfully.');
     }
 
     public function updateSubAdmin(Request $request, $id)
@@ -448,21 +462,27 @@ class SuperAdminController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$id],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'digits:10', 'unique:users,phone,'.$id],
             'password' => ['nullable', 'string', 'min:6'],
             'branches' => ['required', 'array', 'size:1'],
             'branches.*' => [
                 'exists:branches,id',
                 function ($attribute, $value, $fail) use ($id) {
                     $hasSubAdmin = \Illuminate\Support\Facades\DB::table('sub_admin_branch')
-                        ->where('branch_id', $value)
-                        ->where('user_id', '!=', $id)
+                        ->join('users', 'sub_admin_branch.user_id', '=', 'users.id')
+                        ->where('sub_admin_branch.branch_id', $value)
+                        ->where('sub_admin_branch.user_id', '!=', $id)
+                        ->whereNull('users.deleted_at')
+                        ->where('users.status', 'ACTIVE')
                         ->exists();
                     if ($hasSubAdmin) {
-                        $fail('This branch already has another sub-admin assigned to it.');
+                        $fail('This branch already has another active sub-admin assigned to it.');
                     }
                 }
             ],
+        ], [
+            'email.unique' => 'A user account with this email address already exists.',
+            'phone.unique' => 'A user account with this mobile number already exists.',
         ]);
 
         DB::transaction(function () use ($user, $validated) {

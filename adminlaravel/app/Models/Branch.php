@@ -40,7 +40,7 @@ class Branch extends Model
 
     public function subAdmins()
     {
-        return $this->belongsToMany(User::class, 'sub_admin_branch', 'branch_id', 'user_id');
+        return $this->belongsToMany(User::class, 'sub_admin_branch', 'branch_id', 'user_id')->withTimestamps();
     }
 
     public function rooms()
