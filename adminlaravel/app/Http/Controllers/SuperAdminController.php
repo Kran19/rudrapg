@@ -12,7 +12,9 @@ use App\Models\RegistrationRequest;
 use App\Models\Room;
 use App\Models\Student;
 use App\Models\User;
+use App\Models\PasswordResetRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -933,6 +935,107 @@ class SuperAdminController extends Controller
             'pending_registrations' => \App\Models\RegistrationRequest::whereIn('status', ['PENDING', 'pending'])->count(),
             'pending_payments' => \App\Models\PaymentProof::whereIn('status', ['PENDING', 'pending'])->count(),
             'pending_complaints' => \App\Models\Complaint::whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])->count(),
+            'pending_password_resets' => \App\Models\PasswordResetRequest::where('status', 'PENDING')->count(),
         ]);
+    }
+
+    public function passwordRequests(Request $request)
+    {
+        $requests = PasswordResetRequest::with(['user', 'student.room', 'student.bed', 'branch', 'resolver'])
+            ->latest()
+            ->get();
+
+        $allStudents = Student::with(['user', 'room', 'bed', 'branch'])
+            ->where('status', 'APPROVED')
+            ->orderBy('full_name')
+            ->get();
+
+        return view('super_admin.password_requests', compact('requests', 'allStudents'));
+    }
+
+    public function resetPasswordRequest($id, Request $request)
+    {
+        $validated = $request->validate([
+            'new_password' => ['required', 'string', 'min:6'],
+        ]);
+
+        $resetReq = PasswordResetRequest::with(['user', 'student'])->findOrFail($id);
+
+        $user = $resetReq->user;
+        $user->password = Hash::make($validated['new_password']);
+        $user->tokens()->delete();
+        $user->save();
+
+        $resetReq->update([
+            'status' => 'RESOLVED',
+            'resolved_by' => Auth::id(),
+            'resolved_at' => now(),
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Super Admin reset student password via request ID: '.$resetReq->id.' for User: '.$user->name.' ('.$user->phone.')',
+            'module' => 'RESIDENT_SECURITY',
+            'record_id' => $user->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Password updated successfully.',
+                'new_password' => $validated['new_password'],
+                'user_name' => $user->name,
+                'phone' => $user->phone,
+            ]);
+        }
+
+        return back()->with('success', "Password for {$user->name} ({$user->phone}) has been updated to: {$validated['new_password']}");
+    }
+
+    public function directResetPassword($studentId, Request $request)
+    {
+        $validated = $request->validate([
+            'new_password' => ['required', 'string', 'min:6'],
+        ]);
+
+        $student = Student::with('user')->findOrFail($studentId);
+
+        $user = $student->user;
+        if (!$user) {
+            return back()->with('error', 'Student user account not found.');
+        }
+
+        $user->password = Hash::make($validated['new_password']);
+        $user->tokens()->delete();
+        $user->save();
+
+        PasswordResetRequest::where('user_id', $user->id)
+            ->where('status', 'PENDING')
+            ->update([
+                'status' => 'RESOLVED',
+                'resolved_by' => Auth::id(),
+                'resolved_at' => now(),
+            ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Super Admin direct reset student password for: '.$user->name.' ('.$user->phone.')',
+            'module' => 'RESIDENT_SECURITY',
+            'record_id' => $user->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Password updated successfully.',
+                'new_password' => $validated['new_password'],
+                'user_name' => $user->name,
+                'phone' => $user->phone,
+            ]);
+        }
+
+        return back()->with('success', "Password for {$user->name} ({$user->phone}) has been updated to: {$validated['new_password']}");
     }
 }

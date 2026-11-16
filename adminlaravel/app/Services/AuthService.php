@@ -12,29 +12,26 @@ class AuthService
     {
         $loginId = trim($credentials['phone'] ?? $credentials['email'] ?? '');
         $digits = preg_replace('/\D+/', '', $loginId);
+        $phone10 = strlen($digits) >= 10 ? substr($digits, -10) : null;
 
-        $user = User::where('email', $loginId)
-            ->orWhere('phone', $loginId)
-            ->when(! empty($digits), function ($query) use ($digits) {
-                $last10 = strlen($digits) >= 10 ? substr($digits, -10) : $digits;
-                $query->orWhereRaw("REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', '') LIKE ?", ["%$last10"]);
-            })
-            ->first();
+        $user = User::where(function ($query) use ($loginId, $phone10) {
+            $query->where('email', $loginId)
+                  ->orWhere('phone', $loginId);
+
+            if ($phone10) {
+                $query->orWhere('phone', $phone10)
+                      ->orWhere('phone', '+91 ' . substr($phone10, 0, 5) . ' ' . substr($phone10, 5))
+                      ->orWhere('phone', '+91' . $phone10)
+                      ->orWhere('phone', '91' . $phone10)
+                      ->orWhereRaw("SUBSTR(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), -10) = ?", [$phone10]);
+            }
+        })->first();
 
         $passwordMatches = $user && Hash::check($credentials['password'], $user->password);
 
-        // Self-healing fallback: support legacy default passwords strictly in local and testing environments
-        if (app()->environment('local', 'testing') && $user && ! $passwordMatches && in_array($credentials['password'], ['password123', 'secret123'], true)) {
-            $altPassword = $credentials['password'] === 'password123' ? 'secret123' : 'password123';
-            if (Hash::check($altPassword, $user->password)) {
-                $passwordMatches = true;
-                $user->update(['password' => Hash::make($credentials['password'])]);
-            }
-        }
-
         if (! $user || ! $passwordMatches) {
             throw ValidationException::withMessages([
-                'email' => ['Invalid credentials provided.'],
+                'email' => ['Invalid credentials provided. Please check your phone number and password.'],
             ]);
         }
 

@@ -9,6 +9,7 @@ import '../../core/widgets/custom_text_field.dart';
 import '../qr_scanner/qr_scanner_gate_screen.dart';
 import '../main_layout/main_layout_screen.dart';
 import '../auth/presentation/auth_notifier.dart';
+import '../auth/data/auth_repository.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -59,6 +60,151 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         );
       }
     });
+  }
+
+  void _showForgotPasswordSheet(BuildContext context) {
+    final resetPhoneController = TextEditingController(text: _mobileController.text.trim());
+    final noteController = TextEditingController();
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: AppSpacing.xl,
+                right: AppSpacing.xl,
+                top: AppSpacing.xl,
+                bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondary.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.lock_reset_rounded, color: AppColors.secondary, size: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            Text('Forgot Password?', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          onPressed: () => Navigator.pop(sheetContext),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'No email needed. Enter your registered mobile number below to send a password assistance request directly to your PG Sub-Admin and Admin.',
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    CustomTextField(
+                      label: 'Registered Mobile Number',
+                      hint: 'e.g. 9876543210',
+                      controller: resetPhoneController,
+                      keyboardType: TextInputType.phone,
+                      prefixIcon: Icons.phone_android_rounded,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    CustomTextField(
+                      label: 'Note / Reason (Optional)',
+                      hint: 'e.g. Forgot my password or need new login code',
+                      controller: noteController,
+                      prefixIcon: Icons.notes_rounded,
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    CustomButton(
+                      text: isSubmitting ? 'Submitting Request...' : 'Submit Reset Request to Admin',
+                      icon: isSubmitting ? Icons.hourglass_empty : Icons.send_rounded,
+                      isLoading: isSubmitting,
+                      onPressed: isSubmitting
+                          ? () {}
+                          : () async {
+                              final phone = resetPhoneController.text.trim();
+                              if (phone.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Please enter your registered mobile number.'),
+                                    backgroundColor: AppColors.error,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              setSheetState(() => isSubmitting = true);
+                              try {
+                                final authRepo = ref.read(authRepositoryProvider);
+                                final msg = await authRepo.requestPasswordReset(phone, notes: noteController.text.trim());
+                                if (sheetContext.mounted) {
+                                  Navigator.pop(sheetContext);
+                                }
+                                if (context.mounted) {
+                                  showDialog(
+                                    context: context,
+                                    builder: (dialogCtx) => AlertDialog(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                      title: const Row(
+                                        children: [
+                                          Icon(Icons.check_circle_rounded, color: AppColors.success, size: 26),
+                                          SizedBox(width: 8),
+                                          Text('Request Received', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                      content: Text(
+                                        msg,
+                                        style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                                      ),
+                                      actions: [
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                                          onPressed: () => Navigator.pop(dialogCtx),
+                                          child: const Text('OK', style: TextStyle(color: Colors.white)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                setSheetState(() => isSubmitting = false);
+                                final err = e.toString().replaceAll('Exception: ', '');
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(err),
+                                    backgroundColor: AppColors.error,
+                                  ),
+                                );
+                              }
+                            },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -160,13 +306,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please contact your PG Manager or Sub-Admin to reset your password.'),
-                            ),
-                          );
-                        },
+                        onPressed: () => _showForgotPasswordSheet(context),
                         child: Text(
                           'Forgot Password?',
                           style: AppTypography.caption.copyWith(

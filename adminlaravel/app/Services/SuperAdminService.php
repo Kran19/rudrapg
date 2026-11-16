@@ -47,7 +47,7 @@ class SuperAdminService
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'],
-                'password' => Hash::make($data['password'] ?? 'secret123'),
+                'password' => Hash::make($data['password']),
                 'role' => 'SUB_ADMIN',
                 'status' => 'ACTIVE',
             ]);

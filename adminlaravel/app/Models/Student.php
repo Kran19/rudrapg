@@ -80,4 +80,9 @@ class Student extends Model
     {
         return $this->hasMany(RegistrationRequest::class);
     }
+
+    public function passwordResetRequests()
+    {
+        return $this->hasMany(PasswordResetRequest::class);
+    }
 }

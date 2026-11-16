@@ -21,6 +21,7 @@ class SecurityAndEdgeCasesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
         $this->seed(DatabaseSeeder::class);
     }
 
@@ -201,5 +202,178 @@ class SecurityAndEdgeCasesTest extends TestCase
             'id' => $bed2->id,
             'status' => 'AVAILABLE',
         ]);
+    }
+
+    public function test_login_strictly_requires_correct_password_without_fallback(): void
+    {
+        $user = User::create([
+            'name' => 'Custom Password Resident',
+            'email' => 'custom.pw@example.com',
+            'phone' => '9111122222',
+            'password' => Hash::make('MyCustomPass@99'),
+            'role' => 'STUDENT',
+            'status' => 'ACTIVE',
+        ]);
+
+        // Wrong password attempt (even default password123) must be rejected
+        $wrongRes = $this->postJson('/api/v1/auth/login', [
+            'phone' => '9111122222',
+            'password' => 'password123',
+        ]);
+        $wrongRes->assertStatus(422);
+
+        // Correct password must succeed
+        $correctRes = $this->postJson('/api/v1/auth/login', [
+            'phone' => '9111122222',
+            'password' => 'MyCustomPass@99',
+        ]);
+        $correctRes->assertStatus(200)
+            ->assertJsonPath('status', 'success');
+    }
+
+    public function test_student_can_request_forgot_password(): void
+    {
+        $user = User::create([
+            'name' => 'Forgot Password Resident',
+            'email' => 'forgot.pw@example.com',
+            'phone' => '9333344444',
+            'password' => Hash::make('OldSecret@123'),
+            'role' => 'STUDENT',
+            'status' => 'ACTIVE',
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/forgot-password-request', [
+            'phone' => '9333344444',
+            'notes' => 'I cannot remember my login password',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('status', 'success');
+
+        $this->assertDatabaseHas('password_reset_requests', [
+            'user_id' => $user->id,
+            'phone' => $user->phone,
+            'status' => 'PENDING',
+        ]);
+    }
+
+    public function test_sub_admin_can_reset_password_for_branch_student(): void
+    {
+        $branch = Branch::where('code', 'PG-NRD-01')->first();
+        $subAdmin = User::where('email', 'subadmin.naroda@rudrapg.com')->first();
+        $subAdmin->branches()->sync([$branch->id]);
+
+        $studentUser = User::create([
+            'name' => 'Need Reset Resident',
+            'email' => 'need.reset@example.com',
+            'phone' => '9444455555',
+            'password' => Hash::make('StalePass#11'),
+            'role' => 'STUDENT',
+            'status' => 'ACTIVE',
+        ]);
+
+        $student = Student::create([
+            'user_id' => $studentUser->id,
+            'branch_id' => $branch->id,
+            'app_reference' => 'REG-RESET-01',
+            'full_name' => 'Need Reset Resident',
+            'phone' => '9444455555',
+            'email' => 'need.reset@example.com',
+            'aadhaar_number' => '123456789012',
+            'parent_name' => 'Parent Name',
+            'parent_phone' => '9444455550',
+            'emergency_contact' => '9444455550',
+            'current_address' => 'Test Address',
+            'status' => 'APPROVED',
+        ]);
+
+        $resetReq = \App\Models\PasswordResetRequest::create([
+            'user_id' => $studentUser->id,
+            'student_id' => $student->id,
+            'branch_id' => $branch->id,
+            'phone' => $studentUser->phone,
+            'status' => 'PENDING',
+        ]);
+
+        // SubAdmin resets password
+        $res = $this->actingAs($subAdmin)->postJson("/sub-admin/password-requests/{$resetReq->id}/reset", [
+            'new_password' => 'NewGenerated@2026',
+        ]);
+
+        $res->assertStatus(200)
+            ->assertJsonPath('status', 'success');
+
+        // Verify request marked resolved
+        $this->assertDatabaseHas('password_reset_requests', [
+            'id' => $resetReq->id,
+            'status' => 'RESOLVED',
+            'resolved_by' => $subAdmin->id,
+        ]);
+
+        // Verify student can now login with new password
+        $loginRes = $this->postJson('/api/v1/auth/login', [
+            'phone' => '9444455555',
+            'password' => 'NewGenerated@2026',
+        ]);
+        $loginRes->assertStatus(200);
+    }
+
+    public function test_sub_admin_cross_branch_password_reset_rejected_with_403(): void
+    {
+        $branch1 = Branch::where('code', 'PG-NRD-01')->first();
+        $subAdmin = User::where('email', 'subadmin.naroda@rudrapg.com')->first();
+        $subAdmin->branches()->sync([$branch1->id]);
+
+        $branch2 = Branch::create([
+            'code' => 'PG-OTHER-02',
+            'name' => 'Other Branch',
+            'address' => 'Other Address',
+            'city' => 'Ahmedabad',
+            'phone' => '+91 79228 11111',
+            'manager_name' => 'Other Manager',
+            'manager_phone' => '+91 98888 11111',
+            'qr_code_hash' => 'hash_other_02',
+            'status' => 'ACTIVE',
+        ]);
+
+        $otherUser = User::create([
+            'name' => 'Other Branch Resident',
+            'email' => 'other.res@example.com',
+            'phone' => '9555566666',
+            'password' => Hash::make('Secret#99'),
+            'role' => 'STUDENT',
+            'status' => 'ACTIVE',
+        ]);
+
+        $otherStudent = Student::create([
+            'user_id' => $otherUser->id,
+            'branch_id' => $branch2->id,
+            'app_reference' => 'REG-OTHER-01',
+            'full_name' => 'Other Branch Resident',
+            'phone' => '9555566666',
+            'email' => 'other.res@example.com',
+            'aadhaar_number' => '999988887777',
+            'parent_name' => 'Parent Name',
+            'parent_phone' => '9555566660',
+            'emergency_contact' => '9555566660',
+            'current_address' => 'Test Address',
+            'status' => 'APPROVED',
+        ]);
+
+        $resetReq = \App\Models\PasswordResetRequest::create([
+            'user_id' => $otherUser->id,
+            'student_id' => $otherStudent->id,
+            'branch_id' => $branch2->id,
+            'phone' => $otherUser->phone,
+            'status' => 'PENDING',
+        ]);
+
+        // SubAdmin of branch 1 attempts to reset password of student in branch 2
+        $res = $this->actingAs($subAdmin)->postJson("/sub-admin/password-requests/{$resetReq->id}/reset", [
+            'new_password' => 'HackedPass@123',
+        ]);
+
+        // Must be rejected with 403 Forbidden!
+        $res->assertStatus(403);
     }
 }

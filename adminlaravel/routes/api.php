@@ -16,6 +16,7 @@ Route::prefix('v1')->group(function () {
 
     // Public Auth & Student QR Registration
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/forgot-password-request', [AuthController::class, 'requestPasswordReset']);
     Route::post('/student/register', [StudentApiController::class, 'register']);
     Route::post('/branch/verify-qr', [StudentApiController::class, 'verifyBranchQr']);
     Route::get('/branch/verify-qr', [StudentApiController::class, 'verifyBranchQr']);

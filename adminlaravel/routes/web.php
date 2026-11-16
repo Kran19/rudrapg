@@ -64,6 +64,9 @@ Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('su
     Route::delete('/finance/{id}', [SuperAdminController::class, 'destroyTransaction'])->name('finance.destroy');
     
     Route::get('/settings', [SuperAdminController::class, 'settings'])->name('settings');
+    Route::get('/password-requests', [SuperAdminController::class, 'passwordRequests'])->name('password_requests');
+    Route::post('/password-requests/{id}/reset', [SuperAdminController::class, 'resetPasswordRequest'])->name('password_requests.reset');
+    Route::post('/students/{id}/reset-password', [SuperAdminController::class, 'directResetPassword'])->name('students.reset_password');
     Route::post('/change-password', [WebAuthController::class, 'changePassword'])->name('change_password');
 });
 
@@ -99,5 +102,8 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::get('/complaints-data', [SubAdminController::class, 'getComplaintsData'])->name('complaints_data');
     Route::get('/documents/{id}/view', [SubAdminController::class, 'viewDocument'])->name('documents.view');
     Route::get('/payment-proofs/{id}/view', [SubAdminController::class, 'viewPaymentProof'])->name('payment_proofs.view');
+    Route::get('/password-requests', [SubAdminController::class, 'passwordRequests'])->name('password_requests');
+    Route::post('/password-requests/{id}/reset', [SubAdminController::class, 'resetPasswordRequest'])->name('password_requests.reset');
+    Route::post('/students/{id}/reset-password', [SubAdminController::class, 'directResetPassword'])->name('students.reset_password');
     Route::post('/change-password', [WebAuthController::class, 'changePassword'])->name('change_password');
 });

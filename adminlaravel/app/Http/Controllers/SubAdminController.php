@@ -14,9 +14,12 @@ use App\Models\RegistrationRequest;
 use App\Models\Room;
 use App\Models\RoomAllocation;
 use App\Models\Student;
+use App\Models\StudentDocument;
+use App\Models\PasswordResetRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class SubAdminController extends Controller
 {
@@ -970,6 +973,9 @@ class SubAdminController extends Controller
         $pendingProofs = $branchId ? PaymentProof::whereIn('status', ['PENDING', 'pending'])->whereHas('payment', function($q) use ($branchId) { $q->where('branch_id', $branchId); })->count() : PaymentProof::whereIn('status', ['PENDING', 'pending'])->count();
 
         $overdueRents = $branchId ? Student::where('rent_status', 'DUE')->where('branch_id', $branchId)->count() : Student::where('rent_status', 'DUE')->count();
+        $pendingPasswordResets = $branchId 
+            ? PasswordResetRequest::where('status', 'PENDING')->where('branch_id', $branchId)->count() 
+            : PasswordResetRequest::where('status', 'PENDING')->count();
 
         $monthlyRevenue = $branchId 
             ? Payment::where('branch_id', $branchId)->whereIn('status', ['PAID', 'VERIFIED'])->whereMonth('payment_date', now()->month)->whereYear('payment_date', now()->year)->sum('amount')
@@ -979,6 +985,7 @@ class SubAdminController extends Controller
             'pending_registrations' => $pendingRegs,
             'pending_payments' => $pendingProofs,
             'pending_complaints' => \App\Models\Complaint::whereNotIn('status', ['RESOLVED', 'CLOSED', 'Resolved', 'Solved'])->count(),
+            'pending_password_resets' => $pendingPasswordResets,
             
             // Dashboard KPI values
             'occupied_beds' => $occupiedBeds,
@@ -1050,5 +1057,125 @@ class SubAdminController extends Controller
         }
 
         abort(404, 'Payment proof file not found.');
+    }
+
+    public function passwordRequests(Request $request)
+    {
+        $branchIds = $this->getAuthorizedBranchIds();
+
+        $requests = PasswordResetRequest::with(['user', 'student.room', 'student.bed', 'branch', 'resolver'])
+            ->where(function ($q) use ($branchIds) {
+                $q->whereIn('branch_id', $branchIds)
+                  ->orWhereHas('student', function ($sq) use ($branchIds) {
+                      $sq->whereIn('branch_id', $branchIds);
+                  });
+            })
+            ->latest()
+            ->get();
+
+        $branchStudents = Student::with(['user', 'room', 'bed'])
+            ->whereIn('branch_id', $branchIds)
+            ->where('status', 'APPROVED')
+            ->orderBy('full_name')
+            ->get();
+
+        return view('sub_admin.password_requests', compact('requests', 'branchStudents'));
+    }
+
+    public function resetPasswordRequest($id, Request $request)
+    {
+        $validated = $request->validate([
+            'new_password' => ['required', 'string', 'min:6'],
+        ]);
+
+        $resetReq = PasswordResetRequest::with(['user', 'student'])->findOrFail($id);
+        $branchIds = $this->getAuthorizedBranchIds();
+
+        $reqBranchId = $resetReq->branch_id ?? $resetReq->student?->branch_id;
+        if (!$reqBranchId || !in_array($reqBranchId, $branchIds)) {
+            abort(403, 'Unauthorized access: Cannot reset password for resident of another branch.');
+        }
+
+        $user = $resetReq->user;
+        $user->password = Hash::make($validated['new_password']);
+        $user->tokens()->delete();
+        $user->save();
+
+        $resetReq->update([
+            'status' => 'RESOLVED',
+            'resolved_by' => Auth::id(),
+            'resolved_at' => now(),
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Reset student password via request ID: '.$resetReq->id.' for User: '.$user->name.' ('.$user->phone.')',
+            'module' => 'RESIDENT_SECURITY',
+            'record_id' => $user->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Password updated successfully.',
+                'new_password' => $validated['new_password'],
+                'user_name' => $user->name,
+                'phone' => $user->phone,
+            ]);
+        }
+
+        return back()->with('success', "Password for {$user->name} ({$user->phone}) has been updated to: {$validated['new_password']}");
+    }
+
+    public function directResetPassword($studentId, Request $request)
+    {
+        $validated = $request->validate([
+            'new_password' => ['required', 'string', 'min:6'],
+        ]);
+
+        $student = Student::with('user')->findOrFail($studentId);
+        $branchIds = $this->getAuthorizedBranchIds();
+
+        if (!in_array($student->branch_id, $branchIds)) {
+            abort(403, 'Unauthorized access: Cannot reset password for resident of another branch.');
+        }
+
+        $user = $student->user;
+        if (!$user) {
+            return back()->with('error', 'Student user account not found.');
+        }
+
+        $user->password = Hash::make($validated['new_password']);
+        $user->tokens()->delete();
+        $user->save();
+
+        PasswordResetRequest::where('user_id', $user->id)
+            ->where('status', 'PENDING')
+            ->update([
+                'status' => 'RESOLVED',
+                'resolved_by' => Auth::id(),
+                'resolved_at' => now(),
+            ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Direct reset student password for: '.$user->name.' ('.$user->phone.')',
+            'module' => 'RESIDENT_SECURITY',
+            'record_id' => $user->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Password updated successfully.',
+                'new_password' => $validated['new_password'],
+                'user_name' => $user->name,
+                'phone' => $user->phone,
+            ]);
+        }
+
+        return back()->with('success', "Password for {$user->name} ({$user->phone}) has been updated to: {$validated['new_password']}");
     }
 }

@@ -77,4 +77,9 @@ class Branch extends Model
     {
         return $this->hasMany(Announcement::class);
     }
+
+    public function passwordResetRequests()
+    {
+        return $this->hasMany(PasswordResetRequest::class);
+    }
 }

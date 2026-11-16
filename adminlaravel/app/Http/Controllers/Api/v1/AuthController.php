@@ -87,4 +87,76 @@ class AuthController extends Controller
             'message' => 'Password updated successfully.',
         ]);
     }
+
+    public function requestPasswordReset(Request $request): JsonResponse
+    {
+        $request->validate([
+            'phone' => ['required', 'string'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $loginId = trim($request->input('phone'));
+        $digits = preg_replace('/\D+/', '', $loginId);
+        $phone10 = strlen($digits) >= 10 ? substr($digits, -10) : $digits;
+
+        $user = \App\Models\User::where(function ($query) use ($loginId, $phone10) {
+            $query->where('phone', $loginId)
+                  ->orWhere('email', $loginId);
+            if ($phone10) {
+                $query->orWhere('phone', $phone10)
+                      ->orWhere('phone', '+91 ' . substr($phone10, 0, 5) . ' ' . substr($phone10, 5))
+                      ->orWhere('phone', '+91' . $phone10)
+                      ->orWhere('phone', '91' . $phone10)
+                      ->orWhereRaw("SUBSTR(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), -10) = ?", [$phone10]);
+            }
+        })->first();
+
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No account found with this mobile number. Please verify your number or register at your branch reception.',
+            ], 404);
+        }
+
+        $student = \App\Models\Student::where('user_id', $user->id)->first();
+
+        // Check if an existing pending request is already logged
+        $existing = \App\Models\PasswordResetRequest::where('user_id', $user->id)
+            ->where('status', 'PENDING')
+            ->first();
+
+        if ($existing) {
+            $existing->update([
+                'notes' => $request->input('notes') ?? $existing->notes,
+                'updated_at' => now(),
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Your password reset request is already active. Please contact your PG Manager or Sub-Admin to receive your new password.',
+                'data' => [
+                    'request_id' => $existing->id,
+                    'status' => 'PENDING',
+                ],
+            ]);
+        }
+
+        $resetReq = \App\Models\PasswordResetRequest::create([
+            'user_id' => $user->id,
+            'student_id' => $student?->id,
+            'branch_id' => $student?->branch_id,
+            'phone' => $user->phone,
+            'status' => 'PENDING',
+            'notes' => $request->input('notes') ?? 'Resident submitted password reset request via mobile/web login',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Password reset request submitted successfully. Your PG Manager & Admin will create your new password.',
+            'data' => [
+                'request_id' => $resetReq->id,
+                'status' => 'PENDING',
+            ],
+        ], 201);
+    }
 }

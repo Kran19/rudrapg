@@ -99406,7 +99406,7 @@ $0(){var s=this.a
 return s.y=!s.y},
 $S:0}
 A.ayM.prototype={
-$0(){this.a.ac(t.J).f.eA(B.WU)},
+$0(){try{var ph=window.prompt("Enter your registered mobile number for password reset assistance:","");if(ph&&ph.trim().length>=10){fetch('/api/v1/auth/forgot-password-request',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({phone:ph.trim()})}).then(function(r){return r.json()}).then(function(d){alert(d.message||'Your password reset request has been logged. Please contact your PG manager or sub-admin.');}).catch(function(e){alert('Unable to submit request: '+e.message);});return;}}catch(e){}this.a.ac(t.J).f.eA(B.WU)},
 $S:0}
 A.ayN.prototype={
 $0(){},

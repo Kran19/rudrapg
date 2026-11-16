@@ -292,10 +292,11 @@
                 if (cell.getValue() == "PENDING" || cell.getValue() == "Pending") return '<span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
                 return '<span class="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Overdue</span>';
             }},
-            {title: "Actions", field: "id", minWidth: 160, formatter: function(cell){
+            {title: "Actions", field: "id", minWidth: 220, formatter: function(cell){
                 return '<div class="flex gap-1.5">' +
                        '  <button class="bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors view-kyc-btn"><i class="fa-solid fa-id-card font-bold"></i> KYC</button>' +
                        '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm edit-student-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
+                       '  <button class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-sm reset-pw-student-btn"><i class="fa-solid fa-key"></i> Pass</button>' +
                        '</div>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
@@ -309,6 +310,49 @@
                     } }));
                 } else if (e.target.classList.contains('edit-student-btn') || e.target.closest('.edit-student-btn')) {
                     window.dispatchEvent(new CustomEvent('open-edit-student-modal', { detail: data }));
+                } else if (e.target.classList.contains('reset-pw-student-btn') || e.target.closest('.reset-pw-student-btn')) {
+                    const generated = 'Rudra@' + Math.floor(1000 + Math.random() * 9000);
+                    Swal.fire({
+                        title: 'Set Student Password',
+                        html: `<p class="text-sm text-slate-600 dark:text-slate-300 mb-3">Set new login password for <b>${data.full_name}</b> (${data.phone}):</p>` +
+                              `<input id="swal-new-pw" class="swal2-input font-mono" placeholder="Minimum 6 characters" value="${generated}">`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Save & Activate Password',
+                        confirmButtonColor: '#2563eb',
+                        preConfirm: () => {
+                            const pw = document.getElementById('swal-new-pw').value;
+                            if (!pw || pw.length < 6) {
+                                Swal.showValidationMessage('Password must be at least 6 characters');
+                            }
+                            return pw;
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fetch("{{ url('/super-admin/students') }}/" + data.db_id + "/reset-password", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ new_password: result.value })
+                            })
+                            .then(res => res.json())
+                            .then(resp => {
+                                if (resp.status === 'success') {
+                                    Swal.fire({
+                                        title: 'Password Activated!',
+                                        html: `New password for <b>${data.full_name}</b> is:<br><div class="my-3 p-3 bg-slate-100 dark:bg-slate-700 rounded-xl font-mono text-xl text-blue-600 font-bold select-all">${result.value}</div><span class="text-xs text-slate-500">Please share this password with the student.</span>`,
+                                        icon: 'success'
+                                    });
+                                } else {
+                                    Swal.fire('Error', resp.message || 'Failed to update password', 'error');
+                                }
+                            })
+                            .catch(err => Swal.fire('Error', err.message, 'error'));
+                        }
+                    });
                 }
             }},
         ]

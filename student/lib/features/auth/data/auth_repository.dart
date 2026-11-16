@@ -49,4 +49,23 @@ class AuthRepository {
       await _prefs.remove('auth_token');
     }
   }
+
+  Future<String> requestPasswordReset(String phone, {String? notes}) async {
+    try {
+      final response = await _dio.post('/auth/forgot-password-request', data: {
+        'phone': phone,
+        if (notes != null && notes.isNotEmpty) 'notes': notes,
+      });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data['message'] ?? 'Password reset request submitted successfully.';
+      }
+      throw Exception(response.data['message'] ?? 'Failed to submit password reset request.');
+    } on DioException catch (e) {
+      if (e.response?.data != null && e.response?.data['message'] != null) {
+        throw Exception(e.response!.data['message']);
+      }
+      throw Exception('Failed to connect to server. Please try again.');
+    }
+  }
 }

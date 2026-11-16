@@ -301,6 +301,13 @@
                     </span>
                     <span id="badge-complaints" class="{{ isset($pendingComplaintsCount) && $pendingComplaintsCount > 0 ? '' : 'hidden' }} bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingComplaintsCount ?? 0 }}</span>
                 </a>
+                <a href="{{ route('sub_admin.password_requests') }}" 
+                   class="flex items-center justify-between px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.password_requests*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-user-lock w-5 text-center"></i> Password Requests
+                    </span>
+                    <span id="badge-sub-password-resets" class="hidden bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </a>
                 <button type="button" @click="changePasswordModalOpen = true" 
                         class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200">
                     <i class="fa-solid fa-key w-5 text-center text-amber-400"></i> Change Password
@@ -346,6 +353,13 @@
                 <a href="{{ route('super_admin.settings') }}" 
                    class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.settings') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <i class="fa-solid fa-sliders w-5 text-center"></i> Audit Logs & Settings
+                </a>
+                <a href="{{ route('super_admin.password_requests') }}" 
+                   class="flex items-center justify-between px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.password_requests*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-user-lock w-5 text-center"></i> Password Requests
+                    </span>
+                    <span id="badge-super-password-resets" class="hidden bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
                 </a>
                 <button type="button" @click="changePasswordModalOpen = true" 
                         class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200">
@@ -733,6 +747,16 @@
                 }
             }
 
+            const resetBadgeSub = document.getElementById('badge-sub-password-resets');
+            if (resetBadgeSub) {
+                if (data.pending_password_resets > 0) {
+                    resetBadgeSub.textContent = data.pending_password_resets;
+                    resetBadgeSub.classList.remove('hidden');
+                } else {
+                    resetBadgeSub.classList.add('hidden');
+                }
+            }
+
             // 2. Super Admin Badges
             const regBadgeSuper = document.getElementById('badge-verifications-super');
             if (regBadgeSuper) {
@@ -754,10 +778,20 @@
                 }
             }
 
+            const resetBadgeSuper = document.getElementById('badge-super-password-resets');
+            if (resetBadgeSuper) {
+                if (data.pending_password_resets > 0) {
+                    resetBadgeSuper.textContent = data.pending_password_resets;
+                    resetBadgeSuper.classList.remove('hidden');
+                } else {
+                    resetBadgeSuper.classList.add('hidden');
+                }
+            }
+
             // 3. Header Notification Bell Badge
             const bellBadge = document.getElementById('badge-notifications-bell');
             if (bellBadge) {
-                const totalAlerts = (data.pending_registrations || 0) + (data.pending_payments || 0) + (data.pending_complaints || 0);
+                const totalAlerts = (data.pending_registrations || 0) + (data.pending_payments || 0) + (data.pending_complaints || 0) + (data.pending_password_resets || 0);
                 if (totalAlerts > 0) {
                     bellBadge.textContent = totalAlerts;
                     bellBadge.classList.remove('hidden');
