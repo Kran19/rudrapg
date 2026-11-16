@@ -112,6 +112,32 @@ class AuthController extends Controller
         })->first();
 
         if (! $user) {
+            $student = \App\Models\Student::where(function ($query) use ($loginId, $phone10) {
+                $query->where('phone', $loginId)
+                      ->orWhere('email', $loginId);
+                if ($phone10) {
+                    $query->orWhere('phone', $phone10)
+                          ->orWhereRaw("SUBSTR(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), -10) = ?", [$phone10]);
+                }
+            })->first();
+
+            if ($student && $student->user) {
+                $user = $student->user;
+            } elseif ($student) {
+                $user = \App\Models\User::create([
+                    'name' => $student->full_name,
+                    'email' => $student->email ?: ($student->phone . '@rudrapg.com'),
+                    'phone' => $student->phone,
+                    'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                    'role' => 'STUDENT',
+                    'status' => 'ACTIVE',
+                ]);
+                $student->user_id = $user->id;
+                $student->save();
+            }
+        }
+
+        if (! $user) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'No account found with this mobile number. Please verify your number or register at your branch reception.',
@@ -119,6 +145,23 @@ class AuthController extends Controller
         }
 
         $student = \App\Models\Student::where('user_id', $user->id)->first();
+        if (!$student && $user->phone) {
+            $last10 = substr(preg_replace('/[^0-9]/', '', $user->phone), -10);
+            $student = \App\Models\Student::whereRaw("SUBSTR(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), -10) = ?", [$last10])->first();
+            if ($student && !$student->user_id) {
+                $student->user_id = $user->id;
+                $student->save();
+            }
+        }
+
+        $branchId = $student?->branch_id;
+        if (!$branchId) {
+            $reg = \App\Models\RegistrationRequest::where('phone', $user->phone)->orWhere('student_id', $student?->id)->first();
+            $branchId = $reg?->branch_id;
+        }
+        if (!$branchId) {
+            $branchId = \App\Models\Branch::first()?->id;
+        }
 
         // Check if an existing pending request is already logged
         $existing = \App\Models\PasswordResetRequest::where('user_id', $user->id)
@@ -127,6 +170,7 @@ class AuthController extends Controller
 
         if ($existing) {
             $existing->update([
+                'branch_id' => $existing->branch_id ?: $branchId,
                 'notes' => $request->input('notes') ?? $existing->notes,
                 'updated_at' => now(),
             ]);
@@ -144,7 +188,7 @@ class AuthController extends Controller
         $resetReq = \App\Models\PasswordResetRequest::create([
             'user_id' => $user->id,
             'student_id' => $student?->id,
-            'branch_id' => $student?->branch_id,
+            'branch_id' => $branchId,
             'phone' => $user->phone,
             'status' => 'PENDING',
             'notes' => $request->input('notes') ?? 'Resident submitted password reset request via mobile/web login',

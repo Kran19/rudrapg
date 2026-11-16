@@ -1068,7 +1068,8 @@ class SubAdminController extends Controller
                 $q->whereIn('branch_id', $branchIds)
                   ->orWhereHas('student', function ($sq) use ($branchIds) {
                       $sq->whereIn('branch_id', $branchIds);
-                  });
+                  })
+                  ->orWhereNull('branch_id');
             })
             ->latest()
             ->get();
