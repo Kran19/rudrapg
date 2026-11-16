@@ -13,6 +13,9 @@ use App\Models\Room;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\PasswordResetRequest;
+use App\Models\RoomAllocation;
+use App\Models\StudentDocument;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -576,125 +579,173 @@ class SuperAdminController extends Controller
 
     public function roomsMaster(Request $request)
     {
-        $allBranches = Branch::withCount(['rooms', 'beds'])->get();
-        $selectedBranchId = $request->query('branch_id');
-        if (!$selectedBranchId && $allBranches->isNotEmpty()) {
-            $selectedBranchId = $allBranches->first()->id;
-        }
+        try {
+            $allBranches = Branch::withCount(['rooms', 'beds'])->get();
+            $selectedBranchId = $request->query('branch_id');
+            if (!$selectedBranchId && $allBranches->isNotEmpty()) {
+                $selectedBranchId = $allBranches->first()->id;
+            }
 
-        $roomsData = Room::with([
-            'branch',
-            'beds.student.documents',
-            'beds.activeAllocation.student.documents',
-            'students.documents',
-        ])
-        ->get()
-        ->map(function ($room) {
-            $totalBeds = $room->beds->count() > 0 ? $room->beds->count() : $room->max_beds;
+            $roomsData = Room::with([
+                'branch',
+                'beds.student.documents',
+                'beds.activeAllocation.student.documents',
+                'students.documents',
+            ])
+            ->get()
+            ->map(function ($room) {
+                $totalBeds = $room->beds->count() > 0 ? $room->beds->count() : $room->max_beds;
 
-            $bedsData = $room->beds->map(function ($bed) use ($room) {
-                // Find real student attached to this bed
-                $student = $bed->student ?? $bed->activeAllocation?->student;
+                $bedsData = $room->beds->map(function ($bed) use ($room) {
+                    // Find real student attached to this bed
+                    $student = $bed->student ?? $bed->activeAllocation?->student;
 
-                // Check active allocation records directly
-                if (!$student) {
-                    $alloc = RoomAllocation::where('bed_id', $bed->id)->where('status', 'ACTIVE')->latest()->first()
-                        ?? RoomAllocation::where('bed_id', $bed->id)->latest()->first();
-                    if ($alloc && $alloc->student) {
-                        $student = $alloc->student;
-                    }
-                }
-
-                // Check room students if student has matching bed_id or is assigned to this room
-                if (!$student && $room->students && $room->students->isNotEmpty()) {
-                    $student = $room->students->firstWhere('bed_id', $bed->id);
-                    if (!$student && $room->students->count() === 1 && $room->beds->count() <= 2) {
-                        // Single student in room, link to this bed
-                        $student = $room->students->first();
-                    }
-                }
-
-                $studentData = null;
-                $isOccupied = ($student !== null);
-
-                if ($student) {
-                    $profileDoc = $student->documents ? $student->documents->firstWhere('doc_type', 'PROFILE_PHOTO') : null;
-                    $photoUrl = null;
-                    if ($profileDoc && $profileDoc->file_path) {
-                        $path = $profileDoc->file_path;
-                        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-                            $photoUrl = $path;
-                        } else {
-                            $clean = ltrim(str_replace('storage/', '', $path), '/');
-                            $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($clean)
-                                ? asset('storage/' . $clean)
-                                : asset($path);
+                    // Check active allocation records directly
+                    if (!$student) {
+                        $alloc = RoomAllocation::where('bed_id', $bed->id)->where('status', 'ACTIVE')->latest()->first()
+                            ?? RoomAllocation::where('bed_id', $bed->id)->latest()->first();
+                        if ($alloc && $alloc->student) {
+                            $student = $alloc->student;
                         }
                     }
 
-                    $studentData = [
-                        'id' => $student->id,
-                        'app_reference' => $student->app_reference ?? 'REG-'.str_pad($student->id, 4, '0', STR_PAD_LEFT),
-                        'full_name' => $student->full_name,
-                        'phone' => $student->phone,
-                        'email' => $student->email ?? 'N/A',
-                        'room_number' => (string) $room->room_number,
+                    // Check room students if student has matching bed_id or is assigned to this room
+                    if (!$student && $room->students && $room->students->isNotEmpty()) {
+                        $student = $room->students->firstWhere('bed_id', $bed->id);
+                        if (!$student && $room->students->count() === 1 && $room->beds->count() <= 2) {
+                            $student = $room->students->first();
+                        }
+                    }
+
+                    $studentData = null;
+                    $isOccupied = ($student !== null);
+
+                    if ($student) {
+                        $profileDoc = $student->documents ? $student->documents->firstWhere('doc_type', 'PROFILE_PHOTO') : null;
+                        $photoUrl = null;
+                        if ($profileDoc && $profileDoc->file_path) {
+                            $path = $profileDoc->file_path;
+                            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                                $photoUrl = $path;
+                            } else {
+                                $clean = ltrim(str_replace('storage/', '', $path), '/');
+                                $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($clean)
+                                    ? asset('storage/' . $clean)
+                                    : asset($path);
+                            }
+                        }
+
+                        $joiningDateFormatted = 'N/A';
+                        if ($student->joining_date) {
+                            $joiningDateFormatted = is_string($student->joining_date)
+                                ? date('d M Y', strtotime($student->joining_date))
+                                : $student->joining_date->format('d M Y');
+                        }
+
+                        $studentData = [
+                            'id' => $student->id,
+                            'app_reference' => $student->app_reference ?? 'REG-'.str_pad($student->id, 4, '0', STR_PAD_LEFT),
+                            'full_name' => $student->full_name,
+                            'phone' => $student->phone,
+                            'email' => $student->email ?? 'N/A',
+                            'room_number' => (string) $room->room_number,
+                            'bed_code' => $bed->bed_code,
+                            'branch_name' => $room->branch?->name ?? 'PG Branch',
+                            'joining_date' => $joiningDateFormatted,
+                            'monthly_rent' => (int) $bed->monthly_rent,
+                            'security_deposit' => (int) $bed->security_deposit,
+                            'kyc_status' => $student->kyc_status ?? 'VERIFIED',
+                            'rent_status' => $student->rent_status ?? 'PAID',
+                            'status' => $student->status ?? 'ACTIVE',
+                            'parent_name' => $student->parent_name ?? 'N/A',
+                            'parent_phone' => $student->parent_phone ?? 'N/A',
+                            'emergency_contact' => $student->emergency_contact ?? 'N/A',
+                            'current_address' => $student->current_address ?? 'N/A',
+                            'aadhaar_number' => $student->aadhaar_number ?? 'N/A',
+                            'pan_number' => $student->pan_number ?? 'N/A',
+                            'photo_url' => $photoUrl,
+                        ];
+                    }
+
+                    return [
+                        'id' => $bed->id,
                         'bed_code' => $bed->bed_code,
-                        'branch_name' => $room->branch?->name ?? 'PG Branch',
-                        'joining_date' => $student->joining_date ? $student->joining_date->format('d M Y') : 'N/A',
+                        'status' => $isOccupied ? 'OCCUPIED' : 'AVAILABLE',
                         'monthly_rent' => (int) $bed->monthly_rent,
                         'security_deposit' => (int) $bed->security_deposit,
-                        'kyc_status' => $student->kyc_status ?? 'VERIFIED',
-                        'rent_status' => $student->rent_status ?? 'PAID',
-                        'status' => $student->status ?? 'ACTIVE',
-                        'parent_name' => $student->parent_name ?? 'N/A',
-                        'parent_phone' => $student->parent_phone ?? 'N/A',
-                        'emergency_contact' => $student->emergency_contact ?? 'N/A',
-                        'current_address' => $student->current_address ?? 'N/A',
-                        'aadhaar_number' => $student->aadhaar_number ?? 'N/A',
-                        'pan_number' => $student->pan_number ?? 'N/A',
-                        'photo_url' => $photoUrl,
+                        'is_occupied' => $isOccupied,
+                        'student' => $studentData,
                     ];
-                }
+                });
+
+                $occupiedBeds = $bedsData->where('is_occupied', true)->count();
+                $availableBeds = max(0, $totalBeds - $occupiedBeds);
 
                 return [
-                    'id' => $bed->id,
-                    'bed_code' => $bed->bed_code,
-                    'status' => $isOccupied ? 'OCCUPIED' : 'AVAILABLE',
-                    'monthly_rent' => (int) $bed->monthly_rent,
-                    'security_deposit' => (int) $bed->security_deposit,
-                    'is_occupied' => $isOccupied,
-                    'student' => $studentData,
+                    'id' => $room->id,
+                    'room_number' => (string) $room->room_number,
+                    'floor' => (int) $room->floor_number,
+                    'sharing_type' => $room->sharing_type,
+                    'is_ac' => (bool) $room->is_ac,
+                    'rent' => $room->beds->first() ? (int) $room->beds->first()->monthly_rent : 0,
+                    'deposit' => $room->beds->first() ? (int) $room->beds->first()->security_deposit : 0,
+                    'total_beds' => $totalBeds,
+                    'occupied_beds' => $occupiedBeds,
+                    'available_beds' => $availableBeds,
+                    'status' => $availableBeds == 0 ? 'Full' : 'Available',
+                    'branch_id' => $room->branch_id,
+                    'branch_name' => $room->branch?->name ?? 'PG Branch',
+                    'max_beds' => (int) $room->max_beds,
+                    'beds' => $bedsData->values()->toArray(),
                 ];
-            });
+            })->toArray();
 
-            $occupiedBeds = $bedsData->where('is_occupied', true)->count();
-            $availableBeds = max(0, $totalBeds - $occupiedBeds);
+            return view('super_admin.rooms_master', [
+                'rooms' => $roomsData,
+                'allBranches' => $allBranches,
+                'selectedBranchId' => $selectedBranchId ? (int) $selectedBranchId : null,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error in roomsMaster: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            
+            // Graceful fallback to basic room data
+            $allBranches = Branch::all();
+            $roomsData = Room::with('branch', 'beds')->get()->map(function ($r) {
+                $total = $r->beds->count() > 0 ? $r->beds->count() : $r->max_beds;
+                $occupied = $r->beds->where('status', 'OCCUPIED')->count();
+                return [
+                    'id' => $r->id,
+                    'room_number' => (string) $r->room_number,
+                    'floor' => (int) $r->floor_number,
+                    'sharing_type' => $r->sharing_type,
+                    'is_ac' => (bool) $r->is_ac,
+                    'rent' => $r->beds->first() ? (int) $r->beds->first()->monthly_rent : 0,
+                    'deposit' => $r->beds->first() ? (int) $r->beds->first()->security_deposit : 0,
+                    'total_beds' => $total,
+                    'occupied_beds' => $occupied,
+                    'available_beds' => max(0, $total - $occupied),
+                    'status' => ($total - $occupied) <= 0 ? 'Full' : 'Available',
+                    'branch_id' => $r->branch_id,
+                    'branch_name' => $r->branch?->name ?? 'PG Branch',
+                    'max_beds' => (int) $r->max_beds,
+                    'beds' => $r->beds->map(fn($b) => [
+                        'id' => $b->id,
+                        'bed_code' => $b->bed_code,
+                        'status' => $b->status,
+                        'monthly_rent' => (int) $b->monthly_rent,
+                        'security_deposit' => (int) $b->security_deposit,
+                        'is_occupied' => in_array($b->status, ['OCCUPIED', 'RESERVED']),
+                        'student' => null,
+                    ])->toArray(),
+                ];
+            })->toArray();
 
-            return [
-                'id' => $room->id,
-                'room_number' => (string) $room->room_number,
-                'floor' => (int) $room->floor_number,
-                'sharing_type' => $room->sharing_type,
-                'is_ac' => (bool) $room->is_ac,
-                'rent' => $room->beds->first() ? (int) $room->beds->first()->monthly_rent : 0,
-                'deposit' => $room->beds->first() ? (int) $room->beds->first()->security_deposit : 0,
-                'total_beds' => $totalBeds,
-                'occupied_beds' => $occupiedBeds,
-                'available_beds' => $availableBeds,
-                'status' => $availableBeds == 0 ? 'Full' : 'Available',
-                'branch_id' => $room->branch_id,
-                'branch_name' => $room->branch?->name ?? 'PG Branch',
-                'max_beds' => (int) $room->max_beds,
-                'beds' => $bedsData->values()->toArray(),
-            ];
-        })->toArray();
-
-        return view('super_admin.rooms_master', [
-            'rooms' => $roomsData,
-            'allBranches' => $allBranches,
-            'selectedBranchId' => $selectedBranchId ? (int) $selectedBranchId : null,
-        ]);
+            return view('super_admin.rooms_master', [
+                'rooms' => $roomsData,
+                'allBranches' => $allBranches,
+                'selectedBranchId' => $allBranches->first()?->id ?? null,
+            ]);
+        }
     }
 
     public function storeRoom(Request $request)
