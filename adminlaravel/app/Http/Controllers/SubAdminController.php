@@ -210,7 +210,22 @@ class SubAdminController extends Controller
                 ];
             });
 
-        return view('sub_admin.dashboard', compact('branchInfo', 'pendingVerifications', 'collectionsTrend', 'branch'));
+        // Rooms for Room Electricity Splitter & Operations
+        $rooms = Room::with(['branch'])
+            ->withCount(['beds', 'students' => function($q) {
+                $q->whereIn('status', ['APPROVED', 'ACTIVE', 'BED_ALLOCATED', 'KYC_APPROVED']);
+            }])
+            ->where(function($q) use ($branchId, $branchIds) {
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
+            ->orderBy('room_number')
+            ->get();
+
+        return view('sub_admin.dashboard', compact('branchInfo', 'pendingVerifications', 'collectionsTrend', 'branch', 'rooms'));
     }
 
     public function verifications()
@@ -1170,9 +1185,24 @@ class SubAdminController extends Controller
             })
             ->get();
 
+        $rooms = Room::with(['branch'])
+            ->withCount(['beds', 'students' => function($q) {
+                $q->whereIn('status', ['APPROVED', 'ACTIVE', 'BED_ALLOCATED', 'KYC_APPROVED']);
+            }])
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
+            ->orderBy('room_number')
+            ->get();
+
         return view('sub_admin.electricity_audit', [
             'readings' => $readingsData,
             'students' => $students,
+            'rooms' => $rooms,
             'activeBranch' => $branch,
             'branch' => $branch,
         ]);
@@ -1371,6 +1401,361 @@ class SubAdminController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Electricity reading updated successfully!',
+        ]);
+    }
+
+    /**
+     * Calculate Pro-Rata Room Electricity Split based on resident move-in dates & days stayed.
+     */
+    public function calculateElectricitySplit(Request $request)
+    {
+        $validated = $request->validate([
+            'room_id' => ['required', 'exists:rooms,id'],
+            'billing_month' => ['required', 'string'],
+            'total_bill' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $room = Room::with(['branch', 'beds'])->findOrFail($validated['room_id']);
+        if (!in_array($room->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission for this branch.'], 403);
+        }
+
+        $monthStr = trim($validated['billing_month']);
+        try {
+            $dateObj = \Carbon\Carbon::parse($monthStr . '-01');
+        } catch (\Exception $e) {
+            $dateObj = \Carbon\Carbon::now();
+        }
+
+        $startOfMonth = $dateObj->copy()->startOfMonth();
+        $endOfMonth = $dateObj->copy()->endOfMonth();
+        $daysInMonth = (int) $startOfMonth->daysInMonth;
+
+        $totalBill = isset($validated['total_bill']) && (float)$validated['total_bill'] > 0
+            ? (float)$validated['total_bill']
+            : 0.0;
+
+        // Auto-pull from latest electricity reading for room if total_bill not passed
+        if ($totalBill <= 0) {
+            $latestReading = ElectricityReading::where('room_id', $room->id)
+                ->where(function ($q) use ($startOfMonth, $monthStr) {
+                    $q->where('reading_month', $monthStr)
+                      ->orWhere('reading_month', 'like', '%' . $startOfMonth->format('F Y') . '%')
+                      ->orWhere('reading_month', 'like', '%' . $monthStr . '%');
+                })
+                ->latest('id')
+                ->first();
+
+            if ($latestReading && (float)$latestReading->total_amount > 0) {
+                $totalBill = (float)$latestReading->total_amount;
+            }
+        }
+
+        if ($totalBill <= 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Please enter a valid Total Room Electricity Bill amount (greater than ₹0).'
+            ], 422);
+        }
+
+        // Collect all active residents allocated to this room
+        $directStudents = Student::with(['bed'])
+            ->where('room_id', $room->id)
+            ->whereIn('status', ['APPROVED', 'ACTIVE', 'BED_ALLOCATED', 'KYC_APPROVED'])
+            ->get();
+
+        $bedStudents = Student::with(['bed'])
+            ->whereHas('bed', function($q) use ($room) {
+                $q->where('room_id', $room->id);
+            })
+            ->whereIn('status', ['APPROVED', 'ACTIVE', 'BED_ALLOCATED', 'KYC_APPROVED'])
+            ->get();
+
+        $allocationStudents = Student::with(['bed'])
+            ->whereHas('bed.activeAllocation', function($q) use ($room) {
+                $q->where('room_id', $room->id);
+            })
+            ->get();
+
+        $allStudents = $directStudents->merge($bedStudents)->merge($allocationStudents)->unique('id');
+
+        if ($allStudents->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "No active residents found in Room {$room->room_number}."
+            ], 422);
+        }
+
+        // Build occupant stay intervals
+        $occupants = [];
+        foreach ($allStudents as $st) {
+            $joinDate = $st->joining_date 
+                ? \Carbon\Carbon::parse($st->joining_date) 
+                : ($st->created_at ? \Carbon\Carbon::parse($st->created_at) : $startOfMonth->copy());
+
+            if ($joinDate->gt($endOfMonth)) {
+                $startDay = $daysInMonth + 1; // Not present this month
+            } elseif ($joinDate->lt($startOfMonth)) {
+                $startDay = 1;
+            } else {
+                $startDay = (int) $joinDate->day;
+            }
+
+            $endDay = $daysInMonth;
+
+            $occupants[] = [
+                'id' => $st->id,
+                'name' => $st->full_name ?: 'Resident #' . $st->id,
+                'phone' => $st->phone ?: 'N/A',
+                'bed_code' => $st->bed ? $st->bed->bed_code : 'Bed N/A',
+                'joining_date' => $joinDate->format('d M Y'),
+                'raw_joining_date' => $joinDate->format('Y-m-d'),
+                'start_day' => $startDay,
+                'end_day' => $endDay,
+            ];
+        }
+
+        $dailyCost = $totalBill / $daysInMonth;
+        $studentDailyShares = [];
+        $studentDaysActive = [];
+        $activeSetsByDay = [];
+
+        foreach ($occupants as $occ) {
+            $studentDailyShares[$occ['id']] = 0.0;
+            $studentDaysActive[$occ['id']] = 0;
+        }
+
+        // Day-by-Day Integration
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $activeOnDay = [];
+            foreach ($occupants as $occ) {
+                if ($day >= $occ['start_day'] && $day <= $occ['end_day']) {
+                    $activeOnDay[] = $occ['id'];
+                }
+            }
+            $activeSetsByDay[$day] = $activeOnDay;
+            $count = count($activeOnDay);
+            if ($count > 0) {
+                $costPerPerson = $dailyCost / $count;
+                foreach ($activeOnDay as $sid) {
+                    $studentDailyShares[$sid] += $costPerPerson;
+                    $studentDaysActive[$sid]++;
+                }
+            }
+        }
+
+        // Group consecutive days with identical occupant sets into Periods
+        $periods = [];
+        $currentPeriod = null;
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $occupantSet = $activeSetsByDay[$day];
+            sort($occupantSet);
+            $setKey = implode(',', $occupantSet);
+
+            if ($currentPeriod === null || $currentPeriod['key'] !== $setKey) {
+                if ($currentPeriod !== null) {
+                    $periods[] = $currentPeriod;
+                }
+                $currentPeriod = [
+                    'key' => $setKey,
+                    'from_day' => $day,
+                    'to_day' => $day,
+                    'occupant_ids' => $occupantSet,
+                    'count' => count($occupantSet),
+                ];
+            } else {
+                $currentPeriod['to_day'] = $day;
+            }
+        }
+        if ($currentPeriod !== null) {
+            $periods[] = $currentPeriod;
+        }
+
+        // Format periods with human-readable dates and labels
+        $occupantsById = collect($occupants)->keyBy('id');
+        $formattedPeriods = [];
+        foreach ($periods as $idx => $p) {
+            $pDays = ($p['to_day'] - $p['from_day']) + 1;
+            $fromDateStr = $startOfMonth->copy()->addDays($p['from_day'] - 1)->format('d M');
+            $toDateStr = $startOfMonth->copy()->addDays($p['to_day'] - 1)->format('d M');
+            $pTotalCost = round($pDays * $dailyCost, 2);
+            $pCostPerPerson = $p['count'] > 0 ? round($pTotalCost / $p['count'], 2) : 0;
+
+            $occupantNames = [];
+            foreach ($p['occupant_ids'] as $sid) {
+                if (isset($occupantsById[$sid])) {
+                    $occupantNames[] = $occupantsById[$sid]['name'] . ' (' . $occupantsById[$sid]['bed_code'] . ')';
+                }
+            }
+
+            $formattedPeriods[] = [
+                'period_num' => $idx + 1,
+                'label' => "Period " . ($idx + 1) . ": {$fromDateStr} - {$toDateStr} ({$pDays} Days)",
+                'range' => "{$fromDateStr} - {$toDateStr}",
+                'from_day' => $p['from_day'],
+                'to_day' => $p['to_day'],
+                'days' => $pDays,
+                'count' => $p['count'],
+                'occupant_names' => $occupantNames,
+                'period_cost' => $pTotalCost,
+                'cost_per_person' => $pCostPerPerson,
+            ];
+        }
+
+        // Per-occupant calculations
+        $shares = [];
+        $totalRounded = 0;
+        foreach ($occupants as $occ) {
+            $sid = $occ['id'];
+            $exact = $studentDailyShares[$sid];
+            $rounded = (int) round($exact);
+            $totalRounded += $rounded;
+
+            $periodShares = [];
+            foreach ($formattedPeriods as $fp) {
+                $pObj = $periods[$fp['period_num'] - 1];
+                if (in_array($sid, $pObj['occupant_ids'])) {
+                    $periodShares[] = [
+                        'period_num' => $fp['period_num'],
+                        'period_label' => $fp['label'],
+                        'days' => $fp['days'],
+                        'occupants' => $fp['count'],
+                        'share' => $fp['cost_per_person'],
+                    ];
+                }
+            }
+
+            $shares[$sid] = [
+                'student_id' => $sid,
+                'name' => $occ['name'],
+                'phone' => $occ['phone'],
+                'bed_code' => $occ['bed_code'],
+                'joining_date' => $occ['joining_date'],
+                'days_active' => $studentDaysActive[$sid],
+                'exact_share' => round($exact, 2),
+                'calculated_share' => $rounded,
+                'period_shares' => $periodShares,
+            ];
+        }
+
+        // Balance round-off difference with occupant who stayed the most days
+        $diff = (int) round($totalBill) - $totalRounded;
+        if ($diff !== 0 && !empty($shares)) {
+            $highestKey = array_keys($shares)[0];
+            $maxDays = -1;
+            foreach ($shares as $k => $s) {
+                if ($s['days_active'] > $maxDays) {
+                    $maxDays = $s['days_active'];
+                    $highestKey = $k;
+                }
+            }
+            $shares[$highestKey]['calculated_share'] += $diff;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'room' => [
+                    'id' => $room->id,
+                    'room_number' => $room->room_number,
+                    'floor_number' => $room->floor_number,
+                    'sharing_type' => $room->sharing_type,
+                ],
+                'billing_month' => $startOfMonth->format('F Y'),
+                'billing_month_code' => $monthStr,
+                'total_bill' => $totalBill,
+                'days_in_month' => $daysInMonth,
+                'daily_cost' => round($dailyCost, 2),
+                'periods' => $formattedPeriods,
+                'occupant_shares' => array_values($shares),
+                'sum_shares' => array_sum(array_column($shares, 'calculated_share')),
+            ]
+        ]);
+    }
+
+    /**
+     * Push Calculated Pro-Rata Electricity Bills to Residents' Dues Ledger.
+     */
+    public function pushElectricitySplitDues(Request $request)
+    {
+        $validated = $request->validate([
+            'room_id' => ['required', 'exists:rooms,id'],
+            'billing_month' => ['required', 'string'],
+            'total_bill' => ['required', 'numeric', 'min:0'],
+            'splits' => ['required', 'array', 'min:1'],
+            'splits.*.student_id' => ['required', 'exists:students,id'],
+            'splits.*.amount' => ['required', 'numeric', 'min:0'],
+            'splits.*.days_active' => ['nullable', 'numeric'],
+        ]);
+
+        $room = Room::findOrFail($validated['room_id']);
+        if (!in_array($room->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action for this branch.'], 403);
+        }
+
+        $createdPayments = [];
+
+        DB::transaction(function () use ($room, $validated, &$createdPayments) {
+            foreach ($validated['splits'] as $split) {
+                $amount = (float)$split['amount'];
+                if ($amount <= 0) continue;
+
+                $student = Student::find($split['student_id']);
+                if (!$student) continue;
+
+                $daysActive = $split['days_active'] ?? 30;
+                $monthCode = preg_replace('/[^0-9]/', '', $validated['billing_month']);
+                if (empty($monthCode)) {
+                    $monthCode = date('Ym');
+                }
+                $txRef = 'ELEC-SPLIT-R' . $room->room_number . '-S' . $student->id . '-' . $monthCode;
+
+                $payment = Payment::updateOrCreate(
+                    [
+                        'tx_reference' => $txRef,
+                    ],
+                    [
+                        'student_id' => $student->id,
+                        'branch_id' => $student->branch_id ?? $room->branch_id,
+                        'payment_type' => 'ELECTRICITY',
+                        'amount' => $amount,
+                        'total_due' => $amount,
+                        'remaining_amount' => $amount,
+                        'payment_mode' => 'UPI',
+                        'payment_date' => now()->toDateString(),
+                        'due_date' => now()->addDays(7)->toDateString(),
+                        'status' => 'PENDING',
+                        'verification_remarks' => "Room {$room->room_number} Light Bill Pro-Rata Share ({$validated['billing_month']}) - {$daysActive} active days: ₹" . number_format($amount),
+                    ]
+                );
+
+                $createdPayments[] = $payment;
+            }
+
+            // Also mark any room-level electricity reading for this month as APPROVED
+            ElectricityReading::where('room_id', $room->id)
+                ->where(function($q) use ($validated) {
+                    $q->where('reading_month', $validated['billing_month'])
+                      ->orWhere('reading_month', 'like', '%' . $validated['billing_month'] . '%');
+                })
+                ->update([
+                    'status' => 'APPROVED',
+                    'audited_by' => Auth::id(),
+                ]);
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Generated & Pushed Electricity Split Bills for Room ' . $room->room_number . ' (' . count($createdPayments) . ' residents, Total: ₹' . number_format($validated['total_bill']) . ')',
+            'module' => 'ELECTRICITY',
+            'record_id' => $room->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Successfully generated and pushed light bills for ' . count($createdPayments) . ' residents in Room ' . $room->room_number . '!',
+            'count' => count($createdPayments),
         ]);
     }
 

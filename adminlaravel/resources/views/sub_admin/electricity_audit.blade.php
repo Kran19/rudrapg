@@ -44,6 +44,9 @@
         <div id="electricity-table"></div>
     </div>
 
+    <!-- Room Electricity Bill Splitter & Fair Pro-Rata Calculator -->
+    @include('sub_admin.partials.room_electricity_splitter')
+
     <!-- Fullscreen Image Lightbox Zoom Modal -->
     <div x-show="lightboxOpen" style="display: none;"
          x-transition

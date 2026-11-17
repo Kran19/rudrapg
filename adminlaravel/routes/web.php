@@ -97,6 +97,8 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::post('/electricity-audit/{id}/approve', [SubAdminController::class, 'approveElectricityReading'])->name('electricity_audit.approve');
     Route::post('/electricity-audit/{id}/reject', [SubAdminController::class, 'rejectElectricityReading'])->name('electricity_audit.reject');
     Route::post('/electricity-audit/{id}/update', [SubAdminController::class, 'updateElectricityReading'])->name('electricity_audit.update');
+    Route::post('/electricity-split/calculate', [SubAdminController::class, 'calculateElectricitySplit'])->name('electricity_split.calculate');
+    Route::post('/electricity-split/push-dues', [SubAdminController::class, 'pushElectricitySplitDues'])->name('electricity_split.push_dues');
     
     Route::get('/complaints', [SubAdminController::class, 'complaints'])->name('complaints');
     Route::post('/complaints/broadcast-notice', [SubAdminController::class, 'broadcastNotice'])->name('complaints.broadcast_notice');

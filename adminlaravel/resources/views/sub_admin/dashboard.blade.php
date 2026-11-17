@@ -189,6 +189,9 @@
     </div>
 </div>
 
+<!-- Room Electricity Bill Splitter & Fair Pro-Rata Calculator -->
+@include('sub_admin.partials.room_electricity_splitter')
+
 <!-- Tabulator Verification Preview Table -->
 <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs mb-8">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
