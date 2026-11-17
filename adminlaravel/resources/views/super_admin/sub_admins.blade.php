@@ -235,7 +235,7 @@
         e.preventDefault();
         var formData = new FormData(this);
 
-        fetch("{{ route('super_admin.sub_admins.store') }}", {
+        fetch(appUrl("super-admin/sub-admins"), {
             method: "POST",
             headers: {
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -244,7 +244,12 @@
             body: formData
         })
         .then(async res => {
-            const data = await res.json();
+            let data = {};
+            try {
+                data = await res.json();
+            } catch (err) {
+                data = { message: "Server returned non-JSON response (" + res.status + ")." };
+            }
             if (!res.ok) {
                 if (res.status === 422 && data.errors) {
                     let firstError = "";
@@ -252,10 +257,12 @@
                         firstError = data.errors[field][0];
                         break;
                     }
-                    toastr.error(firstError, "Validation Error");
+                    toastr.error(firstError || data.message, "Validation Error");
                     return Promise.reject("Validation Error");
                 }
-                return Promise.reject(data.message || "Server Error");
+                const msg = data.message || "Failed to create Sub Admin (Status " + res.status + ")";
+                toastr.error(msg, "Error");
+                return Promise.reject(msg);
             }
             return data;
         })

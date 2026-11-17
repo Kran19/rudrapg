@@ -82,6 +82,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::post('/verifications/{id}/reject', [SubAdminController::class, 'rejectVerification'])->name('verifications.reject');
     
     Route::get('/bed-map', [SubAdminController::class, 'bedMap'])->name('bed_map');
+    Route::post('/rooms/{id}/update', [SubAdminController::class, 'updateRoom'])->name('rooms.update');
     
     Route::get('/rent-ledger', [SubAdminController::class, 'rentLedger'])->name('rent_ledger');
     Route::post('/rent-ledger/cash-payment', [SubAdminController::class, 'recordCashPayment'])->name('rent_ledger.cash_payment');

@@ -81,7 +81,7 @@
                 <!-- Floor Header Banner -->
                 <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-700/60">
                     <span class="bg-slate-900 dark:bg-slate-950 text-white font-bold text-xs px-3.5 py-1.5 rounded-full flex items-center gap-2">
-                        🏢 FLOOR <span x-text="floor"></span> 
+                        🏢 <span x-text="parseInt(floor) === 0 ? 'GROUND FLOOR' : 'FLOOR ' + floor"></span> 
                         <span class="text-slate-300 font-normal text-[11px]" x-text="'(Rooms ' + floorRoomsSummary(floor) + ')'"></span>
                     </span>
                     <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -120,7 +120,7 @@
                             </div>
 
                             <!-- User / Bed Icons Row (Interactive: Click to View Resident Details) -->
-                            <div class="flex items-center justify-center gap-2 my-3 py-1 bg-white/60 dark:bg-slate-900/40 rounded-lg">
+                            <div class="flex items-center justify-center flex-wrap gap-1.5 my-2.5 py-1.5 bg-white/60 dark:bg-slate-900/40 rounded-lg">
                                 <template x-for="(bed, bIdx) in room.beds" :key="bed.id || bIdx">
                                     <button type="button" 
                                             @click.stop="openResidentModal(bed, room)"
@@ -372,27 +372,47 @@
 
                 <div class="grid grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Floor Number</label>
-                        <input type="number" name="floor_number" min="1" required x-model.number="editForm.floor" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Sharing Type</label>
-                        <select name="sharing_type" required x-model="editForm.sharing_type" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
-                            <option value="Single Sharing">Single Sharing</option>
-                            <option value="2-Sharing">2-Sharing</option>
-                            <option value="2 Sharing AC">2 Sharing AC</option>
-                            <option value="3-Sharing">3-Sharing</option>
-                            <option value="3 Sharing AC">3 Sharing AC</option>
-                            <option value="4-Sharing">4-Sharing</option>
-                            <option value="4 Sharing AC">4 Sharing AC</option>
-                            <option value="5-Sharing">5-Sharing</option>
-                            <option value="6-Sharing">6-Sharing</option>
-                            <option value="Private Room">Private Room</option>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Floor</label>
+                        <select name="floor_number" required x-model.number="editForm.floor" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="0">Ground Floor (Floor 0)</option>
+                            <option value="1">Floor 1</option>
+                            <option value="2">Floor 2</option>
+                            <option value="3">Floor 3</option>
+                            <option value="4">Floor 4</option>
+                            <option value="5">Floor 5</option>
+                            <option value="6">Floor 6</option>
+                            <option value="7">Floor 7</option>
+                            <option value="8">Floor 8</option>
+                            <option value="9">Floor 9</option>
+                            <option value="10">Floor 10</option>
+                            <template x-if="editForm.floor > 10">
+                                <option :value="editForm.floor" x-text="'Floor ' + editForm.floor" selected></option>
+                            </template>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-blue-700 dark:text-blue-400 uppercase mb-1">Total Beds (Persons)</label>
-                        <input type="number" name="max_beds" min="1" max="10" required x-model.number="editForm.max_beds" 
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Sharing Type</label>
+                        <select name="sharing_type" required x-model="editForm.sharing_type" @change="onSharingTypeChange($event.target.value)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="Single Sharing">Single Sharing (1 Person)</option>
+                            <option value="2-Sharing">2-Sharing (2 Persons)</option>
+                            <option value="2 Sharing AC">2 Sharing AC (2 Persons)</option>
+                            <option value="3-Sharing">3-Sharing (3 Persons)</option>
+                            <option value="3 Sharing AC">3 Sharing AC (3 Persons)</option>
+                            <option value="4-Sharing">4-Sharing (4 Persons)</option>
+                            <option value="4 Sharing AC">4 Sharing AC (4 Persons)</option>
+                            <option value="5-Sharing">5-Sharing (5 Persons)</option>
+                            <option value="5 Sharing AC">5 Sharing AC (5 Persons)</option>
+                            <option value="6-Sharing">6-Sharing (6 Persons)</option>
+                            <option value="6 Sharing AC">6 Sharing AC (6 Persons)</option>
+                            <option value="7-Sharing">7-Sharing (7 Persons)</option>
+                            <option value="8-Sharing">8-Sharing (8 Persons)</option>
+                            <option value="Private Room">Private Room (1 Person)</option>
+                            <option value="Dormitory">Dormitory (Custom)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-blue-700 dark:text-blue-400 uppercase mb-1">Total Beds (Capacity)</label>
+                        <input type="number" name="max_beds" min="1" max="20" required x-model.number="editForm.max_beds" 
                                class="w-full px-3.5 py-2.5 bg-blue-50/50 dark:bg-blue-950/30 border-2 border-blue-400 dark:border-blue-600 rounded-xl text-sm font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none text-blue-900 dark:text-blue-100">
                     </div>
                 </div>
@@ -468,27 +488,49 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Room Number</label>
-                        <input type="text" name="room_number" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" placeholder="e.g. 401">
+                        <input type="text" name="room_number" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100" placeholder="e.g. G01, 101, 401">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Floor Number</label>
-                        <input type="number" name="floor_number" min="1" value="1" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Floor</label>
+                        <select name="floor_number" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="0">Ground Floor (Floor 0)</option>
+                            <option value="1" selected>Floor 1</option>
+                            <option value="2">Floor 2</option>
+                            <option value="3">Floor 3</option>
+                            <option value="4">Floor 4</option>
+                            <option value="5">Floor 5</option>
+                            <option value="6">Floor 6</option>
+                            <option value="7">Floor 7</option>
+                            <option value="8">Floor 8</option>
+                            <option value="9">Floor 9</option>
+                            <option value="10">Floor 10</option>
+                        </select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Sharing Type</label>
-                        <select name="sharing_type" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
-                            <option value="Single Sharing">Single Sharing</option>
-                            <option value="2 Sharing AC">2 Sharing AC</option>
-                            <option value="3 Sharing AC" selected>3 Sharing AC</option>
-                            <option value="4 Sharing AC">4 Sharing AC</option>
-                            <option value="Private Room">Private Room</option>
+                        <select name="sharing_type" required x-model="addSharingType" @change="onAddSharingTypeChange($event.target.value)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="Single Sharing">Single Sharing (1 Person)</option>
+                            <option value="2-Sharing">2-Sharing (2 Persons)</option>
+                            <option value="2 Sharing AC">2 Sharing AC (2 Persons)</option>
+                            <option value="3-Sharing">3-Sharing (3 Persons)</option>
+                            <option value="3 Sharing AC">3 Sharing AC (3 Persons)</option>
+                            <option value="4-Sharing">4-Sharing (4 Persons)</option>
+                            <option value="4 Sharing AC">4 Sharing AC (4 Persons)</option>
+                            <option value="5-Sharing">5-Sharing (5 Persons)</option>
+                            <option value="5 Sharing AC">5 Sharing AC (5 Persons)</option>
+                            <option value="6-Sharing">6-Sharing (6 Persons)</option>
+                            <option value="6 Sharing AC">6 Sharing AC (6 Persons)</option>
+                            <option value="7-Sharing">7-Sharing (7 Persons)</option>
+                            <option value="8-Sharing">8-Sharing (8 Persons)</option>
+                            <option value="Private Room">Private Room (1 Person)</option>
+                            <option value="Dormitory">Dormitory (Custom)</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Total Beds (Capacity)</label>
-                        <input type="number" name="max_beds" min="1" max="10" value="3" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        <input type="number" name="max_beds" min="1" max="20" x-model.number="addMaxBeds" required class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -533,6 +575,8 @@ function roomsMatrix() {
         activeRoom: null,
         activeResident: null,
         addFormBranchId: {{ $selectedBranchId ?? ($allBranches->first()?->id ?? 'null') }},
+        addSharingType: '3 Sharing AC',
+        addMaxBeds: 3,
         editForm: {
             id: '',
             branch_id: '',
@@ -545,6 +589,24 @@ function roomsMatrix() {
             deposit: 0
         },
         tabulatorTable: null,
+
+        onSharingTypeChange(val) {
+            const numMatch = val.match(/^(\d+)/);
+            if (numMatch) {
+                this.editForm.max_beds = parseInt(numMatch[1]);
+            } else if (val.includes('Single') || val.includes('Private')) {
+                this.editForm.max_beds = 1;
+            }
+        },
+
+        onAddSharingTypeChange(val) {
+            const numMatch = val.match(/^(\d+)/);
+            if (numMatch) {
+                this.addMaxBeds = parseInt(numMatch[1]);
+            } else if (val.includes('Single') || val.includes('Private')) {
+                this.addMaxBeds = 1;
+            }
+        },
 
         init() {
             this.initTabulator();
@@ -651,7 +713,11 @@ function roomsMatrix() {
                         return "<strong class='text-slate-900 dark:text-slate-100'>Room " + cell.getValue() + "</strong>";
                     }},
                     {title: "Branch", field: "branch_name", minWidth: 130},
-                    {title: "Floor", field: "floor", minWidth: 80},
+                    {title: "Floor", field: "floor", minWidth: 110, formatter: function(cell){
+                        return parseInt(cell.getValue()) === 0 
+                            ? '<span class="font-bold text-blue-600 dark:text-blue-400">Ground Floor (0)</span>' 
+                            : 'Floor ' + cell.getValue();
+                    }},
                     {title: "Sharing Type", field: "sharing_type", minWidth: 130},
                     {title: "AC Status", field: "is_ac", minWidth: 100, formatter: function(cell){
                         return cell.getValue() 

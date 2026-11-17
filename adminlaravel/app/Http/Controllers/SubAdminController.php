@@ -546,7 +546,12 @@ class SubAdminController extends Controller
         $branch = $this->getActiveBranch();
         $branchIds = $this->getAuthorizedBranchIds();
 
-        $roomsPaginated = Room::with('beds.student')
+        $roomsPaginated = Room::with([
+                'beds.student.documents',
+                'beds.activeAllocation.student.documents',
+                'students.documents',
+                'branch'
+            ])
             ->where(function($q) use ($branch, $branchIds) {
                 if ($branch) {
                     $q->where('branch_id', $branch->id);
@@ -556,37 +561,95 @@ class SubAdminController extends Controller
             })
             ->orderBy('floor_number')
             ->orderBy('room_number')
-            ->paginate(50);
+            ->paginate(100);
 
         $roomsData = collect($roomsPaginated->items())->map(function ($room) {
             $totalBeds = $room->beds->count() > 0 ? $room->beds->count() : $room->max_beds;
-            $occupiedBeds = $room->beds->where('status', 'OCCUPIED')->count();
-            $availableBeds = max(0, $totalBeds - $occupiedBeds);
 
-            $bedsData = $room->beds->map(function ($bed) {
-                $student = $bed->student;
+            $bedsData = $room->beds->map(function ($bed) use ($room) {
+                // 1. Check direct bed student or active allocation relation
+                $student = $bed->student ?? $bed->activeAllocation?->student;
+
+                // 2. Check room allocations table
+                if (!$student) {
+                    $alloc = RoomAllocation::where('bed_id', $bed->id)->where('status', 'ACTIVE')->latest()->first()
+                        ?? RoomAllocation::where('bed_id', $bed->id)->latest()->first();
+                    if ($alloc && $alloc->student) {
+                        $student = $alloc->student;
+                    }
+                }
+
+                // 3. Check room students
+                if (!$student && $room->students && $room->students->isNotEmpty()) {
+                    $student = $room->students->firstWhere('bed_id', $bed->id);
+                    if (!$student && $room->students->count() === 1 && $room->beds->count() <= 2) {
+                        $student = $room->students->first();
+                    }
+                }
+
+                $isOccupied = ($student !== null);
+
+                // Extract profile photo url
+                $photoUrl = null;
+                if ($student && $student->documents) {
+                    $profileDoc = $student->documents->firstWhere('doc_type', 'PROFILE_PHOTO');
+                    if ($profileDoc && $profileDoc->file_path) {
+                        $path = $profileDoc->file_path;
+                        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+                            $photoUrl = $path;
+                        } else {
+                            $clean = ltrim(str_replace('storage/', '', $path), '/');
+                            $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($clean)
+                                ? asset('storage/' . $clean)
+                                : asset($path);
+                        }
+                    }
+                }
+
+                $joiningDateFormatted = 'N/A';
+                if ($student && $student->joining_date) {
+                    $joiningDateFormatted = is_string($student->joining_date)
+                        ? date('d M Y', strtotime($student->joining_date))
+                        : $student->joining_date->format('d M Y');
+                }
+
                 return [
                     'id' => $bed->id,
                     'code' => $bed->bed_code,
-                    'status' => strtolower($bed->status),
+                    'status' => $isOccupied ? 'occupied' : 'available',
+                    'is_occupied' => $isOccupied,
                     'student_name' => $student ? $student->full_name : null,
                     'student_phone' => $student ? $student->phone : null,
-                    'student_email' => $student ? $student->email : null,
-                    'student_kyc' => $student ? $student->kyc_status : null,
-                    'student_rent_status' => $student ? $student->rent_status : null,
+                    'student_email' => $student ? ($student->email ?? 'N/A') : null,
+                    'student_app_ref' => $student ? ($student->app_reference ?? 'REG-'.str_pad($student->id, 4, '0', STR_PAD_LEFT)) : null,
+                    'student_kyc' => $student ? ($student->kyc_status ?? 'VERIFIED') : 'VERIFIED',
+                    'student_rent_status' => $student ? ($student->rent_status ?? 'PAID') : 'PAID',
+                    'student_admission_date' => $joiningDateFormatted,
+                    'student_emergency_contact' => $student ? ($student->emergency_contact ?? $student->parent_phone ?? 'N/A') : null,
+                    'student_parent_name' => $student ? ($student->parent_name ?? 'N/A') : null,
+                    'student_aadhaar' => $student ? ($student->aadhaar_number ?? 'N/A') : null,
+                    'student_address' => $student ? ($student->current_address ?? 'N/A') : null,
+                    'student_photo' => $photoUrl,
                     'monthly_rent' => (int) $bed->monthly_rent,
                     'security_deposit' => (int) $bed->security_deposit,
+                    'room_number' => (string) $room->room_number,
+                    'branch_name' => $room->branch?->name ?? 'PG Branch',
                 ];
             })->toArray();
+
+            $occupiedBeds = collect($bedsData)->where('is_occupied', true)->count();
+            $availableBeds = max(0, $totalBeds - $occupiedBeds);
 
             return [
                 'id' => $room->id,
                 'room_number' => (string) $room->room_number,
-                'floor' => $room->floor_number,
+                'floor' => (int) $room->floor_number,
                 'sharing_type' => $room->sharing_type,
                 'is_ac' => (bool) $room->is_ac,
                 'rent' => $room->beds->first() ? (int) $room->beds->first()->monthly_rent : 0,
+                'deposit' => $room->beds->first() ? (int) $room->beds->first()->security_deposit : 0,
                 'total_beds' => $totalBeds,
+                'max_beds' => (int) ($room->max_beds ?: $totalBeds),
                 'available_beds' => $availableBeds,
                 'beds' => $bedsData,
             ];
@@ -597,6 +660,96 @@ class SubAdminController extends Controller
             'paginator' => $roomsPaginated,
             'activeBranch' => $branch,
             'branch' => $branch,
+        ]);
+    }
+
+    public function updateRoom(Request $request, $id)
+    {
+        $branchIds = $this->getAuthorizedBranchIds();
+        $room = Room::findOrFail($id);
+
+        if (!in_array($room->branch_id, $branchIds)) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to edit rooms for this branch.'], 403);
+        }
+
+        $validated = $request->validate([
+            'room_number' => ['required', 'string'],
+            'floor_number' => ['required', 'integer', 'min:0'],
+            'sharing_type' => ['required', 'string'],
+            'max_beds' => ['required', 'integer', 'min:1', 'max:20'],
+            'is_ac' => ['required', 'boolean'],
+            'rent' => ['required', 'numeric', 'min:0'],
+            'deposit' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $occupiedBedsCount = Bed::where('room_id', $room->id)
+            ->whereIn('status', ['OCCUPIED', 'RESERVED'])
+            ->count();
+
+        if ($validated['max_beds'] < $occupiedBedsCount) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Cannot reduce room capacity to {$validated['max_beds']}. There are currently {$occupiedBedsCount} occupied/reserved beds in this room.",
+            ], 422);
+        }
+
+        DB::transaction(function () use ($room, $validated) {
+            $room->update([
+                'room_number' => $validated['room_number'],
+                'floor_number' => $validated['floor_number'],
+                'sharing_type' => $validated['sharing_type'],
+                'max_beds' => $validated['max_beds'],
+                'is_ac' => $validated['is_ac'],
+            ]);
+
+            $existingBeds = Bed::where('room_id', $room->id)->orderBy('id')->get();
+            $currentBedCount = $existingBeds->count();
+            $targetBedCount = (int) $validated['max_beds'];
+
+            if ($targetBedCount > $currentBedCount) {
+                for ($b = $currentBedCount + 1; $b <= $targetBedCount; $b++) {
+                    $suffix = chr(64 + $b);
+                    Bed::create([
+                        'room_id' => $room->id,
+                        'bed_code' => 'Bed ' . $validated['room_number'] . '-' . $suffix,
+                        'monthly_rent' => $validated['rent'],
+                        'security_deposit' => $validated['deposit'],
+                        'status' => 'AVAILABLE',
+                    ]);
+                }
+            } elseif ($targetBedCount < $currentBedCount) {
+                $bedsToRemoveCount = $currentBedCount - $targetBedCount;
+                $removableBeds = Bed::where('room_id', $room->id)
+                    ->where('status', 'AVAILABLE')
+                    ->orderByDesc('id')
+                    ->take($bedsToRemoveCount)
+                    ->get();
+
+                foreach ($removableBeds as $rb) {
+                    $rb->delete();
+                }
+            }
+
+            Bed::where('room_id', $room->id)
+                ->where('status', 'AVAILABLE')
+                ->update([
+                    'monthly_rent' => $validated['rent'],
+                    'security_deposit' => $validated['deposit'],
+                ]);
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Sub Admin updated Room ' . $room->room_number . ' capacity to ' . $validated['max_beds'] . ' beds',
+            'module' => 'ROOMS',
+            'record_id' => $room->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Room updated successfully!',
+            'data' => $room->fresh()->load('beds'),
         ]);
     }
 
