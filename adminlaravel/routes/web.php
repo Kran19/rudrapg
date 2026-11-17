@@ -53,6 +53,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('su
     Route::post('/rooms-master', [SuperAdminController::class, 'storeRoom'])->name('rooms_master.store');
     Route::post('/rooms-master/{id}/update', [SuperAdminController::class, 'updateRoom'])->name('rooms_master.update');
     Route::delete('/rooms-master/{id}', [SuperAdminController::class, 'destroyRoom'])->name('rooms_master.destroy');
+    Route::post('/rooms-master/bulk-delete', [SuperAdminController::class, 'bulkDestroyRooms'])->name('rooms_master.bulk_destroy');
     
     Route::get('/students', [SuperAdminController::class, 'students'])->name('students');
     Route::post('/students/{id}/update', [SuperAdminController::class, 'updateStudent'])->name('students.update');

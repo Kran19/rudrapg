@@ -24,13 +24,19 @@
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             <button @click="viewMode = viewMode === 'grid' ? 'table' : 'grid'" 
-                    class="border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2">
+                    class="border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer">
                 <i class="fa-solid" :class="viewMode === 'grid' ? 'fa-table-list' : 'fa-border-all'"></i>
                 <span x-text="viewMode === 'grid' ? 'Switch to Tabulator Table' : 'Switch to Visual Room Grid'"></span>
             </button>
             <button @click="openAddModal()" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2">
+                    class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-plus"></i> Add New Room
+            </button>
+            <button type="button"
+                    @click="openDeleteSelectionModal()" 
+                    class="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+                    title="Delete one or multiple rooms">
+                <i class="fa-solid fa-trash-can text-rose-500"></i> Delete Room(s)
             </button>
         </div>
     </div>
@@ -110,13 +116,21 @@
                                     </template>
                                 </div>
 
-                                <!-- Room Edit Button -->
-                                <button type="button" 
-                                        @click.stop="openEditModal(room)"
-                                        class="px-2 py-0.5 text-[11px] font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
-                                        title="Edit Room Capacity & Beds">
-                                    <i class="fa-solid fa-pen-to-square text-[10px]"></i> Edit
-                                </button>
+                                <!-- Room Actions: Edit & Delete -->
+                                <div class="flex items-center gap-1">
+                                    <button type="button" 
+                                            @click.stop="openEditModal(room)"
+                                            class="px-2 py-0.5 text-[11px] font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-400 rounded-md transition-colors flex items-center gap-1 cursor-pointer"
+                                            title="Edit Room Capacity & Beds">
+                                        <i class="fa-solid fa-pen-to-square text-[10px]"></i> Edit
+                                    </button>
+                                    <button type="button" 
+                                            @click.stop="confirmSingleRoomDelete(room)"
+                                            class="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-md transition-colors cursor-pointer"
+                                            title="Delete Room">
+                                        <i class="fa-solid fa-trash-can text-[11px]"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- User / Bed Icons Row (Interactive: Click to View Resident Details) -->
@@ -557,6 +571,218 @@
         </div>
     </div>
 
+    <!-- Modal 1: Select Room(s) for Deletion -->
+    <div x-show="deleteSelectionModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="deleteSelectionModalOpen = false" 
+             class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden transform transition-all flex flex-col max-h-[88vh]">
+            
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-rose-900 to-slate-900 text-white p-5 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-base leading-tight">Delete Room(s)</h4>
+                        <p class="text-xs text-rose-200/80">
+                            Select room(s) to remove from <span class="font-bold text-white" x-text="currentBranchName()"></span>
+                        </p>
+                    </div>
+                </div>
+                <button @click="deleteSelectionModalOpen = false" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Filter & Search Bar -->
+            <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 space-y-3 shrink-0">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <!-- Search Input -->
+                    <div class="relative flex-1 min-w-[200px]">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                        <input type="text" 
+                               x-model="deleteSearchQuery" 
+                               placeholder="Search room number (e.g. 401)..." 
+                               class="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+
+                    <!-- Quick Select Action Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button type="button" 
+                                @click="selectAllVacantForDelete()" 
+                                class="px-3 py-1.5 text-xs font-semibold bg-rose-100 hover:bg-rose-200 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 rounded-xl transition-colors cursor-pointer">
+                            Select All Vacant
+                        </button>
+                        <button type="button" 
+                                @click="deselectAllDelete()" 
+                                class="px-3 py-1.5 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition-colors cursor-pointer">
+                            Deselect All
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Floor Filter Tabs inside Delete Modal -->
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                    <button type="button" 
+                            @click="deleteFloorFilter = 'all'"
+                            :class="deleteFloorFilter === 'all' ? 'bg-rose-600 text-white font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'"
+                            class="px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap cursor-pointer">
+                        All Floors
+                    </button>
+                    <template x-for="floor in availableFloors()" :key="'del-floor-' + floor">
+                        <button type="button" 
+                                @click="deleteFloorFilter = floor"
+                                :class="deleteFloorFilter === floor ? 'bg-rose-600 text-white font-bold' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'"
+                                class="px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+                                x-text="parseInt(floor) === 0 ? 'Ground Floor' : 'Floor ' + floor">
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Room Selection Grid (Scrollable) -->
+            <div class="p-4 overflow-y-auto flex-1 space-y-2">
+                <template x-if="deleteCandidateRooms().length === 0">
+                    <div class="text-center py-8 text-slate-400 text-xs">
+                        No rooms match the search or filter in this branch.
+                    </div>
+                </template>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    <template x-for="room in deleteCandidateRooms()" :key="'del-room-' + room.id">
+                        <div @click="toggleRoomDeleteSelection(room)"
+                             :class="{
+                                 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 ring-2 ring-rose-500/50': isRoomSelectedForDelete(room.id),
+                                 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-slate-300': !isRoomSelectedForDelete(room.id) && room.occupied_beds === 0,
+                                 'opacity-60 bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 cursor-not-allowed': room.occupied_beds > 0
+                             }"
+                             class="p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-2.5 select-none relative">
+                            
+                            <!-- Checkbox -->
+                            <div class="pt-0.5">
+                                <input type="checkbox" 
+                                       :checked="isRoomSelectedForDelete(room.id)"
+                                       :disabled="room.occupied_beds > 0"
+                                       @click.stop="toggleRoomDeleteSelection(room)"
+                                       class="rounded text-rose-600 focus:ring-rose-500 border-slate-300 dark:border-slate-600 cursor-pointer">
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-xs text-slate-900 dark:text-slate-100" x-text="'Room ' + room.room_number"></span>
+                                    <span class="text-[10px] font-semibold text-slate-400" x-text="parseInt(room.floor) === 0 ? 'GF' : 'F' + room.floor"></span>
+                                </div>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate" x-text="room.sharing_type"></div>
+                                
+                                <div class="mt-1.5 flex items-center justify-between text-[10px]">
+                                    <span class="text-slate-500" x-text="(room.total_beds || room.max_beds) + ' beds'"></span>
+                                    <template x-if="room.occupied_beds > 0">
+                                        <span class="px-1.5 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                                            Occupied
+                                        </span>
+                                    </template>
+                                    <template x-if="room.occupied_beds === 0">
+                                        <span class="px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                            Vacant
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
+                <div class="text-xs text-slate-600 dark:text-slate-400">
+                    Selected for deletion: <span class="font-bold text-rose-600 dark:text-rose-400 text-sm" x-text="selectedDeleteRoomIds.length"></span> room(s)
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" 
+                            @click="deleteSelectionModalOpen = false" 
+                            class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="button" 
+                            @click="promptConfirmDelete()" 
+                            :disabled="selectedDeleteRoomIds.length === 0"
+                            :class="selectedDeleteRoomIds.length === 0 ? 'opacity-50 cursor-not-allowed bg-rose-400' : 'bg-rose-600 hover:bg-rose-700 cursor-pointer'"
+                            class="px-5 py-2 text-xs font-semibold text-white rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Delete Selected (<span x-text="selectedDeleteRoomIds.length"></span>)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: "Are You Sure" Confirmation Popup -->
+    <div x-show="deleteConfirmModalOpen" 
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="deleteConfirmModalOpen = false" 
+             class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-rose-200 dark:border-rose-900/60 w-full max-w-md overflow-hidden p-6 text-center">
+            
+            <div class="w-16 h-16 rounded-3xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+                Are you sure you want to delete?
+            </h3>
+            
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                You are about to delete <span class="font-bold text-rose-600 dark:text-rose-400" x-text="selectedDeleteRoomIds.length + ' room(s)'"></span>:
+                <br>
+                <span class="font-semibold text-slate-800 dark:text-slate-200 block my-1" x-text="selectedDeleteRoomNumbers()"></span>
+                from <span class="font-bold text-slate-800 dark:text-slate-200" x-text="currentBranchName()"></span>.
+            </p>
+
+            <div class="p-3 bg-rose-50 dark:bg-rose-950/30 rounded-2xl border border-rose-200/60 dark:border-rose-900/40 text-[11px] text-rose-700 dark:text-rose-300 text-left mb-6 flex items-start gap-2">
+                <i class="fa-solid fa-circle-exclamation text-rose-500 mt-0.5 shrink-0"></i>
+                <span>This action will permanently remove the selected room(s) and their associated beds from the database. This action cannot be undone.</span>
+            </div>
+
+            <div class="flex items-center justify-center gap-3">
+                <button type="button" 
+                        @click="deleteConfirmModalOpen = false" 
+                        :disabled="isDeleting"
+                        class="px-5 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl transition-colors cursor-pointer">
+                    Cancel, Keep Rooms
+                </button>
+                <button type="button" 
+                        @click="executeDeleteRooms()" 
+                        :disabled="isDeleting"
+                        class="px-5 py-2.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer">
+                    <template x-if="isDeleting">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    </template>
+                    <template x-if="!isDeleting">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </template>
+                    <span x-text="isDeleting ? 'Deleting...' : 'Yes, Delete Room(s)'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
 
@@ -571,6 +797,12 @@ function roomsMatrix() {
         addRoomModalOpen: false,
         editRoomModalOpen: false,
         residentModalOpen: false,
+        deleteSelectionModalOpen: false,
+        deleteConfirmModalOpen: false,
+        selectedDeleteRoomIds: [],
+        deleteFloorFilter: 'all',
+        deleteSearchQuery: '',
+        isDeleting: false,
         activeBed: null,
         activeRoom: null,
         activeResident: null,
@@ -698,6 +930,131 @@ function roomsMatrix() {
             this.residentModalOpen = true;
         },
 
+        openDeleteSelectionModal() {
+            this.selectedDeleteRoomIds = [];
+            this.deleteFloorFilter = 'all';
+            this.deleteSearchQuery = '';
+            this.deleteSelectionModalOpen = true;
+        },
+
+        deleteCandidateRooms() {
+            let rooms = this.filteredRooms();
+            if (this.deleteFloorFilter !== 'all') {
+                rooms = rooms.filter(r => parseInt(r.floor) === parseInt(this.deleteFloorFilter));
+            }
+            if (this.deleteSearchQuery.trim()) {
+                const q = this.deleteSearchQuery.trim().toLowerCase();
+                rooms = rooms.filter(r => String(r.room_number).toLowerCase().includes(q));
+            }
+            return rooms;
+        },
+
+        isRoomSelectedForDelete(roomId) {
+            return this.selectedDeleteRoomIds.includes(roomId);
+        },
+
+        toggleRoomDeleteSelection(room) {
+            if (room.occupied_beds > 0) {
+                toastr.warning('Room ' + room.room_number + ' cannot be deleted because it has active occupied residents.');
+                return;
+            }
+            const idx = this.selectedDeleteRoomIds.indexOf(room.id);
+            if (idx > -1) {
+                this.selectedDeleteRoomIds.splice(idx, 1);
+            } else {
+                this.selectedDeleteRoomIds.push(room.id);
+            }
+        },
+
+        selectAllVacantForDelete() {
+            const vacantRooms = this.deleteCandidateRooms().filter(r => (r.occupied_beds || 0) === 0);
+            this.selectedDeleteRoomIds = vacantRooms.map(r => r.id);
+        },
+
+        deselectAllDelete() {
+            this.selectedDeleteRoomIds = [];
+        },
+
+        selectedDeleteRoomNumbers() {
+            const selected = this.allRooms.filter(r => this.selectedDeleteRoomIds.includes(r.id));
+            if (selected.length <= 5) {
+                return selected.map(r => 'Room ' + r.room_number).join(', ');
+            }
+            return selected.slice(0, 5).map(r => 'Room ' + r.room_number).join(', ') + ' +' + (selected.length - 5) + ' more';
+        },
+
+        promptConfirmDelete() {
+            if (this.selectedDeleteRoomIds.length === 0) {
+                toastr.warning('Please select at least one room to delete.');
+                return;
+            }
+            this.deleteConfirmModalOpen = true;
+        },
+
+        confirmSingleRoomDelete(room) {
+            if (room.occupied_beds > 0) {
+                toastr.warning('Room ' + room.room_number + ' cannot be deleted because it has active occupied residents.');
+                return;
+            }
+            this.selectedDeleteRoomIds = [room.id];
+            this.deleteConfirmModalOpen = true;
+        },
+
+        executeDeleteRooms() {
+            if (this.selectedDeleteRoomIds.length === 0 || this.isDeleting) return;
+            this.isDeleting = true;
+
+            const isBulk = this.selectedDeleteRoomIds.length > 1;
+            const url = isBulk 
+                ? appUrl("super-admin/rooms-master/bulk-delete")
+                : appUrl("super-admin/rooms-master/" + this.selectedDeleteRoomIds[0]);
+
+            const method = isBulk ? "POST" : "DELETE";
+            const headers = {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            };
+            let body = null;
+            if (isBulk) {
+                headers["Content-Type"] = "application/json";
+                body = JSON.stringify({ room_ids: this.selectedDeleteRoomIds });
+            }
+
+            fetch(url, { method, headers, body })
+                .then(async res => {
+                    let data = {};
+                    try {
+                        data = await res.json();
+                    } catch (e) {
+                        data = { message: "Server returned status " + res.status };
+                    }
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Failed to delete room(s).');
+                    }
+                    return data;
+                })
+                .then(data => {
+                    toastr.success(data.message || 'Room(s) deleted successfully.');
+                    
+                    const deleted = data.deleted_ids || (data.room_id ? [data.room_id] : this.selectedDeleteRoomIds);
+                    this.allRooms = this.allRooms.filter(r => !deleted.includes(r.id));
+                    
+                    if (this.tabulatorTable) {
+                        this.tabulatorTable.setData(this.filteredRooms());
+                    }
+
+                    this.deleteConfirmModalOpen = false;
+                    this.deleteSelectionModalOpen = false;
+                    this.selectedDeleteRoomIds = [];
+                })
+                .catch(err => {
+                    toastr.error(err.message || 'Failed to delete room(s).');
+                })
+                .finally(() => {
+                    this.isDeleting = false;
+                });
+        },
+
         initTabulator() {
             const self = this;
             this.tabulatorTable = new Tabulator("#rooms-table", {
@@ -735,13 +1092,19 @@ function roomsMatrix() {
                             ? '<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-full">FULL</span>' 
                             : '<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Available</span>';
                     }},
-                    {title: "Actions", field: "id", minWidth: 110, formatter: function(cell){
-                        return '<button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-xs flex items-center gap-1.5 edit-room-btn cursor-pointer">' +
-                               '<i class="fa-solid fa-pen-to-square"></i> Edit</button>';
+                    {title: "Actions", field: "id", minWidth: 160, formatter: function(cell){
+                        return '<div class="flex items-center gap-1.5">' +
+                               '<button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-xs flex items-center gap-1 edit-room-btn cursor-pointer">' +
+                               '<i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
+                               '<button class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-xs flex items-center gap-1 delete-room-btn cursor-pointer">' +
+                               '<i class="fa-solid fa-trash-can"></i> Delete</button>' +
+                               '</div>';
                     }, cellClick: function(e, cell){
                         var data = cell.getRow().getData();
                         if (e.target.classList.contains('edit-room-btn') || e.target.closest('.edit-room-btn')) {
                             self.openEditModal(data);
+                        } else if (e.target.classList.contains('delete-room-btn') || e.target.closest('.delete-room-btn')) {
+                            self.confirmSingleRoomDelete(data);
                         }
                     }},
                 ]

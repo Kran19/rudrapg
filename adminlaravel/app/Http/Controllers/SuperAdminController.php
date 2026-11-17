@@ -256,25 +256,108 @@ class SuperAdminController extends Controller
 
     public function destroyRoom($id)
     {
-        $room = Room::findOrFail($id);
-        
-        DB::transaction(function () use ($room) {
-            $room->beds()->delete();
-            $room->delete();
-        });
+        try {
+            $room = Room::with('beds')->findOrFail($id);
 
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'action' => 'Deleted Room '.$room->room_number,
-            'module' => 'ROOMS',
-            'record_id' => $room->id,
-            'ip_address' => request()->ip(),
-        ]);
+            // Guard against deleting rooms with occupied beds
+            $hasOccupied = $room->beds->contains('status', 'OCCUPIED');
+            if ($hasOccupied) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Cannot delete Room {$room->room_number} because it has occupied beds with active residents. Please vacate or reallocate residents first.",
+                ], 422);
+            }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Room deleted successfully.',
-        ]);
+            DB::transaction(function () use ($room) {
+                $room->beds()->delete();
+                $room->delete();
+            });
+
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Deleted Room ' . $room->room_number,
+                'module' => 'ROOMS',
+                'record_id' => (string) $room->id,
+                'ip_address' => request()->ip(),
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Room {$room->room_number} deleted successfully.",
+                'room_id' => $room->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to delete room: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete room: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function bulkDestroyRooms(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'room_ids' => ['required', 'array', 'min:1'],
+                'room_ids.*' => ['exists:rooms,id'],
+            ]);
+
+            $rooms = Room::with('beds')->whereIn('id', $validated['room_ids'])->get();
+            $deletedIds = [];
+            $skippedRooms = [];
+
+            DB::transaction(function () use ($rooms, &$deletedIds, &$skippedRooms) {
+                foreach ($rooms as $room) {
+                    $hasOccupied = $room->beds->contains('status', 'OCCUPIED');
+                    if ($hasOccupied) {
+                        $skippedRooms[] = $room->room_number;
+                        continue;
+                    }
+
+                    $room->beds()->delete();
+                    $room->delete();
+                    $deletedIds[] = $room->id;
+                }
+            });
+
+            if (count($deletedIds) > 0) {
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'Bulk deleted ' . count($deletedIds) . ' room(s)',
+                    'module' => 'ROOMS',
+                    'record_id' => implode(',', $deletedIds),
+                    'ip_address' => request()->ip(),
+                ]);
+            }
+
+            if (count($deletedIds) === 0 && !empty($skippedRooms)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Cannot delete selected room(s) because Room(s) " . implode(', ', $skippedRooms) . " have occupied beds with active residents.",
+                ], 422);
+            }
+
+            $message = "Successfully deleted " . count($deletedIds) . " room(s).";
+            if (!empty($skippedRooms)) {
+                $message .= " Note: Room(s) " . implode(', ', $skippedRooms) . " were skipped because they contain occupied beds.";
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'deleted_ids' => $deletedIds,
+                'skipped_rooms' => $skippedRooms,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            throw $ve;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to bulk delete rooms: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to bulk delete rooms: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function updateBranch(Request $request, $id)
