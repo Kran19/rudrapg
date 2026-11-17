@@ -12,7 +12,7 @@
                         Room Electricity Bill Splitter & Pro-Rata Calculator
                     </h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Fair period-wise light bill distribution among room occupants based on joining date and duration of stay (e.g., 15-day pro-rata calculation).
+                        Calculate room light bills directly from sub-meter readings and divide fairly among roommates based on move-in date & duration of stay.
                     </p>
                 </div>
             </div>
@@ -23,14 +23,14 @@
         </span>
     </div>
 
-    <!-- Filter & Configuration Form -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Step 1: Selection & Configuration -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
         <!-- Room Selector -->
         <div>
             <label for="splitter-room-id" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                 1. Select Room <span class="text-rose-500">*</span>
             </label>
-            <select id="splitter-room-id" 
+            <select id="splitter-room-id" onchange="onSplitterRoomChanged()"
                     class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all">
                 <option value="">-- Choose Room --</option>
                 @if(isset($rooms))
@@ -48,27 +48,135 @@
             <label for="splitter-billing-month" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                 2. Billing Month <span class="text-rose-500">*</span>
             </label>
-            <input type="month" id="splitter-billing-month" value="{{ date('Y-m') }}" 
+            <input type="month" id="splitter-billing-month" value="{{ date('Y-m') }}" onchange="onSplitterMonthChanged()"
                    class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all">
         </div>
 
-        <!-- Total Room Electricity Bill -->
-        <div>
-            <label for="splitter-total-bill" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                3. Total Room Bill (₹)
-            </label>
-            <div class="relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold text-sm">₹</span>
-                <input type="number" id="splitter-total-bill" placeholder="e.g. 3000" min="0" step="1"
-                       class="w-full pl-8 pr-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all">
+        <!-- Room Residents Summary Pill -->
+        <div class="flex flex-col justify-end">
+            <div id="sp-occupants-summary-box" class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-500 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-users text-blue-500"></i>
+                    <span id="sp-occupants-label">Select a room to view occupants</span>
+                </div>
+                <span id="sp-occupants-badge" class="font-bold text-slate-700 dark:text-slate-200">-</span>
             </div>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">Leave empty to auto-pull from meter reading</p>
+        </div>
+    </div>
+
+    <!-- Step 2: Sub-Meter Reading & Live Calculation Section -->
+    <div id="sp-meter-section" class="p-5 rounded-2xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/60 mb-6 transition-all">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-gauge-high text-amber-600 dark:text-amber-400"></i>
+                <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                    Room Sub-Meter Reading & Automatic Bill Calculation
+                </h4>
+            </div>
+            <button type="button" onclick="toggleDirectBillMode()" id="btn-toggle-direct-mode" 
+                    class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 underline">
+                Switch to direct bill entry (₹)
+            </button>
         </div>
 
-        <!-- Calculate Trigger Button -->
-        <div class="flex items-end">
+        <!-- Meter Reading Input Row -->
+        <div id="sp-meter-inputs-row" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <!-- Previous Reading -->
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="sp-prev-reading" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Previous Reading (kWh)
+                    </label>
+                    <span id="sp-baseline-source-tag" class="text-[10px] text-slate-400 truncate max-w-[140px]" title="Baseline">Baseline: 0</span>
+                </div>
+                <div class="relative">
+                    <input type="number" step="0.01" id="sp-prev-reading" placeholder="0.00" oninput="liveRecalcMeterBill()"
+                           class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button type="button" id="btn-view-baseline-photo" onclick="viewBaselinePhoto()" style="display: none;"
+                            class="absolute right-2 top-2 px-2 py-1 text-[10px] font-bold bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200">
+                        <i class="fa-solid fa-image"></i> Photo
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Move-in baseline or last month's final reading</p>
+            </div>
+
+            <!-- Current Reading -->
+            <div>
+                <label for="sp-curr-reading" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Current Reading (kWh) <span class="text-rose-500">*</span>
+                </label>
+                <input type="number" step="0.01" id="sp-curr-reading" placeholder="Enter month-end reading" oninput="liveRecalcMeterBill()"
+                       class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <p class="text-[10px] text-slate-400 mt-1">Read directly from room's sub-meter display</p>
+            </div>
+
+            <!-- Unit Rate -->
+            <div>
+                <label for="sp-unit-rate" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Unit Rate (₹ / kWh)
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold text-sm">₹</span>
+                    <input type="number" step="0.5" id="sp-unit-rate" value="10.00" oninput="liveRecalcMeterBill()"
+                           class="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Branch default electricity tariff rate</p>
+            </div>
+
+            <!-- Month-End Meter Photo (Optional) -->
+            <div>
+                <label for="sp-meter-photo" class="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Month-End Meter Photo
+                </label>
+                <input type="file" id="sp-meter-photo" accept="image/*"
+                       class="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-300 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200">
+                <p class="text-[10px] text-slate-400 mt-1">Audit proof for roommates</p>
+            </div>
+        </div>
+
+        <!-- Direct Bill Input (Hidden by default, toggled via link) -->
+        <div id="sp-direct-bill-row" style="display: none;" class="mb-4">
+            <div class="max-w-md">
+                <label for="splitter-total-bill" class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                    Fixed Total Room Electricity Bill (₹) <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold text-sm">₹</span>
+                    <input type="number" id="splitter-total-bill" placeholder="e.g. 3000" min="0" step="1"
+                           class="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">Enter fixed electricity board bill slip amount directly</p>
+            </div>
+        </div>
+
+        <!-- Live Computed Consumption Banner -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 border border-amber-200/60 dark:border-amber-800/40">
+            <div class="flex flex-wrap items-center gap-4 text-xs">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Units Consumed</span>
+                    <p class="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
+                        <span id="sp-live-units">0.00</span> <span class="text-xs font-normal text-slate-400">kWh</span>
+                    </p>
+                </div>
+                <div class="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Calculation Formula</span>
+                    <p id="sp-live-formula" class="text-xs font-semibold text-slate-600 dark:text-slate-300 mt-0.5">
+                        (0.00 - 0.00) × ₹10.00/u
+                    </p>
+                </div>
+                <div class="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 tracking-wider">Total Room Bill</span>
+                    <p class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        ₹<span id="sp-live-total-bill">0.00</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Trigger Button -->
             <button type="button" id="btn-calculate-splitter" onclick="calculateRoomSplitter()"
-                    class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm py-2.5 px-4 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2">
+                    class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm py-2.5 px-6 rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2">
                 <i class="fa-solid fa-calculator"></i>
                 <span>Calculate Fair Split</span>
             </button>
@@ -79,7 +187,7 @@
     <div id="splitter-loading" class="hidden py-8 text-center">
         <div class="inline-flex items-center gap-3 px-4 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-semibold">
             <i class="fa-solid fa-circle-notch fa-spin text-amber-600 text-sm"></i>
-            <span>Analyzing occupant move-in dates & segmenting periods...</span>
+            <span>Calculating units & segmenting periods based on move-in dates...</span>
         </div>
     </div>
 
@@ -106,7 +214,7 @@
                 <p id="sp-metric-daily" class="text-sm font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">-</p>
             </div>
             <div>
-                <span class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">Room Total Bill</span>
+                <span class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">Total Room Bill</span>
                 <p id="sp-metric-total" class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">-</p>
             </div>
         </div>
@@ -172,11 +280,119 @@
 <!-- Pro-Rata Splitter JavaScript Engine -->
 <script>
     var currentSplitData = null;
+    var cachedRoomInfo = null;
+    var isDirectBillMode = false;
+
+    function toggleDirectBillMode() {
+        isDirectBillMode = !isDirectBillMode;
+        var meterRow = document.getElementById("sp-meter-inputs-row");
+        var directRow = document.getElementById("sp-direct-bill-row");
+        var toggleBtn = document.getElementById("btn-toggle-direct-mode");
+
+        if (isDirectBillMode) {
+            meterRow.style.display = "none";
+            directRow.style.display = "block";
+            toggleBtn.innerText = "Switch to meter reading calculation (kWh)";
+        } else {
+            meterRow.style.display = "grid";
+            directRow.style.display = "none";
+            toggleBtn.innerText = "Switch to direct bill entry (₹)";
+            liveRecalcMeterBill();
+        }
+    }
+
+    function onSplitterRoomChanged() {
+        var roomId = document.getElementById("splitter-room-id").value;
+        var month = document.getElementById("splitter-billing-month").value;
+        if (!roomId) {
+            document.getElementById("sp-occupants-label").innerText = "Select a room to view occupants";
+            document.getElementById("sp-occupants-badge").innerText = "-";
+            return;
+        }
+
+        // Fetch room meter baseline and active occupants
+        fetch("{{ url('sub-admin/room-electricity-info') }}/" + roomId + "?billing_month=" + encodeURIComponent(month), {
+            headers: {
+                "Accept": "application/json"
+            }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.status === "success" && res.data) {
+                var d = res.data;
+                cachedRoomInfo = d;
+
+                // Update occupants summary
+                var count = d.active_residents ? d.active_residents.length : 0;
+                document.getElementById("sp-occupants-label").innerText = count + " Active Occupants in Room " + d.room_number;
+                document.getElementById("sp-occupants-badge").innerText = count + " Roommates";
+
+                // Update previous reading and baseline source
+                document.getElementById("sp-prev-reading").value = d.previous_reading !== null ? d.previous_reading : 0;
+                document.getElementById("sp-baseline-source-tag").innerText = d.baseline_source || "Baseline: 0";
+                document.getElementById("sp-unit-rate").value = d.unit_rate || 10.0;
+
+                // Photo preview button
+                var photoBtn = document.getElementById("btn-view-baseline-photo");
+                if (d.baseline_photo_url) {
+                    photoBtn.style.display = "inline-block";
+                    photoBtn.setAttribute("data-src", d.baseline_photo_url);
+                } else {
+                    photoBtn.style.display = "none";
+                }
+
+                // If a reading for this month already exists, pre-fill current reading
+                if (d.current_reading !== null) {
+                    document.getElementById("sp-curr-reading").value = d.current_reading;
+                } else {
+                    document.getElementById("sp-curr-reading").value = "";
+                }
+
+                liveRecalcMeterBill();
+            }
+        })
+        .catch(err => {
+            console.error("Failed to load room electricity info:", err);
+        });
+    }
+
+    function onSplitterMonthChanged() {
+        var roomId = document.getElementById("splitter-room-id").value;
+        if (roomId) {
+            onSplitterRoomChanged();
+        }
+    }
+
+    function viewBaselinePhoto() {
+        var photoBtn = document.getElementById("btn-view-baseline-photo");
+        var src = photoBtn.getAttribute("data-src");
+        if (src) {
+            window.open(src, "_blank");
+        }
+    }
+
+    function liveRecalcMeterBill() {
+        if (isDirectBillMode) return;
+
+        var prev = parseFloat(document.getElementById("sp-prev-reading").value) || 0;
+        var currVal = document.getElementById("sp-curr-reading").value;
+        var curr = currVal !== "" ? parseFloat(currVal) : prev;
+        var rate = parseFloat(document.getElementById("sp-unit-rate").value) || 10.0;
+
+        var units = Math.max(0, Math.round((curr - prev) * 100) / 100);
+        var total = Math.round(units * rate * 100) / 100;
+
+        document.getElementById("sp-live-units").innerText = units.toFixed(2);
+        document.getElementById("sp-live-formula").innerText = "(" + curr.toFixed(2) + " - " + prev.toFixed(2) + ") × ₹" + rate.toFixed(2) + "/u";
+        document.getElementById("sp-live-total-bill").innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        // Sync with total-bill input as fallback
+        document.getElementById("splitter-total-bill").value = total;
+    }
 
     function calculateRoomSplitter() {
         var roomId = document.getElementById("splitter-room-id").value;
         var month = document.getElementById("splitter-billing-month").value;
-        var totalBill = document.getElementById("splitter-total-bill").value;
         var loading = document.getElementById("splitter-loading");
         var errorBanner = document.getElementById("splitter-error-banner");
         var errorMsg = document.getElementById("splitter-error-message");
@@ -191,6 +407,38 @@
             return;
         }
 
+        var prev = parseFloat(document.getElementById("sp-prev-reading").value) || 0;
+        var curr = document.getElementById("sp-curr-reading").value;
+        var rate = parseFloat(document.getElementById("sp-unit-rate").value) || 10.0;
+        var directBill = document.getElementById("splitter-total-bill").value;
+
+        var payload = {
+            room_id: roomId,
+            billing_month: month
+        };
+
+        if (isDirectBillMode || (!curr && directBill)) {
+            if (!directBill || parseFloat(directBill) <= 0) {
+                toastr.warning("Please enter a Total Room Bill amount greater than ₹0.");
+                return;
+            }
+            payload.total_bill = parseFloat(directBill);
+        } else {
+            if (curr === "") {
+                toastr.warning("Please enter the Current Meter Reading (kWh).");
+                return;
+            }
+            var currNum = parseFloat(curr);
+            if (currNum < prev) {
+                toastr.warning("Current reading (" + currNum + ") cannot be less than previous reading (" + prev + ").");
+                return;
+            }
+            payload.previous_reading = prev;
+            payload.current_reading = currNum;
+            payload.unit_rate = rate;
+            payload.total_bill = Math.round(Math.max(0, currNum - prev) * rate * 100) / 100;
+        }
+
         loading.classList.remove("hidden");
         errorBanner.classList.add("hidden");
         resultsPanel.classList.add("hidden");
@@ -202,11 +450,7 @@
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
                 "Accept": "application/json"
             },
-            body: JSON.stringify({
-                room_id: roomId,
-                billing_month: month,
-                total_bill: totalBill ? parseFloat(totalBill) : null
-            })
+            body: JSON.stringify(payload)
         })
         .then(function(res) { return res.json(); })
         .then(function(data) {
@@ -234,12 +478,6 @@
         document.getElementById("sp-metric-month").innerText = d.billing_month + " (" + d.days_in_month + " Days)";
         document.getElementById("sp-metric-daily").innerText = "₹" + Number(d.daily_cost).toFixed(2) + " / day";
         document.getElementById("sp-metric-total").innerText = "₹" + Number(d.total_bill).toLocaleString();
-
-        // If total_bill field was empty, fill it with auto-pulled value
-        var totalInput = document.getElementById("splitter-total-bill");
-        if (!totalInput.value) {
-            totalInput.value = d.total_bill;
-        }
 
         // Periods container
         var periodsContainer = document.getElementById("sp-periods-container");
@@ -272,7 +510,7 @@
         tbody.innerHTML = "";
 
         if (d.occupant_shares && d.occupant_shares.length > 0) {
-            d.occupant_shares.forEach(function(s, idx) {
+            d.occupant_shares.forEach(function(s) {
                 var row = document.createElement("tr");
                 row.className = "hover:bg-slate-50/60 dark:hover:bg-slate-750 transition-colors";
 
@@ -373,7 +611,7 @@
             return;
         }
 
-        if (!confirm("Are you sure you want to push these light bills to all " + splits.length + " residents in Room " + currentSplitData.room.room_number + "?\n\nTotal Sum: ₹" + total.toLocaleString() + "\nThis will create official pending dues on each student's portal.")) {
+        if (!confirm("Are you sure you want to push these light bills to all " + splits.length + " residents in Room " + currentSplitData.room.room_number + "?\n\nTotal Sum: ₹" + total.toLocaleString() + "\nThis will record the room meter reading and create official pending dues on each student's portal.")) {
             return;
         }
 
@@ -382,19 +620,35 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Pushing Bills...';
 
+        var formData = new FormData();
+        formData.append("room_id", currentSplitData.room.id);
+        formData.append("billing_month", currentSplitData.billing_month_code);
+        formData.append("total_bill", total);
+
+        var prev = document.getElementById("sp-prev-reading").value;
+        var curr = document.getElementById("sp-curr-reading").value;
+        var rate = document.getElementById("sp-unit-rate").value;
+        var photoFile = document.getElementById("sp-meter-photo").files[0];
+
+        if (prev) formData.append("previous_reading", prev);
+        if (curr) formData.append("current_reading", curr);
+        if (rate) formData.append("unit_rate", rate);
+        if (curr && prev) formData.append("units_consumed", Math.max(0, parseFloat(curr) - parseFloat(prev)));
+        if (photoFile) formData.append("meter_photo", photoFile);
+
+        splits.forEach(function(s, idx) {
+            formData.append("splits[" + idx + "][student_id]", s.student_id);
+            formData.append("splits[" + idx + "][amount]", s.amount);
+            formData.append("splits[" + idx + "][days_active]", s.days_active);
+        });
+
         fetch("{{ route('sub_admin.electricity_split.push_dues') }}", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
                 "X-CSRF-TOKEN": "{{ csrf_token() }}",
                 "Accept": "application/json"
             },
-            body: JSON.stringify({
-                room_id: currentSplitData.room.id,
-                billing_month: currentSplitData.billing_month_code,
-                total_bill: total,
-                splits: splits
-            })
+            body: formData
         })
         .then(function(res) { return res.json(); })
         .then(function(data) {

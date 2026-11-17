@@ -91,6 +91,18 @@ class SubAdminController extends Controller
         return $activeBranch ? [$activeBranch->id] : [];
     }
 
+    protected function formatStorageUrl(?string $path): ?string
+    {
+        if (!$path) return null;
+        if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+        $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+            return asset('storage/' . $cleanPath);
+        }
+        return null;
+    }
+
     public function dashboard()
     {
         $branch = $this->getActiveBranch();
@@ -1405,6 +1417,126 @@ class SubAdminController extends Controller
     }
 
     /**
+     * Get Room Electricity Sub-Meter Reading Details (Baseline, Previous, and Active Residents).
+     */
+    public function getRoomElectricityInfo(Request $request, $roomId)
+    {
+        $room = Room::with(['branch', 'beds'])->findOrFail($roomId);
+        if (!in_array($room->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action for this branch.'], 403);
+        }
+
+        $billingMonth = trim($request->query('billing_month', date('Y-m')));
+        try {
+            $monthDate = \Carbon\Carbon::parse($billingMonth . '-01');
+        } catch (\Exception $e) {
+            $monthDate = \Carbon\Carbon::now();
+        }
+
+        $unitRate = $room->branch && (float)$room->branch->electricity_unit_rate > 0 
+            ? (float)$room->branch->electricity_unit_rate 
+            : 10.0;
+
+        // 1. Check if a reading for this exact billing month already exists for this room
+        $currentMonthReading = ElectricityReading::where('room_id', $room->id)
+            ->where(function ($q) use ($billingMonth, $monthDate) {
+                $q->where('reading_month', $billingMonth)
+                  ->orWhere('reading_month', 'like', '%' . $billingMonth . '%')
+                  ->orWhere('reading_month', 'like', '%' . $monthDate->format('F Y') . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        // 2. Find previous reading baseline
+        $previousReading = null;
+        $baselineSource = 'None';
+        $baselinePhotoUrl = null;
+
+        // Look for the most recent reading prior to this one
+        $lastReading = ElectricityReading::where('room_id', $room->id)
+            ->when($currentMonthReading, function($q) use ($currentMonthReading) {
+                $q->where('id', '!=', $currentMonthReading->id);
+            })
+            ->latest('id')
+            ->first();
+
+        if ($lastReading) {
+            $previousReading = (float)$lastReading->current_reading;
+            $baselineSource = 'Previous Reading (' . $lastReading->reading_month . ')';
+            $baselinePhotoUrl = $this->formatStorageUrl($lastReading->meter_photo_path);
+        } else {
+            // Check student initial move-in meter readings for this room
+            $baselineStudent = Student::with(['documents'])
+                ->where('room_id', $room->id)
+                ->where(function($q) {
+                    $q->whereNotNull('initial_meter_reading')
+                      ->orWhereNotNull('initial_meter_photo');
+                })
+                ->latest('id')
+                ->first();
+
+            if ($baselineStudent) {
+                $previousReading = (float)($baselineStudent->initial_meter_reading ?? 0);
+                $doc = $baselineStudent->documents->firstWhere('doc_type', 'INITIAL_METER_PHOTO');
+                $baselinePhotoUrl = $this->formatStorageUrl($doc?->file_path ?? $baselineStudent->initial_meter_photo);
+                $baselineSource = 'Move-In Baseline by ' . ($baselineStudent->full_name ?: 'Resident');
+            } else {
+                $previousReading = 0.0;
+                $baselineSource = 'Default Baseline (0.0 kWh)';
+            }
+        }
+
+        // Active students in room
+        $directStudents = Student::with(['bed'])
+            ->where('room_id', $room->id)
+            ->whereIn('status', ['APPROVED', 'ACTIVE', 'BED_ALLOCATED', 'KYC_APPROVED'])
+            ->get();
+
+        $bedStudents = Student::with(['bed'])
+            ->whereHas('bed', function($q) use ($room) {
+                $q->where('room_id', $room->id);
+            })
+            ->whereIn('status', ['APPROVED', 'ACTIVE', 'BED_ALLOCATED', 'KYC_APPROVED'])
+            ->get();
+
+        $allocationStudents = Student::with(['bed'])
+            ->whereHas('bed.activeAllocation', function($q) use ($room) {
+                $q->where('room_id', $room->id);
+            })
+            ->get();
+
+        $allStudents = $directStudents->merge($bedStudents)->merge($allocationStudents)->unique('id');
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'room_id' => $room->id,
+                'room_number' => $room->room_number,
+                'floor_number' => $room->floor_number,
+                'sharing_type' => $room->sharing_type,
+                'unit_rate' => $unitRate,
+                'previous_reading' => $currentMonthReading ? (float)$currentMonthReading->previous_reading : (float)$previousReading,
+                'current_reading' => $currentMonthReading ? (float)$currentMonthReading->current_reading : null,
+                'units_consumed' => $currentMonthReading ? (float)$currentMonthReading->units_consumed : null,
+                'total_bill' => $currentMonthReading ? (float)$currentMonthReading->total_amount : null,
+                'meter_photo_url' => $currentMonthReading ? $this->formatStorageUrl($currentMonthReading->meter_photo_path) : null,
+                'baseline_photo_url' => $baselinePhotoUrl,
+                'baseline_source' => $baselineSource,
+                'has_saved_reading' => $currentMonthReading !== null,
+                'active_residents' => $allStudents->map(function($st) {
+                    return [
+                        'id' => $st->id,
+                        'name' => $st->full_name,
+                        'phone' => $st->phone,
+                        'bed_code' => $st->bed?->bed_code ?? 'Bed Unassigned',
+                        'joining_date' => $st->joining_date ? $st->joining_date->format('d M Y') : ($st->created_at ? $st->created_at->format('d M Y') : 'N/A'),
+                    ];
+                })->values(),
+            ]
+        ]);
+    }
+
+    /**
      * Calculate Pro-Rata Room Electricity Split based on resident move-in dates & days stayed.
      */
     public function calculateElectricitySplit(Request $request)
@@ -1412,6 +1544,9 @@ class SubAdminController extends Controller
         $validated = $request->validate([
             'room_id' => ['required', 'exists:rooms,id'],
             'billing_month' => ['required', 'string'],
+            'previous_reading' => ['nullable', 'numeric', 'min:0'],
+            'current_reading' => ['nullable', 'numeric', 'min:0'],
+            'unit_rate' => ['nullable', 'numeric', 'min:0'],
             'total_bill' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -1431,11 +1566,23 @@ class SubAdminController extends Controller
         $endOfMonth = $dateObj->copy()->endOfMonth();
         $daysInMonth = (int) $startOfMonth->daysInMonth;
 
-        $totalBill = isset($validated['total_bill']) && (float)$validated['total_bill'] > 0
-            ? (float)$validated['total_bill']
-            : 0.0;
+        $previousReading = isset($validated['previous_reading']) ? (float)$validated['previous_reading'] : 0.0;
+        $currentReading = isset($validated['current_reading']) ? (float)$validated['current_reading'] : null;
+        $unitRate = isset($validated['unit_rate']) && (float)$validated['unit_rate'] > 0
+            ? (float)$validated['unit_rate']
+            : ($room->branch && (float)$room->branch->electricity_unit_rate > 0 ? (float)$room->branch->electricity_unit_rate : 10.0);
 
-        // Auto-pull from latest electricity reading for room if total_bill not passed
+        if ($currentReading !== null) {
+            $unitsConsumed = max(0, round($currentReading - $previousReading, 2));
+            $totalBill = round($unitsConsumed * $unitRate, 2);
+        } else {
+            $totalBill = isset($validated['total_bill']) && (float)$validated['total_bill'] > 0
+                ? (float)$validated['total_bill']
+                : 0.0;
+            $unitsConsumed = $unitRate > 0 ? round($totalBill / $unitRate, 2) : 0.0;
+        }
+
+        // Auto-pull from latest electricity reading for room if total_bill not passed and current_reading not passed
         if ($totalBill <= 0) {
             $latestReading = ElectricityReading::where('room_id', $room->id)
                 ->where(function ($q) use ($startOfMonth, $monthStr) {
@@ -1448,13 +1595,17 @@ class SubAdminController extends Controller
 
             if ($latestReading && (float)$latestReading->total_amount > 0) {
                 $totalBill = (float)$latestReading->total_amount;
+                $previousReading = (float)$latestReading->previous_reading;
+                $currentReading = (float)$latestReading->current_reading;
+                $unitsConsumed = (float)$latestReading->units_consumed;
+                $unitRate = (float)$latestReading->unit_rate;
             }
         }
 
         if ($totalBill <= 0) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Please enter a valid Total Room Electricity Bill amount (greater than ₹0).'
+                'message' => 'Please enter a Current Meter Reading (greater than Previous Reading) or a Total Room Bill amount greater than ₹0.'
             ], 422);
         }
 
@@ -1663,6 +1814,10 @@ class SubAdminController extends Controller
                 ],
                 'billing_month' => $startOfMonth->format('F Y'),
                 'billing_month_code' => $monthStr,
+                'previous_reading' => $previousReading,
+                'current_reading' => $currentReading,
+                'units_consumed' => $unitsConsumed,
+                'unit_rate' => $unitRate,
                 'total_bill' => $totalBill,
                 'days_in_month' => $daysInMonth,
                 'daily_cost' => round($dailyCost, 2),
@@ -1682,6 +1837,11 @@ class SubAdminController extends Controller
             'room_id' => ['required', 'exists:rooms,id'],
             'billing_month' => ['required', 'string'],
             'total_bill' => ['required', 'numeric', 'min:0'],
+            'previous_reading' => ['nullable', 'numeric', 'min:0'],
+            'current_reading' => ['nullable', 'numeric', 'min:0'],
+            'unit_rate' => ['nullable', 'numeric', 'min:0'],
+            'units_consumed' => ['nullable', 'numeric', 'min:0'],
+            'meter_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'splits' => ['required', 'array', 'min:1'],
             'splits.*.student_id' => ['required', 'exists:students,id'],
             'splits.*.amount' => ['required', 'numeric', 'min:0'],
@@ -1695,7 +1855,41 @@ class SubAdminController extends Controller
 
         $createdPayments = [];
 
-        DB::transaction(function () use ($room, $validated, &$createdPayments) {
+        DB::transaction(function () use ($room, $request, $validated, &$createdPayments) {
+            $meterPhotoPath = null;
+            if ($request->hasFile('meter_photo')) {
+                $meterPhotoPath = $request->file('meter_photo')->store('uploads/meter', 'public');
+            }
+
+            $primaryStudentId = !empty($validated['splits']) ? $validated['splits'][0]['student_id'] : null;
+
+            $prevReading = (float)($request->previous_reading ?? 0);
+            $currReading = $request->filled('current_reading') ? (float)$request->current_reading : $prevReading;
+            $units = $request->filled('units_consumed') 
+                ? (float)$request->units_consumed 
+                : max(0, round($currReading - $prevReading, 2));
+            $rate = $request->filled('unit_rate') ? (float)$request->unit_rate : 10.0;
+
+            // Save / Update official ElectricityReading for this room & month
+            ElectricityReading::updateOrCreate(
+                [
+                    'room_id' => $room->id,
+                    'reading_month' => $validated['billing_month'],
+                ],
+                [
+                    'branch_id' => $room->branch_id,
+                    'student_id' => $primaryStudentId ?? ($room->students()->first()?->id ?? 1),
+                    'previous_reading' => $prevReading,
+                    'current_reading' => $currReading,
+                    'units_consumed' => $units,
+                    'unit_rate' => $rate,
+                    'total_amount' => (float)$validated['total_bill'],
+                    'meter_photo_path' => $meterPhotoPath ?? 'uploads/meter/room_reading.jpg',
+                    'status' => 'APPROVED',
+                    'audited_by' => Auth::id(),
+                ]
+            );
+
             foreach ($validated['splits'] as $split) {
                 $amount = (float)$split['amount'];
                 if ($amount <= 0) continue;
@@ -1725,23 +1919,12 @@ class SubAdminController extends Controller
                         'payment_date' => now()->toDateString(),
                         'due_date' => now()->addDays(7)->toDateString(),
                         'status' => 'PENDING',
-                        'verification_remarks' => "Room {$room->room_number} Light Bill Pro-Rata Share ({$validated['billing_month']}) - {$daysActive} active days: ₹" . number_format($amount),
+                        'verification_remarks' => "Room {$room->room_number} Light Bill ({$validated['billing_month']}) - {$units} units @ ₹{$rate}/u, {$daysActive} days stay share: ₹" . number_format($amount),
                     ]
                 );
 
                 $createdPayments[] = $payment;
             }
-
-            // Also mark any room-level electricity reading for this month as APPROVED
-            ElectricityReading::where('room_id', $room->id)
-                ->where(function($q) use ($validated) {
-                    $q->where('reading_month', $validated['billing_month'])
-                      ->orWhere('reading_month', 'like', '%' . $validated['billing_month'] . '%');
-                })
-                ->update([
-                    'status' => 'APPROVED',
-                    'audited_by' => Auth::id(),
-                ]);
         });
 
         AuditLog::create([
