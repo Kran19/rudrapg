@@ -44,6 +44,12 @@ class StudentRepository {
         final data = response.data;
         final studentData = data['student'] ?? data['data'] ?? data;
         
+        final monthlyRent = double.tryParse((studentData['bed']?['monthly_rent'] ?? studentData['monthly_rent'])?.toString() ?? '0') ?? 0;
+        final amountLeft = double.tryParse((studentData['amount_left'] ?? studentData['rent_balance_due'])?.toString() ?? '0') ?? 0;
+        final totalRentDue = double.tryParse(studentData['total_rent_due']?.toString() ?? '') ?? monthlyRent;
+        final amountPaid = double.tryParse(studentData['amount_paid']?.toString() ?? '') ?? (monthlyRent > amountLeft ? (monthlyRent - amountLeft) : 0);
+        final rentStatusDisplay = studentData['rent_status_display']?.toString() ?? '';
+
         return ResidentModel(
           id: studentData['id']?.toString() ?? '',
           fullName: studentData['full_name'] ?? studentData['name'] ?? '',
@@ -61,10 +67,14 @@ class StudentRepository {
           roomNumber: studentData['room']?['room_number'] ?? studentData['bed']?['room']?['room_number'] ?? 'N/A',
           bedCode: studentData['bed']?['bed_code'] ?? 'N/A',
           sharingType: studentData['room']?['sharing_type'] ?? 'N/A',
-          monthlyRent: double.tryParse((studentData['bed']?['monthly_rent'] ?? studentData['monthly_rent'])?.toString() ?? '0') ?? 0,
+          monthlyRent: monthlyRent,
           securityDeposit: double.tryParse((studentData['bed']?['security_deposit'] ?? studentData['deposit_amount'])?.toString() ?? '0') ?? 0,
+          amountLeft: amountLeft,
+          totalRentDue: totalRentDue,
+          amountPaid: amountPaid,
           joiningDate: studentData['joining_date'] ?? 'N/A',
           rentStatus: studentData['rent_status'] ?? 'N/A',
+          rentStatusDisplay: rentStatusDisplay,
           depositStatus: studentData['deposit_status'] ?? 'N/A',
           kycStatus: studentData['kyc_status'] ?? 'N/A',
           status: studentData['status'] ?? 'PENDING_APPROVAL',

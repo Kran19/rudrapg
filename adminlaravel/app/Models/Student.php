@@ -28,13 +28,31 @@ class Student extends Model
         'joining_date',
         'kyc_status',
         'rent_status',
+        'rent_balance_due',
         'deposit_status',
+        'deposit_balance_due',
         'status',
     ];
 
     protected $casts = [
         'joining_date' => 'date',
+        'rent_balance_due' => 'float',
+        'deposit_balance_due' => 'float',
     ];
+
+    public function getEffectiveRentDueAttribute(): float
+    {
+        if ((float)($this->rent_balance_due ?? 0) > 0) {
+            return (float) $this->rent_balance_due;
+        }
+        if (strtoupper($this->rent_status ?? '') === 'DUE' && $this->bed) {
+            return (float) ($this->bed->monthly_rent ?? 0);
+        }
+        if (strtoupper($this->rent_status ?? '') === 'PAID') {
+            return 0.0;
+        }
+        return (float) ($this->rent_balance_due ?? 0);
+    }
 
     public function user()
     {

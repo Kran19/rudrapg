@@ -9,6 +9,17 @@ class StudentResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $monthlyRent = (float)($this->bed?->monthly_rent ?? 0);
+        $rentBalance = (float)$this->effective_rent_due;
+        $isPartiallyPaid = strtoupper($this->rent_status ?? '') === 'PARTIALLY_PAID' || ($rentBalance > 0 && $rentBalance < $monthlyRent);
+        $amountPaid = max(0, $monthlyRent - $rentBalance);
+
+        $rentStatusDisplay = $isPartiallyPaid
+            ? 'Partially Paid (₹' . number_format($rentBalance) . ' Left)'
+            : (strtoupper($this->rent_status ?? '') === 'PAID'
+                ? 'Paid'
+                : (strtoupper($this->rent_status ?? '') === 'UNDER_VERIFICATION' ? 'Under Verification' : 'Due'));
+
         return [
             'id' => $this->id,
             'app_reference' => $this->app_reference,
@@ -24,12 +35,19 @@ class StudentResource extends JsonResource
             'joining_date' => $this->joining_date?->format('d M Y'),
             'kyc_status' => $this->kyc_status ?? 'PENDING',
             'rent_status' => $this->rent_status ?? 'NOT_APPLICABLE',
+            'rent_status_display' => $rentStatusDisplay,
+            'rent_balance_due' => $rentBalance,
+            'amount_left' => $rentBalance,
+            'total_rent_due' => $monthlyRent,
+            'amount_paid' => $amountPaid,
+            'is_partially_paid' => $isPartiallyPaid,
             'deposit_status' => $this->deposit_status ?? 'NOT_APPLICABLE',
+            'deposit_balance_due' => (float)($this->deposit_balance_due ?? 0),
             'status' => $this->status ?? 'PENDING_APPROVAL',
             'is_kyc_approved' => in_array(strtoupper($this->kyc_status ?? ''), ['APPROVED', 'VERIFIED']) || in_array(strtoupper($this->status ?? ''), ['KYC_APPROVED', 'BED_ALLOCATED', 'APPROVED']),
             'is_room_assigned' => !is_null($this->bed_id),
             'is_bed_assigned' => !is_null($this->bed_id),
-            'is_payment_submitted' => in_array(strtoupper($this->rent_status ?? ''), ['UNDER_VERIFICATION', 'PAID']),
+            'is_payment_submitted' => in_array(strtoupper($this->rent_status ?? ''), ['UNDER_VERIFICATION', 'PAID', 'PARTIALLY_PAID']),
             'is_fully_approved' => strtoupper($this->status ?? '') === 'APPROVED' && strtoupper($this->rent_status ?? '') === 'PAID',
             'allocation_status' => is_null($this->bed_id) ? 'PENDING_ROOM_ALLOCATION' : 'ROOM_ALLOCATED',
             'branch' => new BranchResource($this->whenLoaded('branch')),

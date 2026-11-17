@@ -622,8 +622,11 @@ class SubAdminController extends Controller
                     'student_phone' => $student ? $student->phone : null,
                     'student_email' => $student ? ($student->email ?? 'N/A') : null,
                     'student_app_ref' => $student ? ($student->app_reference ?? 'REG-'.str_pad($student->id, 4, '0', STR_PAD_LEFT)) : null,
+                    'student_id' => $student ? $student->id : null,
                     'student_kyc' => $student ? ($student->kyc_status ?? 'VERIFIED') : 'VERIFIED',
                     'student_rent_status' => $student ? ($student->rent_status ?? 'PAID') : 'PAID',
+                    'student_rent_balance' => $student ? (float)$student->effective_rent_due : 0,
+                    'student_amount_left' => $student ? (float)$student->effective_rent_due : 0,
                     'student_admission_date' => $joiningDateFormatted,
                     'student_emergency_contact' => $student ? ($student->emergency_contact ?? $student->parent_phone ?? 'N/A') : null,
                     'student_parent_name' => $student ? ($student->parent_name ?? 'N/A') : null,
@@ -758,7 +761,7 @@ class SubAdminController extends Controller
         $branch = $this->getActiveBranch();
         $branchIds = $this->getAuthorizedBranchIds();
 
-        $duesData = Payment::with(['student', 'branch', 'proof'])
+        $duesData = Payment::with(['student.room', 'student.bed', 'branch', 'proof'])
             ->where(function($q) use ($branch, $branchIds) {
                 if ($branch) {
                     $q->where('branch_id', $branch->id);
@@ -769,16 +772,37 @@ class SubAdminController extends Controller
             ->latest()
             ->get()
             ->map(function ($payment) {
+                $totalDue = $payment->total_due !== null ? (float)$payment->total_due : (float)$payment->amount;
+                $amountPaid = (float)$payment->amount;
+                $remainingAmount = (float)($payment->remaining_amount ?? 0);
+                $isPartial = $payment->status === 'PARTIALLY_PAID' || ($remainingAmount > 0 && $payment->status !== 'REJECTED');
+
+                $statusLabel = 'Pending Verification';
+                if ($payment->status === 'VERIFIED' || $payment->status === 'PAID') {
+                    $statusLabel = 'Paid';
+                } elseif ($isPartial) {
+                    $statusLabel = 'Partially Paid (₹' . number_format($remainingAmount) . ' Left)';
+                } elseif ($payment->status === 'REJECTED') {
+                    $statusLabel = 'Rejected';
+                }
+
                 return [
                     'id' => $payment->id,
                     'resident_id' => $payment->student ? $payment->student->app_reference : 'N/A',
+                    'student_id' => $payment->student_id,
                     'student_name' => $payment->student ? $payment->student->full_name : 'Resident',
                     'room' => $payment->student && $payment->student->room ? $payment->student->room->room_number.' ('.($payment->student->bed ? $payment->student->bed->bed_code : 'Unassigned').')' : 'Unassigned',
-                    'rent' => '₹'.number_format($payment->amount),
-                    'amount' => $payment->amount,
+                    'rent' => '₹'.number_format($amountPaid),
+                    'amount' => $amountPaid,
+                    'total_due' => $totalDue,
+                    'formatted_total' => '₹'.number_format($totalDue),
+                    'remaining_amount' => $remainingAmount,
+                    'amount_left' => $remainingAmount,
+                    'formatted_left' => '₹'.number_format($remainingAmount),
+                    'is_partial' => $isPartial,
                     'due_date' => $payment->due_date ? $payment->due_date->format('d M Y') : 'N/A',
                     'raw_due_date' => $payment->due_date ? $payment->due_date->toDateString() : '',
-                    'status' => $payment->status == 'VERIFIED' ? 'Paid' : ($payment->status == 'PENDING' ? 'Pending Verification' : $payment->status),
+                    'status' => $statusLabel,
                     'raw_status' => $payment->status,
                     'payment_mode' => $payment->payment_mode ?? 'UPI Transfer',
                     'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
@@ -794,7 +818,23 @@ class SubAdminController extends Controller
                     $q->whereIn('branch_id', $branchIds);
                 }
             })
-            ->get();
+            ->get()
+            ->map(function ($st) {
+                $monthlyRent = (float)($st->bed?->monthly_rent ?? 0);
+                $balanceDue = (float)$st->effective_rent_due;
+                return [
+                    'id' => $st->id,
+                    'full_name' => $st->full_name,
+                    'app_reference' => $st->app_reference,
+                    'room_number' => $st->room ? $st->room->room_number : 'Unassigned',
+                    'bed_code' => $st->bed ? $st->bed->bed_code : 'Unassigned',
+                    'monthly_rent' => $monthlyRent,
+                    'security_deposit' => (float)($st->bed?->security_deposit ?? 0),
+                    'rent_status' => $st->rent_status ?? 'DUE',
+                    'rent_balance_due' => $balanceDue,
+                    'amount_left' => $balanceDue,
+                ];
+            });
 
         return view('sub_admin.rent_ledger', [
             'dues' => $duesData,
@@ -808,38 +848,80 @@ class SubAdminController extends Controller
     {
         $validated = $request->validate([
             'student_id' => ['required', 'exists:students,id'],
-            'payment_type' => ['required', 'string'],
+            'payment_type' => ['required', 'string', 'in:RENT,DEPOSIT,ELECTRICITY,OTHER'],
             'amount' => ['required', 'numeric', 'min:1'],
+            'total_due' => ['nullable', 'numeric', 'min:0'],
+            'remaining_amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_mode' => ['nullable', 'string', 'in:CASH,UPI,BANK_TRANSFER,CHEQUE'],
+            'payment_date' => ['nullable', 'date'],
             'remarks' => ['nullable', 'string'],
         ]);
 
-        $student = Student::findOrFail($validated['student_id']);
+        $student = Student::with(['room', 'bed'])->findOrFail($validated['student_id']);
+        $amountPaid = (float) $validated['amount'];
 
-        DB::transaction(function () use ($validated, $student) {
+        // Determine total expected bill/due
+        if (isset($validated['total_due']) && (float)$validated['total_due'] > 0) {
+            $totalDue = (float) $validated['total_due'];
+        } elseif ($validated['payment_type'] === 'RENT') {
+            $totalDue = (float) ($student->bed?->monthly_rent ?? $amountPaid);
+        } elseif ($validated['payment_type'] === 'DEPOSIT') {
+            $totalDue = (float) ($student->bed?->security_deposit ?? $amountPaid);
+        } else {
+            $totalDue = $amountPaid;
+        }
+
+        // Determine remaining balance left
+        if (isset($validated['remaining_amount']) && is_numeric($validated['remaining_amount'])) {
+            $remainingAmount = max(0, (float)$validated['remaining_amount']);
+        } else {
+            $remainingAmount = max(0, $totalDue - $amountPaid);
+        }
+
+        $status = $remainingAmount <= 0 ? 'PAID' : 'PARTIALLY_PAID';
+        $paymentMode = $validated['payment_mode'] ?? 'CASH';
+
+        DB::transaction(function () use ($validated, $student, $amountPaid, $totalDue, $remainingAmount, $status, $paymentMode) {
             $payment = Payment::create([
                 'tx_reference' => 'PAY-'.date('Y').'-'.rand(1000, 9999),
                 'student_id' => $student->id,
                 'branch_id' => $student->branch_id,
                 'payment_type' => $validated['payment_type'],
-                'amount' => $validated['amount'],
-                'payment_mode' => 'CASH',
-                'payment_date' => now()->toDateString(),
-                'status' => 'PAID',
+                'amount' => $amountPaid,
+                'total_due' => $totalDue,
+                'remaining_amount' => $remainingAmount,
+                'payment_mode' => $paymentMode,
+                'payment_date' => $validated['payment_date'] ?? now()->toDateString(),
+                'status' => $status,
                 'paid_at' => now(),
+                'verification_remarks' => $validated['remarks'] ?? null,
             ]);
 
             PaymentProof::create([
                 'payment_id' => $payment->id,
-                'utr_number' => 'CASH/'.rand(100000000000, 999999999999),
+                'utr_number' => ($paymentMode === 'CASH' ? 'CASH/' : 'MANUAL/') . rand(100000000000, 999999999999),
                 'screenshot_path' => 'uploads/proofs/cash_receipt.png',
                 'status' => 'VERIFIED',
                 'verified_by' => Auth::id(),
+                'verified_at' => now(),
             ]);
+
+            if ($validated['payment_type'] === 'RENT') {
+                $student->update([
+                    'rent_status' => $status,
+                    'rent_balance_due' => $remainingAmount,
+                ]);
+            } elseif ($validated['payment_type'] === 'DEPOSIT') {
+                $student->update([
+                    'deposit_status' => $remainingAmount <= 0 ? 'VERIFIED' : 'PARTIALLY_PAID',
+                    'deposit_balance_due' => $remainingAmount,
+                ]);
+            }
         });
 
         AuditLog::create([
             'user_id' => Auth::id(),
-            'action' => 'Recorded Cash Payment ₹'.$validated['amount'].' for '.$student->full_name,
+            'action' => 'Recorded Manual Payment: Paid ₹'.$amountPaid.', Left ₹'.$remainingAmount.' of Total ₹'.$totalDue.' for '.$student->full_name,
             'module' => 'FINANCE',
             'record_id' => $student->id,
             'ip_address' => $request->ip(),
@@ -847,7 +929,7 @@ class SubAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Offline cash payment receipt generated successfully!',
+            'message' => 'Payment receipt recorded successfully! Paid: ₹'.number_format($amountPaid).' • Remaining Left: ₹'.number_format($remainingAmount),
         ]);
     }
 
@@ -859,8 +941,11 @@ class SubAdminController extends Controller
         }
 
         DB::transaction(function () use ($payment) {
+            $isPartial = (float)($payment->remaining_amount ?? 0) > 0;
+            $newStatus = $isPartial ? 'PARTIALLY_PAID' : 'VERIFIED';
+
             $payment->update([
-                'status' => 'VERIFIED',
+                'status' => $newStatus,
                 'paid_at' => now(),
             ]);
 
@@ -868,12 +953,14 @@ class SubAdminController extends Controller
                 $payment->proof->update([
                     'status' => 'VERIFIED',
                     'verified_by' => Auth::id(),
+                    'verified_at' => now(),
                 ]);
             }
 
             if ($student = $payment->student) {
                 $student->update([
-                    'rent_status' => 'PAID',
+                    'rent_status' => $isPartial ? 'PARTIALLY_PAID' : 'PAID',
+                    'rent_balance_due' => (float)($payment->remaining_amount ?? 0),
                 ]);
             }
         });
@@ -913,8 +1000,10 @@ class SubAdminController extends Controller
             }
 
             if ($student = $payment->student) {
+                $student->load('bed');
                 $student->update([
                     'rent_status' => 'DUE',
+                    'rent_balance_due' => (float)($student->bed?->monthly_rent ?? 0),
                 ]);
             }
         });
@@ -939,39 +1028,58 @@ class SubAdminController extends Controller
 
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:0'],
+            'total_due' => ['nullable', 'numeric', 'min:0'],
+            'remaining_amount' => ['nullable', 'numeric', 'min:0'],
             'due_date' => ['nullable', 'date'],
             'payment_mode' => ['required', 'string'],
             'utr' => ['nullable', 'string'],
-            'status' => ['required', 'string', 'in:PENDING,PAID,VERIFIED'],
+            'status' => ['required', 'string', 'in:PENDING,PAID,VERIFIED,PARTIALLY_PAID,REJECTED'],
         ]);
 
-        DB::transaction(function () use ($payment, $validated) {
+        $amount = (float)$validated['amount'];
+        $totalDue = isset($validated['total_due']) && (float)$validated['total_due'] > 0 
+            ? (float)$validated['total_due'] 
+            : (float)($payment->total_due ?? $amount);
+
+        $remainingAmount = isset($validated['remaining_amount']) 
+            ? max(0, (float)$validated['remaining_amount']) 
+            : max(0, $totalDue - $amount);
+
+        $finalStatus = $validated['status'];
+        if (in_array($finalStatus, ['PAID', 'VERIFIED']) && $remainingAmount > 0) {
+            $finalStatus = 'PARTIALLY_PAID';
+        }
+
+        DB::transaction(function () use ($payment, $validated, $amount, $totalDue, $remainingAmount, $finalStatus) {
             $payment->update([
-                'amount' => $validated['amount'],
+                'amount' => $amount,
+                'total_due' => $totalDue,
+                'remaining_amount' => $remainingAmount,
                 'due_date' => $validated['due_date'],
                 'payment_mode' => $validated['payment_mode'],
-                'status' => $validated['status'],
-                'paid_at' => ($validated['status'] === 'VERIFIED' || $validated['status'] === 'PAID') ? ($payment->paid_at ?? now()) : null,
+                'status' => $finalStatus,
+                'paid_at' => in_array($finalStatus, ['VERIFIED', 'PAID', 'PARTIALLY_PAID']) ? ($payment->paid_at ?? now()) : null,
             ]);
 
             if ($payment->proof) {
                 $payment->proof->update([
                     'utr_number' => $validated['utr'],
-                    'status' => $validated['status'] === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
+                    'status' => in_array($finalStatus, ['VERIFIED', 'PAID', 'PARTIALLY_PAID']) ? 'VERIFIED' : 'PENDING',
                 ]);
             } else if ($validated['utr']) {
                 PaymentProof::create([
                     'payment_id' => $payment->id,
                     'utr_number' => $validated['utr'],
                     'screenshot_path' => 'uploads/proofs/cash_receipt.png',
-                    'status' => $validated['status'] === 'VERIFIED' ? 'VERIFIED' : 'PENDING',
-                    'verified_by' => $validated['status'] === 'VERIFIED' ? Auth::id() : null,
+                    'status' => in_array($finalStatus, ['VERIFIED', 'PAID', 'PARTIALLY_PAID']) ? 'VERIFIED' : 'PENDING',
+                    'verified_by' => in_array($finalStatus, ['VERIFIED', 'PAID', 'PARTIALLY_PAID']) ? Auth::id() : null,
                 ]);
             }
 
             if ($student = $payment->student) {
                 $student->update([
-                    'rent_status' => $validated['status'] === 'VERIFIED' ? 'PAID' : 'PENDING',
+                    'rent_status' => $finalStatus === 'PARTIALLY_PAID' ? 'PARTIALLY_PAID' : (in_array($finalStatus, ['PAID', 'VERIFIED']) ? 'PAID' : 'DUE'),
+                    'rent_balance_due' => $remainingAmount,
                 ]);
             }
         });

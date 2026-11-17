@@ -232,13 +232,13 @@
                                     <h3 class="text-base font-bold text-slate-900 dark:text-white truncate" x-text="selectedBed.student_name"></h3>
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300" x-text="selectedBed.student_app_ref"></span>
                                 </div>
-                                <div class="flex items-center gap-2 mt-1.5 text-xs">
+                                <div class="flex items-center gap-2 mt-1.5 text-xs flex-wrap">
                                     <span class="px-2 py-0.5 rounded-md font-bold text-[10px]"
                                           :class="selectedBed.student_kyc === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'"
                                           x-text="'KYC: ' + (selectedBed.student_kyc || 'VERIFIED')"></span>
                                     <span class="px-2 py-0.5 rounded-md font-bold text-[10px]"
-                                          :class="selectedBed.student_rent_status === 'PAID' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300'"
-                                          x-text="'Rent: ' + (selectedBed.student_rent_status || 'PAID')"></span>
+                                          :class="selectedBed.student_rent_status === 'PAID' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : (selectedBed.student_rent_status === 'PARTIALLY_PAID' || selectedBed.student_rent_balance > 0 ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300')"
+                                          x-text="selectedBed.student_rent_status === 'PAID' ? 'Rent: PAID' : (selectedBed.student_rent_status === 'PARTIALLY_PAID' || selectedBed.student_rent_balance > 0 ? 'Rent: PARTIAL (₹' + Number(selectedBed.student_rent_balance || 0).toLocaleString() + ' Left)' : 'Rent: DUE')"></span>
                                 </div>
                             </div>
                         </div>
@@ -275,6 +275,12 @@
                                 <span class="text-slate-500 font-medium">Monthly Rent:</span>
                                 <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="'₹' + Number(selectedBed.monthly_rent || 0).toLocaleString()"></span>
                             </div>
+                            <template x-if="selectedBed.student_rent_balance > 0">
+                                <div class="flex justify-between py-1 border-b border-slate-200/60 dark:border-slate-700/60 bg-amber-50/70 dark:bg-amber-950/30 px-2 rounded-lg">
+                                    <span class="text-amber-700 dark:text-amber-300 font-bold">Rent Left / Due:</span>
+                                    <span class="font-black text-amber-600 dark:text-amber-400" x-text="'₹' + Number(selectedBed.student_rent_balance).toLocaleString()"></span>
+                                </div>
+                            </template>
                             <div class="flex justify-between py-1 border-b border-slate-200/60 dark:border-slate-700/60">
                                 <span class="text-slate-500 font-medium">Security Deposit:</span>
                                 <span class="font-bold text-blue-600 dark:text-blue-400" x-text="'₹' + Number(selectedBed.security_deposit || 0).toLocaleString()"></span>
@@ -291,6 +297,14 @@
                                 <span class="text-slate-500 font-medium">Address:</span>
                                 <span class="font-medium text-slate-900 dark:text-slate-100 text-right max-w-[250px] truncate" :title="selectedBed.student_address" x-text="selectedBed.student_address || 'N/A'"></span>
                             </div>
+                        </div>
+
+                        <!-- Direct Record Payment Button -->
+                        <div class="flex items-center justify-end gap-2 pt-1">
+                            <a :href="'{{ route('sub_admin.rent_ledger') }}?student_id=' + selectedBed.student_id" 
+                               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors">
+                                <i class="fa-solid fa-money-bill-wave"></i> Record Manual / Partial Payment
+                            </a>
                         </div>
                     </div>
                 </template>

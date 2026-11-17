@@ -145,34 +145,41 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     data: (resident) {
                       final bool isRoomSet = resident.isRoomAssigned;
                       final bool isPaid = resident.isPaid;
+                      final bool isPartial = resident.isPartiallyPaid && resident.amountLeft > 0;
                       final bool isSubmitted = resident.isPaymentSubmitted;
                       final double totalDue = (isRoomSet && !isPaid)
-                          ? (resident.monthlyRent + resident.securityDeposit)
+                          ? (isPartial ? resident.amountLeft : (resident.monthlyRent + resident.securityDeposit))
                           : 0.0;
 
                       final String badgeText = !isRoomSet
                           ? 'AWAITING BED ALLOCATION'
                           : (isPaid
                               ? '✓ ALL DUES CLEARED'
-                              : (isSubmitted
-                                  ? 'UNDER AUDIT ⏳'
-                                  : '! DUES PENDING'));
+                              : (isPartial
+                                  ? 'PARTIALLY PAID: ₹${resident.amountLeft.toInt()} LEFT'
+                                  : (isSubmitted
+                                      ? 'UNDER AUDIT ⏳'
+                                      : '! DUES PENDING')));
 
                       final Color badgeColor = !isRoomSet
                           ? Colors.white70
                           : (isPaid
                               ? AppColors.success
-                              : (isSubmitted
-                                  ? AppColors.accent
-                                  : AppColors.warning));
+                              : (isPartial
+                                  ? AppColors.warning
+                                  : (isSubmitted
+                                      ? AppColors.accent
+                                      : AppColors.warning)));
 
                       final String subtitleText = !isRoomSet
                           ? 'Your room & bed have not been assigned yet. Dues will be calculated once sub-admin allocates your bed.'
                           : (isPaid
                               ? 'All rent and security deposit dues are completely cleared.'
-                              : (isSubmitted
-                                  ? 'Your payment proof has been submitted and is currently being audited by the branch manager.'
-                                  : 'Initial admission payment: Rent ₹${resident.monthlyRent.toInt()} + Deposit ₹${resident.securityDeposit.toInt()}.'));
+                              : (isPartial
+                                  ? 'Deposit/Partial payment: ₹${resident.amountPaid.toInt()} paid. Remaining amount left: ₹${resident.amountLeft.toInt()}.'
+                                  : (isSubmitted
+                                      ? 'Your payment proof has been submitted and is currently being audited by the branch manager.'
+                                      : 'Initial admission payment: Rent ₹${resident.monthlyRent.toInt()} + Deposit ₹${resident.securityDeposit.toInt()}.')));
 
                       return Column(
                         children: [
@@ -241,9 +248,21 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                           Expanded(
                             child: _buildBreakdownCard(
                               title: 'Monthly Rent',
-                              amount: isRoomSet ? '₹${resident.monthlyRent.toInt()}' : 'Pending',
-                              status: isPaid ? 'Paid' : (isSubmitted ? 'Verifying' : (isRoomSet ? 'Due' : 'Not Set')),
-                              color: isPaid ? AppColors.success : (isSubmitted ? AppColors.accent : (isRoomSet ? AppColors.warning : Colors.grey)),
+                              amount: isRoomSet
+                                  ? (isPartial
+                                      ? '₹${resident.amountLeft.toInt()} Left'
+                                      : '₹${resident.monthlyRent.toInt()}')
+                                  : 'Pending',
+                              status: isPaid
+                                  ? 'Paid'
+                                  : (isPartial
+                                      ? 'Partially Paid'
+                                      : (isSubmitted ? 'Verifying' : (isRoomSet ? 'Due' : 'Not Set'))),
+                              color: isPaid
+                                  ? AppColors.success
+                                  : (isPartial
+                                      ? AppColors.warning
+                                      : (isSubmitted ? AppColors.accent : (isRoomSet ? AppColors.warning : Colors.grey))),
                               icon: Icons.home_rounded,
                             ),
                           ),

@@ -15,6 +15,8 @@ class Payment extends Model
         'tx_reference',
         'payment_type',
         'amount',
+        'total_due',
+        'remaining_amount',
         'payment_mode',
         'payment_date',
         'due_date',
@@ -26,10 +28,17 @@ class Payment extends Model
 
     protected $casts = [
         'amount' => 'float',
+        'total_due' => 'float',
+        'remaining_amount' => 'float',
         'payment_date' => 'date',
         'due_date' => 'date',
         'paid_at' => 'datetime',
     ];
+
+    public function getIsPartialAttribute(): bool
+    {
+        return (float)($this->remaining_amount ?? 0) > 0;
+    }
 
     public function student()
     {

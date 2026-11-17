@@ -132,6 +132,7 @@
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Rent Status</label>
                     <select name="rent_status" required x-model="editForm.raw_rent_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
                         <option value="PENDING">PENDING</option>
+                        <option value="PARTIALLY_PAID">PARTIALLY PAID</option>
                         <option value="PAID">PAID</option>
                         <option value="OVERDUE">OVERDUE</option>
                     </select>
@@ -288,8 +289,10 @@
                 return '<span class="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full">' + (val ? val.replace('_', ' ') : 'Pending') + '</span>';
             }},
             {title: "Rent Status", field: "rent_status", minWidth: 120, formatter: function(cell){
-                if (cell.getValue() == "PAID" || cell.getValue() == "Paid") return '<span class="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Paid</span>';
-                if (cell.getValue() == "PENDING" || cell.getValue() == "Pending") return '<span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
+                var val = (cell.getValue() || '').toUpperCase();
+                if (val === "PAID") return '<span class="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Paid</span>';
+                if (val === "PARTIALLY_PAID" || val.includes("PARTIAL")) return '<span class="bg-amber-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Partially Paid</span>';
+                if (val === "PENDING" || val === "UNDER_VERIFICATION") return '<span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">Pending</span>';
                 return '<span class="bg-rose-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">Overdue</span>';
             }},
             {title: "Actions", field: "id", minWidth: 220, formatter: function(cell){

@@ -92,12 +92,19 @@ class StudentService
         return DB::transaction(function () use ($student, $data) {
             $txRef = 'PAY-'.date('Y').'-'.rand(1000, 9999);
 
+            $expectedTotal = $student->bed ? ($student->bed->monthly_rent + $student->bed->security_deposit) : 6500.00;
+            $amount = isset($data['amount']) ? (float)$data['amount'] : (float)$expectedTotal;
+            $totalDue = isset($data['total_due']) ? (float)$data['total_due'] : (float)$expectedTotal;
+            $remainingAmount = max(0, $totalDue - $amount);
+
             $payment = Payment::create([
                 'student_id' => $student->id,
                 'branch_id' => $student->branch_id,
                 'tx_reference' => $txRef,
                 'payment_type' => $data['payment_type'] ?? 'RENT_AND_DEPOSIT',
-                'amount' => $data['amount'] ?? ($student->bed ? ($student->bed->monthly_rent + $student->bed->security_deposit) : 6500.00),
+                'amount' => $amount,
+                'total_due' => $totalDue,
+                'remaining_amount' => $remainingAmount,
                 'payment_mode' => 'UPI',
                 'payment_date' => now()->toDateString(),
                 'status' => 'PENDING',

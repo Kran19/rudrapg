@@ -183,12 +183,20 @@ class HomeDashboardScreen extends ConsumerWidget {
                           children: [
                             _buildStatusColumn(
                               label: 'Rent Payment',
-                              value: resident.isRoomAssigned ? resident.rentStatus : 'Not Applicable',
+                              value: !resident.isRoomAssigned
+                                  ? 'Not Applicable'
+                                  : (resident.isPaid
+                                      ? 'Paid'
+                                      : (resident.isPartiallyPaid && resident.amountLeft > 0
+                                          ? '₹${resident.amountLeft.toInt()} Left'
+                                          : resident.rentStatus)),
                               color: resident.isPaid
                                   ? AppColors.success
-                                  : (resident.isPaymentSubmitted
-                                      ? AppColors.accent
-                                      : (resident.isRoomAssigned ? AppColors.warning : Colors.white60)),
+                                  : (resident.isPartiallyPaid && resident.amountLeft > 0
+                                      ? AppColors.warning
+                                      : (resident.isPaymentSubmitted
+                                          ? AppColors.accent
+                                          : (resident.isRoomAssigned ? AppColors.warning : Colors.white60))),
                             ),
                             _buildStatusColumn(
                               label: 'Deposit Status',
@@ -207,7 +215,62 @@ class HomeDashboardScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Active Partial Payment Alert Banner
+                  if (resident.isPartiallyPaid && resident.amountLeft > 0) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.amber.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade100,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.account_balance_wallet_rounded, color: Colors.amber.shade900, size: 20),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Partial Payment Active',
+                                  style: AppTypography.titleSmall.copyWith(color: Colors.amber.shade900, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Paid: ₹${resident.amountPaid.toInt()} • Left: ₹${resident.amountLeft.toInt()}',
+                                  style: AppTypography.bodySmall.copyWith(color: Colors.amber.shade900),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade200,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '₹${resident.amountLeft.toInt()} Left',
+                              style: AppTypography.caption.copyWith(color: Colors.amber.shade900, fontWeight: FontWeight.w900),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
 
                   // Real-Time Onboarding Milestone Tracker (Always visible during onboarding)
                   if (!resident.isFullyApproved) ...[

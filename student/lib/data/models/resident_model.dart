@@ -18,9 +18,13 @@ class ResidentModel {
   final String sharingType;
   final double monthlyRent;
   final double securityDeposit;
+  final double amountLeft;
+  final double totalRentDue;
+  final double amountPaid;
   final String joiningDate;
   final String kycStatus;
   final String rentStatus;
+  final String rentStatusDisplay;
   final String depositStatus;
   final String status;
   final String emergencyContactName;
@@ -46,9 +50,13 @@ class ResidentModel {
     required this.sharingType,
     required this.monthlyRent,
     required this.securityDeposit,
+    this.amountLeft = 0,
+    this.totalRentDue = 0,
+    this.amountPaid = 0,
     required this.joiningDate,
     this.kycStatus = 'Pending',
     this.rentStatus = 'Due',
+    this.rentStatusDisplay = '',
     this.depositStatus = 'Pending',
     this.status = 'PENDING_APPROVAL',
     this.emergencyContactName = '',
@@ -71,13 +79,17 @@ class ResidentModel {
       status.toUpperCase() == 'BED_ALLOCATED' ||
       status.toUpperCase() == 'APPROVED';
 
+  bool get isPartiallyPaid =>
+      rentStatus.toUpperCase() == 'PARTIALLY_PAID' ||
+      (amountLeft > 0 && isRoomAssigned && rentStatus.toUpperCase() != 'DUE');
+
   bool get isPaymentSubmitted =>
       rentStatus.toUpperCase() == 'UNDER_VERIFICATION' ||
       depositStatus.toUpperCase() == 'UNDER_VERIFICATION';
 
   bool get isPaid =>
-      rentStatus.toUpperCase() == 'PAID' ||
-      (status.toUpperCase() == 'APPROVED' && rentStatus.toUpperCase() != 'DUE');
+      (rentStatus.toUpperCase() == 'PAID' && amountLeft <= 0) ||
+      (status.toUpperCase() == 'APPROVED' && rentStatus.toUpperCase() != 'DUE' && amountLeft <= 0);
 
   bool get isFullyApproved =>
       status.toUpperCase() == 'APPROVED' && isPaid;

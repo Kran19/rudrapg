@@ -777,6 +777,8 @@ class SuperAdminController extends Controller
                             'security_deposit' => (int) $bed->security_deposit,
                             'kyc_status' => $student->kyc_status ?? 'VERIFIED',
                             'rent_status' => $student->rent_status ?? 'PAID',
+                            'rent_balance_due' => (float)$student->effective_rent_due,
+                            'amount_left' => (float)$student->effective_rent_due,
                             'status' => $student->status ?? 'ACTIVE',
                             'parent_name' => $student->parent_name ?? 'N/A',
                             'parent_phone' => $student->parent_phone ?? 'N/A',

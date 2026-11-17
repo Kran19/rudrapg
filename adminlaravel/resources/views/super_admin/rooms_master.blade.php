@@ -235,8 +235,8 @@
                                       :class="activeResident.kyc_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'"
                                       x-text="'KYC: ' + activeResident.kyc_status"></span>
                                 <span class="px-2 py-0.5 rounded-md font-bold text-[10px]"
-                                      :class="activeResident.rent_status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
-                                      x-text="'Rent: ' + activeResident.rent_status"></span>
+                                      :class="activeResident.rent_status === 'PAID' ? 'bg-emerald-100 text-emerald-800' : (activeResident.rent_status === 'PARTIALLY_PAID' || activeResident.rent_balance_due > 0 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')"
+                                      x-text="activeResident.rent_status === 'PAID' ? 'Rent: PAID' : (activeResident.rent_status === 'PARTIALLY_PAID' || activeResident.rent_balance_due > 0 ? 'Rent: PARTIAL (₹' + Number(activeResident.rent_balance_due || 0).toLocaleString() + ' Left)' : 'Rent: ' + activeResident.rent_status)"></span>
                             </div>
                         </div>
                     </div>
