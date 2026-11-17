@@ -611,10 +611,115 @@
             return;
         }
 
-        if (!confirm("Are you sure you want to push these light bills to all " + splits.length + " residents in Room " + currentSplitData.room.room_number + "?\n\nTotal Sum: ₹" + total.toLocaleString() + "\nThis will record the room meter reading and create official pending dues on each student's portal.")) {
-            return;
+        var prev = document.getElementById("sp-prev-reading").value;
+        var curr = document.getElementById("sp-curr-reading").value;
+        var rate = document.getElementById("sp-unit-rate").value || "10.00";
+        var units = (curr && prev) ? Math.max(0, Math.round((parseFloat(curr) - parseFloat(prev)) * 100) / 100) : 0;
+
+        // Build per-resident breakdown preview for popup
+        var residentRowsHtml = "";
+        var occupantsMap = {};
+        if (currentSplitData && currentSplitData.occupant_shares) {
+            currentSplitData.occupant_shares.forEach(function(occ) {
+                occupantsMap[occ.student_id] = occ;
+            });
         }
 
+        splits.forEach(function(s) {
+            var occ = occupantsMap[s.student_id];
+            var name = occ ? occ.name : ("Resident #" + s.student_id);
+            var bedCode = occ ? occ.bed_code : "Bed";
+            residentRowsHtml += 
+                '<div class="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xs">' +
+                    '<div class="flex items-center gap-2.5">' +
+                        '<span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-bold text-[10px]">' + bedCode + '</span>' +
+                        '<div>' +
+                            '<div class="font-bold text-slate-900 dark:text-slate-100 text-xs">' + name + '</div>' +
+                            '<div class="text-[10px] text-slate-400">' + s.days_active + ' active days in month</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="font-extrabold text-emerald-600 dark:text-emerald-400 text-xs">' +
+                        '₹' + Number(s.amount).toLocaleString() +
+                    '</div>' +
+                '</div>';
+        });
+
+        var modalHtml = 
+            '<div class="text-left font-sans">' +
+                '<!-- Header -->' +
+                '<div class="flex items-center gap-3 mb-4 p-3 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200/60 dark:border-amber-800/60">' +
+                    '<div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-amber-500/20 shrink-0">' +
+                        '<i class="fa-solid fa-bolt"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<h4 class="text-sm font-bold text-slate-900 dark:text-slate-100">Confirm & Push Light Bills</h4>' +
+                        '<p class="text-xs text-slate-500 dark:text-slate-400">Post fair electricity dues directly to roommates\' accounts</p>' +
+                    '</div>' +
+                '</div>' +
+
+                '<!-- Key Metrics -->' +
+                '<div class="grid grid-cols-2 gap-2.5 mb-4 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">' +
+                    '<div>' +
+                        '<span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Target Room</span>' +
+                        '<p class="font-extrabold text-slate-800 dark:text-slate-200 text-sm mt-0.5">Room ' + currentSplitData.room.room_number + ' (' + splits.length + ' Roommates)</p>' +
+                    '</div>' +
+                    '<div>' +
+                        '<span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Billing Period</span>' +
+                        '<p class="font-extrabold text-slate-800 dark:text-slate-200 text-sm mt-0.5">' + currentSplitData.billing_month + '</p>' +
+                    '</div>' +
+                    '<div>' +
+                        '<span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Sub-Meter Units</span>' +
+                        '<p class="font-bold text-amber-600 dark:text-amber-400 mt-0.5">' + units + ' kWh @ ₹' + rate + '/u</p>' +
+                    '</div>' +
+                    '<div>' +
+                        '<span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Total Room Bill</span>' +
+                        '<p class="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm mt-0.5">₹' + Number(total).toLocaleString() + '</p>' +
+                    '</div>' +
+                '</div>' +
+
+                '<!-- Residents Allocation Preview -->' +
+                '<div class="mb-3.5">' +
+                    '<span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1.5">Residents\' Pro-Rata Bill Shares</span>' +
+                    '<div class="max-h-36 overflow-y-auto space-y-1.5 pr-1">' +
+                        residentRowsHtml +
+                    '</div>' +
+                '</div>' +
+
+                '<!-- Notice -->' +
+                '<div class="p-2.5 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-900/40 text-[11px] text-blue-800 dark:text-blue-300 flex items-start gap-2">' +
+                    '<i class="fa-solid fa-circle-info text-blue-500 mt-0.5 shrink-0"></i>' +
+                    '<span>This will record the room\'s official month-end meter reading and create pending dues on each student\'s portal.</span>' +
+                '</div>' +
+            '</div>';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                html: modalHtml,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa-solid fa-paper-plane mr-1.5"></i> Yes, Push Bills to Students',
+                cancelButtonText: 'Review Details',
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true,
+                width: '490px',
+                customClass: {
+                    popup: 'rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl dark:bg-slate-800 p-5',
+                    confirmButton: 'rounded-xl px-5 py-2.5 font-bold text-xs shadow-sm hover:shadow',
+                    cancelButton: 'rounded-xl px-4 py-2.5 font-semibold text-xs'
+                }
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    executePushBills(splits, total, prev, curr, rate);
+                }
+            });
+        } else {
+            if (confirm("Push light bills to all " + splits.length + " residents in Room " + currentSplitData.room.room_number + " (Total: ₹" + total.toLocaleString() + ")?")) {
+                executePushBills(splits, total, prev, curr, rate);
+            }
+        }
+    }
+
+    function executePushBills(splits, total, prev, curr, rate) {
         var btn = document.getElementById("btn-push-split-dues");
         var oldHtml = btn.innerHTML;
         btn.disabled = true;
@@ -625,9 +730,6 @@
         formData.append("billing_month", currentSplitData.billing_month_code);
         formData.append("total_bill", total);
 
-        var prev = document.getElementById("sp-prev-reading").value;
-        var curr = document.getElementById("sp-curr-reading").value;
-        var rate = document.getElementById("sp-unit-rate").value;
         var photoFile = document.getElementById("sp-meter-photo").files[0];
 
         if (prev) formData.append("previous_reading", prev);
@@ -659,11 +761,21 @@
                 toastr.success(data.message || "Light bills pushed successfully!");
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
-                        title: "Bills Pushed Successfully!",
-                        text: "Electricity dues have been posted to the accounts of " + splits.length + " residents in Room " + currentSplitData.room.room_number + ". They can now pay from their student app.",
-                        icon: "success",
-                        confirmButtonText: "OK",
-                        confirmButtonColor: "#059669"
+                        title: '<div class="text-emerald-600 dark:text-emerald-400 font-extrabold text-lg flex items-center justify-center gap-2"><i class="fa-solid fa-circle-check"></i> Bills Pushed Successfully!</div>',
+                        html: 
+                            '<div class="text-xs text-slate-600 dark:text-slate-300 mt-2 space-y-2.5 font-sans">' +
+                                '<p>Electricity dues have been posted to the accounts of <strong>' + splits.length + ' residents</strong> in Room <strong>' + currentSplitData.room.room_number + '</strong>.</p>' +
+                                '<div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl font-bold text-emerald-800 dark:text-emerald-200 text-sm">' +
+                                    'Total Amount: ₹' + Number(total).toLocaleString() + ' (' + currentSplitData.billing_month + ')' +
+                                '</div>' +
+                                '<p class="text-[11px] text-slate-400">Residents can now log into their student app to view and pay their fair share.</p>' +
+                            '</div>',
+                        icon: 'success',
+                        confirmButtonText: 'OK, Done',
+                        confirmButtonColor: '#059669',
+                        customClass: {
+                            popup: 'rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl dark:bg-slate-800 p-5'
+                        }
                     });
                 }
             } else {
