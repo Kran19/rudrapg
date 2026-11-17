@@ -235,6 +235,7 @@ class SubAdminController extends Controller
                 $aadhaarFrontDoc = $student ? $student->documents->firstWhere('doc_type', 'AADHAAR_FRONT') : null;
                 $aadhaarBackDoc = $student ? $student->documents->firstWhere('doc_type', 'AADHAAR_BACK') : null;
                 $panCardDoc = $student ? $student->documents->firstWhere('doc_type', 'PAN_CARD') : null;
+                $meterPhotoDoc = $student ? $student->documents->firstWhere('doc_type', 'INITIAL_METER_PHOTO') : null;
                 
                 $latestPayment = $student ? $student->payments->first() : null;
                 $paymentProof = $latestPayment ? $latestPayment->proof : null;
@@ -286,6 +287,8 @@ class SubAdminController extends Controller
                     'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path),
                     'aadhaar_back' => $formatUrl($aadhaarBackDoc?->file_path),
                     'pan_card' => $formatUrl($panCardDoc?->file_path),
+                    'initial_meter_photo' => $formatUrl($meterPhotoDoc?->file_path ?? $student?->initial_meter_photo),
+                    'initial_meter_reading' => $student ? (float)($student->initial_meter_reading ?? 0) : 0,
                     'payment_proof' => $formatUrl($paymentProof?->screenshot_path),
                     'payment_utr' => $paymentProof?->utr_number,
                     'payment_status' => $latestPayment ? $latestPayment->status : ($paymentProof ? 'UPLOADED' : 'PENDING_UPLOAD'),
@@ -1114,7 +1117,7 @@ class SubAdminController extends Controller
             return null;
         };
 
-        $readingsData = ElectricityReading::with(['student', 'room', 'branch'])
+        $readingsData = ElectricityReading::with(['student.documents', 'room', 'branch'])
             ->where(function($q) use ($branch, $branchIds) {
                 if ($branch) {
                     $q->where('branch_id', $branch->id);
@@ -1122,7 +1125,7 @@ class SubAdminController extends Controller
                     $q->whereIn('branch_id', $branchIds);
                 }
             })
-            ->latest()
+            ->latest('id')
             ->get()
             ->map(function ($reading) use ($formatUrl) {
                 $photo = $formatUrl($reading->meter_photo_path);
@@ -1130,26 +1133,46 @@ class SubAdminController extends Controller
                     $photo = 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80';
                 }
 
+                $initialDoc = $reading->student?->documents?->firstWhere('doc_type', 'INITIAL_METER_PHOTO');
+                $initialPhoto = $formatUrl($initialDoc?->file_path ?? $reading->student?->initial_meter_photo);
+
                 return [
                     'id' => $reading->id,
                     'code' => 'E-2026-'.str_pad($reading->id, 3, '0', STR_PAD_LEFT),
                     'student' => $reading->student ? $reading->student->full_name : 'Resident',
+                    'student_id' => $reading->student_id,
                     'room' => $reading->room ? $reading->room->room_number : 'N/A',
-                    'prev_reading' => $reading->previous_reading,
-                    'curr_reading' => $reading->current_reading,
-                    'units' => $reading->units_consumed,
+                    'prev_reading' => (float)$reading->previous_reading,
+                    'curr_reading' => (float)$reading->current_reading,
+                    'units' => (float)$reading->units_consumed,
                     'rate' => '₹'.number_format($reading->unit_rate, 2),
-                    'raw_rate' => $reading->unit_rate,
+                    'raw_rate' => (float)$reading->unit_rate,
                     'total' => '₹'.number_format($reading->total_amount),
+                    'raw_total' => (float)$reading->total_amount,
+                    'reading_month' => $reading->reading_month,
                     'photo_url' => $photo,
+                    'initial_photo_url' => $initialPhoto,
+                    'initial_reading' => (float)($reading->student?->initial_meter_reading ?? 0),
                     'date' => $reading->created_at ? $reading->created_at->format('d M Y') : 'N/A',
                     'status' => $reading->status == 'APPROVED' ? 'Approved' : ($reading->status == 'REJECTED' ? 'Rejected' : 'Pending Audit'),
                     'raw_status' => $reading->status,
                 ];
             });
 
+        $students = Student::with(['room', 'bed'])
+            ->where('status', 'APPROVED')
+            ->where(function($q) use ($branch, $branchIds) {
+                if ($branch) {
+                    $q->where('branch_id', $branch->id);
+                } else if (!empty($branchIds)) {
+                    $q->whereIn('branch_id', $branchIds);
+                }
+            })
+            ->get();
+
         return view('sub_admin.electricity_audit', [
             'readings' => $readingsData,
+            'students' => $students,
             'activeBranch' => $branch,
             'branch' => $branch,
         ]);
@@ -1162,14 +1185,37 @@ class SubAdminController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to audit readings for this branch.'], 403);
         }
 
-        $reading->update([
-            'status' => 'APPROVED',
-            'audited_by' => Auth::id(),
-        ]);
+        DB::transaction(function () use ($reading) {
+            $reading->update([
+                'status' => 'APPROVED',
+                'audited_by' => Auth::id(),
+            ]);
+
+            if ((float)$reading->total_amount > 0) {
+                Payment::firstOrCreate(
+                    [
+                        'student_id' => $reading->student_id,
+                        'payment_type' => 'ELECTRICITY',
+                        'tx_reference' => 'ELEC-' . $reading->id . '-' . date('Ym'),
+                    ],
+                    [
+                        'branch_id' => $reading->branch_id,
+                        'amount' => $reading->total_amount,
+                        'total_due' => $reading->total_amount,
+                        'remaining_amount' => $reading->total_amount,
+                        'payment_mode' => 'UPI',
+                        'payment_date' => now()->toDateString(),
+                        'due_date' => now()->addDays(7)->toDateString(),
+                        'status' => 'PENDING',
+                        'verification_remarks' => 'Electricity Bill for ' . $reading->reading_month . ' (' . $reading->units_consumed . ' units @ ₹' . $reading->unit_rate . ')',
+                    ]
+                );
+            }
+        });
 
         AuditLog::create([
             'user_id' => Auth::id(),
-            'action' => 'Approved Electricity Bill ID: '.$id,
+            'action' => 'Approved Electricity Bill ID: '.$id.' (₹'.$reading->total_amount.')',
             'module' => 'ELECTRICITY',
             'record_id' => $reading->id,
             'ip_address' => request()->ip(),
@@ -1177,7 +1223,90 @@ class SubAdminController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Electricity bill approved and added to dues!',
+            'message' => 'Electricity bill of ₹'.number_format($reading->total_amount).' approved and added to dues ledger!',
+        ]);
+    }
+
+    public function recordMonthlyReading(Request $request)
+    {
+        $validated = $request->validate([
+            'student_id' => ['required', 'exists:students,id'],
+            'current_reading' => ['required', 'numeric', 'min:0'],
+            'reading_month' => ['nullable', 'string'],
+            'meter_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+        ]);
+
+        $student = Student::with(['room', 'branch'])->findOrFail($validated['student_id']);
+        
+        $meterPhotoPath = null;
+        if ($request->hasFile('meter_photo')) {
+            $meterPhotoPath = $request->file('meter_photo')->store('uploads/meter', 'public');
+        }
+
+        $lastReading = ElectricityReading::where(function ($q) use ($student) {
+            $q->where('student_id', $student->id);
+            if ($student->room_id) {
+                $q->orWhere('room_id', $student->room_id);
+            }
+        })->latest('id')->first();
+
+        $currReading = (float) $validated['current_reading'];
+        $prevReading = $lastReading 
+            ? (float) $lastReading->current_reading 
+            : (float) ($student->initial_meter_reading ?? 0.0);
+
+        $units = max(0, round($currReading - $prevReading, 2));
+        $rate = $student->branch ? (float) $student->branch->electricity_unit_rate : 10.0;
+        $total = round($units * $rate, 2);
+
+        $roomId = $student->room_id;
+        if (!$roomId && $student->branch_id) {
+            $roomId = \App\Models\Room::where('branch_id', $student->branch_id)->first()?->id;
+        }
+
+        $reading = ElectricityReading::create([
+            'branch_id' => $student->branch_id,
+            'room_id' => $roomId ?? 1,
+            'student_id' => $student->id,
+            'reading_month' => $validated['reading_month'] ?? date('F Y'),
+            'current_reading' => $currReading,
+            'previous_reading' => $prevReading,
+            'units_consumed' => $units,
+            'unit_rate' => $rate,
+            'total_amount' => $total,
+            'meter_photo_path' => $meterPhotoPath ?? 'uploads/meter/reading.jpg',
+            'status' => 'APPROVED',
+            'audited_by' => Auth::id(),
+        ]);
+
+        if ($total > 0) {
+            Payment::create([
+                'student_id' => $student->id,
+                'branch_id' => $student->branch_id,
+                'tx_reference' => 'ELEC-' . $reading->id . '-' . date('Ym'),
+                'payment_type' => 'ELECTRICITY',
+                'amount' => $total,
+                'total_due' => $total,
+                'remaining_amount' => $total,
+                'payment_mode' => 'UPI',
+                'payment_date' => now()->toDateString(),
+                'due_date' => now()->addDays(7)->toDateString(),
+                'status' => 'PENDING',
+                'verification_remarks' => 'Electricity Bill for ' . $reading->reading_month . ' (' . $units . ' units @ ₹' . $rate . ')',
+            ]);
+        }
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Recorded Month-End Electricity Reading for ' . $student->full_name . ' (' . $units . ' units, ₹' . $total . ')',
+            'module' => 'ELECTRICITY',
+            'record_id' => $reading->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Monthly electricity reading recorded and bill of ₹' . number_format($total) . ' generated successfully!',
         ]);
     }
 

@@ -85,6 +85,10 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter current reading.')));
       return;
     }
+    if (_meterPhotoBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please capture or upload month-end meter photo.')));
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -238,6 +242,31 @@ class _ElectricityScreenState extends ConsumerState<ElectricityScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        historyAsync.maybeWhen(
+                          data: (history) {
+                            double baseline = 0;
+                            if (history.isNotEmpty) {
+                              baseline = double.tryParse(history.first['current_reading']?.toString() ?? '0') ?? 0;
+                            }
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Previous / Baseline Reading:', style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold)),
+                                  Text('${baseline.toStringAsFixed(1)} kWh', style: AppTypography.titleSmall.copyWith(color: AppColors.secondary, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            );
+                          },
+                          orElse: () => const SizedBox(),
+                        ),
                         CustomTextField(
                           label: 'Current Sub-Meter Reading (kWh)',
                           hint: 'Enter meter reading',

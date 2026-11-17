@@ -93,6 +93,7 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::delete('/rent-ledger/{id}', [SubAdminController::class, 'destroyPayment'])->name('rent_ledger.destroy');
     
     Route::get('/electricity-audit', [SubAdminController::class, 'electricityAudit'])->name('electricity_audit');
+    Route::post('/electricity-audit/record-reading', [SubAdminController::class, 'recordMonthlyReading'])->name('electricity_audit.record_reading');
     Route::post('/electricity-audit/{id}/approve', [SubAdminController::class, 'approveElectricityReading'])->name('electricity_audit.approve');
     Route::post('/electricity-audit/{id}/reject', [SubAdminController::class, 'rejectElectricityReading'])->name('electricity_audit.reject');
     Route::post('/electricity-audit/{id}/update', [SubAdminController::class, 'updateElectricityReading'])->name('electricity_audit.update');

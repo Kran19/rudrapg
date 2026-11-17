@@ -43,6 +43,8 @@ class StudentResource extends JsonResource
             'is_partially_paid' => $isPartiallyPaid,
             'deposit_status' => $this->deposit_status ?? 'NOT_APPLICABLE',
             'deposit_balance_due' => (float)($this->deposit_balance_due ?? 0),
+            'initial_meter_reading' => (float)($this->initial_meter_reading ?? 0),
+            'initial_meter_photo' => $this->initial_meter_photo ? asset('storage/' . ltrim(str_replace('storage/', '', $this->initial_meter_photo), '/')) : null,
             'status' => $this->status ?? 'PENDING_APPROVAL',
             'is_kyc_approved' => in_array(strtoupper($this->kyc_status ?? ''), ['APPROVED', 'VERIFIED']) || in_array(strtoupper($this->status ?? ''), ['KYC_APPROVED', 'BED_ALLOCATED', 'APPROVED']),
             'is_room_assigned' => !is_null($this->bed_id),

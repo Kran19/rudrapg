@@ -38,6 +38,7 @@ class _StudentRegistrationScreenState
   final _parentNameController = TextEditingController();
   final _parentPhoneController = TextEditingController();
   final _addressController = TextEditingController();
+  final _meterReadingController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -54,6 +55,9 @@ class _StudentRegistrationScreenState
   XFile? _panCard;
   Uint8List? _panCardBytes;
 
+  XFile? _meterPhoto;
+  Uint8List? _meterPhotoBytes;
+
   bool _isLoading = false;
 
   @override
@@ -68,6 +72,7 @@ class _StudentRegistrationScreenState
     _parentNameController.dispose();
     _parentPhoneController.dispose();
     _addressController.dispose();
+    _meterReadingController.dispose();
     super.dispose();
   }
 
@@ -342,6 +347,7 @@ class _StudentRegistrationScreenState
         'parent_name': _parentNameController.text.trim(),
         'parent_phone': parentPhoneDigits,
         'current_address': _addressController.text.trim(),
+        'starting_meter_reading': _meterReadingController.text.trim(),
       });
 
       if (_profilePhotoBytes != null) {
@@ -387,6 +393,18 @@ class _StudentRegistrationScreenState
             MultipartFile.fromBytes(
               _panCardBytes!,
               filename: 'pan_card.jpg',
+              contentType: MediaType('image', 'jpeg'),
+            ),
+          ),
+        );
+      }
+      if (_meterPhotoBytes != null) {
+        formData.files.add(
+          MapEntry(
+            'meter_photo',
+            MultipartFile.fromBytes(
+              _meterPhotoBytes!,
+              filename: 'meter_photo.jpg',
               contentType: MediaType('image', 'jpeg'),
             ),
           ),
@@ -704,6 +722,43 @@ class _StudentRegistrationScreenState
                   (img, bytes) {
                     _panCard = img;
                     _panCardBytes = bytes;
+                  },
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+
+              // Move-in Electricity Sub-Meter Section
+              const SectionHeader(
+                title: 'Move-in Electricity Sub-Meter',
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Upload your move-in sub-meter reading & photo to calculate monthly consumption bills accurately.',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              CustomTextField(
+                label: 'Starting Sub-Meter Reading (kWh)',
+                hint: 'Enter starting meter reading (e.g. 1024.50)',
+                prefixIcon: Icons.electric_meter_rounded,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                controller: _meterReadingController,
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              _buildUploadCard(
+                title: 'Starting Sub-Meter Photo',
+                file: _meterPhoto,
+                bytes: _meterPhotoBytes,
+                icon: Icons.camera_alt_outlined,
+                onTap: () => _showPickerModal(
+                  'Starting Meter Photo',
+                  _meterPhoto,
+                  _meterPhotoBytes,
+                  (img, bytes) {
+                    _meterPhoto = img;
+                    _meterPhotoBytes = bytes;
                   },
                 ),
               ),

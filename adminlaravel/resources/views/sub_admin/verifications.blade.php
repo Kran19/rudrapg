@@ -264,6 +264,36 @@
                                 </template>
                             </div>
                         </div>
+
+                        <!-- Initial Move-in Meter Reading & Photo -->
+                        <div class="col-span-2">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase flex items-center gap-1.5">
+                                    <i class="fa-solid fa-bolt text-amber-500"></i> Move-in Sub-Meter Photo & Baseline Reading
+                                </label>
+                                <span class="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-lg"
+                                      x-text="'Baseline Reading: ' + (activeStudent.initial_meter_reading || 0) + ' kWh'"></span>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center relative group cursor-pointer overflow-hidden"
+                                 @click="activeStudent.initial_meter_photo && $dispatch('open-lightbox', { src: activeStudent.initial_meter_photo, title: 'Move-in Sub-Meter Photo (' + (activeStudent.initial_meter_reading || 0) + ' kWh) - ' + activeStudent.student_name })">
+                                <template x-if="activeStudent.initial_meter_photo">
+                                    <div class="relative">
+                                        <img :src="activeStudent.initial_meter_photo" 
+                                             x-on:error="$event.target.src = 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80'"
+                                             class="w-full h-32 object-contain rounded-lg group-hover:scale-105 transition-all">
+                                        <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold rounded-lg">
+                                            <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> Zoom Meter Photo
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!activeStudent.initial_meter_photo">
+                                    <div class="h-24 flex flex-col items-center justify-center text-slate-400 text-xs">
+                                        <i class="fa-solid fa-bolt text-2xl mb-1 text-slate-300"></i>
+                                        <span>No Meter Photo Uploaded at Registration</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Step 3 Payment Proof Section -->

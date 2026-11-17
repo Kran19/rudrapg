@@ -34,6 +34,11 @@ class StudentService
 
             $appRef = 'REG-'.date('Y').'-'.rand(1000, 9999);
 
+            $startingMeterReading = isset($data['starting_meter_reading']) && is_numeric($data['starting_meter_reading'])
+                ? (float)$data['starting_meter_reading']
+                : 0.0;
+            $meterPhotoPath = $data['meter_photo_path'] ?? null;
+
             // Create Student Record (Rent and Deposit are NOT_APPLICABLE until Bed is Assigned)
             $student = Student::create([
                 'user_id' => $user->id,
@@ -48,6 +53,8 @@ class StudentService
                 'parent_phone' => $data['parent_phone'],
                 'emergency_contact' => $data['parent_phone'],
                 'current_address' => $data['current_address'],
+                'initial_meter_reading' => $startingMeterReading,
+                'initial_meter_photo' => $meterPhotoPath,
                 'kyc_status' => 'PENDING',
                 'rent_status' => 'NOT_APPLICABLE',
                 'deposit_status' => 'NOT_APPLICABLE',
@@ -66,6 +73,26 @@ class StudentService
             }
             if (!empty($data['pan_card_path'])) {
                 StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'PAN_CARD', 'file_path' => $data['pan_card_path']]);
+            }
+            if (!empty($meterPhotoPath)) {
+                StudentDocument::create(['student_id' => $student->id, 'doc_type' => 'INITIAL_METER_PHOTO', 'file_path' => $meterPhotoPath]);
+            }
+
+            // Create Initial Move-in Meter Baseline in electricity_readings
+            if ($startingMeterReading > 0 || !empty($meterPhotoPath)) {
+                ElectricityReading::create([
+                    'branch_id' => $branch->id,
+                    'room_id' => $branch->rooms()->first()?->id ?? 1,
+                    'student_id' => $student->id,
+                    'reading_month' => 'Move-in Baseline (Registration)',
+                    'current_reading' => $startingMeterReading,
+                    'previous_reading' => $startingMeterReading,
+                    'units_consumed' => 0,
+                    'unit_rate' => $branch->electricity_unit_rate ?? 10.0,
+                    'total_amount' => 0,
+                    'meter_photo_path' => $meterPhotoPath,
+                    'status' => 'APPROVED',
+                ]);
             }
 
             // Create Verification Queue Entry
@@ -129,29 +156,21 @@ class StudentService
 
     public function submitElectricityReading(Student $student, array $data): ElectricityReading
     {
-        $lastReading = ElectricityReading::where('student_id', $student->id)->latest()->first();
-        $prevReading = $lastReading ? $lastReading->current_reading : 14475;
-        $currReading = (int) $data['current_reading'];
-        $units = max(0, $currReading - $prevReading);
-        $rate = $student->branch ? $student->branch->electricity_unit_rate : 10.0;
-        $total = $units * $rate;
         $lastReading = ElectricityReading::where(function ($q) use ($student) {
             $q->where('student_id', $student->id);
             if ($student->room_id) {
                 $q->orWhere('room_id', $student->room_id);
             }
         })
-        ->latest()
+        ->latest('id')
         ->first();
 
         $currReading = (float) $data['current_reading'];
-        $prevReading = $lastReading ? (float) $lastReading->current_reading : 0.0;
+        $prevReading = $lastReading 
+            ? (float) $lastReading->current_reading 
+            : (float) ($student->initial_meter_reading ?? 0.0);
 
-        $units = round(abs($currReading - $prevReading), 2);
-        if ($currReading >= $prevReading) {
-            $units = round($currReading - $prevReading, 2);
-        }
-
+        $units = max(0, round($currReading - $prevReading, 2));
         $rate = $student->branch ? (float) $student->branch->electricity_unit_rate : 10.0;
         $total = round($units * $rate, 2);
 

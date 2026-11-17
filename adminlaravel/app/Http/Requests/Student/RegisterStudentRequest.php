@@ -58,6 +58,8 @@ class RegisterStudentRequest extends FormRequest
             'aadhaar_front' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'aadhaar_back' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'pan_card' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'meter_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'starting_meter_reading' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

@@ -36,6 +36,9 @@ class StudentApiController extends Controller
         if ($request->hasFile('pan_card')) {
             $data['pan_card_path'] = $request->file('pan_card')->store('uploads/kyc', 'public');
         }
+        if ($request->hasFile('meter_photo')) {
+            $data['meter_photo_path'] = $request->file('meter_photo')->store('uploads/meter', 'public');
+        }
 
         $student = $this->studentService->registerFromQr($data);
 

@@ -31,6 +31,8 @@ class Student extends Model
         'rent_balance_due',
         'deposit_status',
         'deposit_balance_due',
+        'initial_meter_reading',
+        'initial_meter_photo',
         'status',
     ];
 
@@ -38,6 +40,7 @@ class Student extends Model
         'joining_date' => 'date',
         'rent_balance_due' => 'float',
         'deposit_balance_due' => 'float',
+        'initial_meter_reading' => 'float',
     ];
 
     public function getEffectiveRentDueAttribute(): float
