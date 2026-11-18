@@ -7,7 +7,97 @@
 <div x-data="{
     residentModalOpen: false,
     editRoomModalOpen: false,
+    editResidentModalOpen: false,
     selectedBed: null,
+    editResidentForm: {
+        db_id: '',
+        full_name: '',
+        phone: '',
+        email: '',
+        raw_joining_date: '',
+        aadhaar_number: '',
+        pan_number: '',
+        parent_name: '',
+        parent_phone: '',
+        emergency_contact: '',
+        current_address: '',
+        initial_meter_reading: 0,
+        kyc_status: 'APPROVED',
+        rent_status: 'PAID',
+        rent_balance_due: 0,
+        deposit_balance_due: 0
+    },
+    openEditResidentModal(bed) {
+        this.editResidentForm = {
+            db_id: bed.student_id,
+            full_name: bed.student_name || '',
+            phone: bed.student_phone || '',
+            email: (bed.student_email && bed.student_email !== 'N/A') ? bed.student_email : '',
+            raw_joining_date: bed.student_raw_joining_date || '',
+            aadhaar_number: (bed.student_aadhaar && bed.student_aadhaar !== 'N/A') ? bed.student_aadhaar : '',
+            pan_number: bed.student_pan || '',
+            parent_name: (bed.student_parent_name && bed.student_parent_name !== 'N/A') ? bed.student_parent_name : '',
+            parent_phone: bed.student_parent_phone || '',
+            emergency_contact: (bed.student_emergency_contact && bed.student_emergency_contact !== 'N/A') ? bed.student_emergency_contact : '',
+            current_address: (bed.student_address && bed.student_address !== 'N/A') ? bed.student_address : '',
+            initial_meter_reading: bed.student_initial_meter_reading || 0,
+            kyc_status: bed.student_kyc || 'APPROVED',
+            rent_status: bed.student_rent_status || 'PAID',
+            rent_balance_due: bed.student_rent_balance || 0,
+            deposit_balance_due: bed.student_deposit_balance || 0
+        };
+        this.residentModalOpen = false;
+        this.editResidentModalOpen = true;
+    },
+    submitEditResidentForm(event) {
+        const formData = new FormData(event.target);
+        const studentId = this.editResidentForm.db_id;
+        fetch(appUrl('sub-admin/students/' + studentId + '/update'), {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Resident Updated',
+                        text: data.message || 'Resident record updated successfully.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.success(data.message);
+                }
+                this.editResidentModalOpen = false;
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Update Failed',
+                        text: data.message || 'Could not update resident record.'
+                    });
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.error(data.message || 'Could not update resident record.');
+                }
+            }
+        })
+        .catch(err => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An unexpected error occurred during submission.'
+                });
+            }
+        });
+    },
     editForm: {
         id: '',
         room_number: '',
@@ -300,10 +390,14 @@
                         </div>
 
                         <!-- Direct Record Payment Button -->
-                        <div class="flex items-center justify-end gap-2 pt-1">
+                        <div class="flex items-center justify-between gap-2 pt-1">
+                            <button type="button" @click="openEditResidentModal(selectedBed)" 
+                                    class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer">
+                                <i class="fa-solid fa-user-pen"></i> Edit Resident Details
+                            </button>
                             <a :href="'{{ route('sub_admin.rent_ledger') }}?student_id=' + selectedBed.student_id" 
                                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors">
-                                <i class="fa-solid fa-money-bill-wave"></i> Record Manual / Partial Payment
+                                <i class="fa-solid fa-money-bill-wave"></i> Record Payment
                             </a>
                         </div>
                     </div>
@@ -349,6 +443,152 @@
                     Close
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Edit Resident Details Modal (Sub Admin Branch Scoped) -->
+    <div x-show="editResidentModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="editResidentModalOpen = false" 
+             class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
+            <div class="bg-slate-900 text-white p-5 flex items-center justify-between shrink-0">
+                <h4 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-user-pen text-amber-400"></i> Edit Resident Details: <span class="text-blue-400" x-text="editResidentForm.full_name"></span>
+                </h4>
+                <button @click="editResidentModalOpen = false" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="edit-resident-form" @submit.prevent="submitEditResidentForm($event)" class="p-6 space-y-5 overflow-y-auto flex-1">
+                @csrf
+                <input type="hidden" name="db_id" x-model="editResidentForm.db_id">
+
+                <!-- Section 1: Basic & Admission -->
+                <div>
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-address-card"></i> 1. Basic & Admission Details
+                    </h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Full Legal Name *</label>
+                            <input type="text" name="full_name" required x-model="editResidentForm.full_name" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Mobile Number *</label>
+                            <input type="text" name="phone" required x-model="editResidentForm.phone" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Email Address</label>
+                            <input type="email" name="email" x-model="editResidentForm.email" placeholder="resident@domain.com" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1 flex items-center justify-between">
+                                <span>Joining Date *</span>
+                                <span class="text-[10px] text-slate-400 font-normal">Admission date</span>
+                            </label>
+                            <input type="date" name="joining_date" x-model="editResidentForm.raw_joining_date" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Identity & Legal Verification -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-id-card"></i> 2. Identity & Legal Verification
+                    </h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Aadhaar Card No.</label>
+                            <input type="text" name="aadhaar_number" x-model="editResidentForm.aadhaar_number" placeholder="12-digit Aadhaar" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">PAN Card No.</label>
+                            <input type="text" name="pan_number" x-model="editResidentForm.pan_number" placeholder="10-digit PAN" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 uppercase font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">KYC Status</label>
+                            <select name="kyc_status" required x-model="editResidentForm.kyc_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                                <option value="PENDING">PENDING</option>
+                                <option value="APPROVED">APPROVED (VERIFIED)</option>
+                                <option value="REJECTED">REJECTED</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Parent & Emergency Contacts -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-family"></i> 3. Parent / Guardian & Emergency Contact
+                    </h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Parent / Guardian Name</label>
+                            <input type="text" name="parent_name" x-model="editResidentForm.parent_name" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Parent Phone</label>
+                            <input type="text" name="parent_phone" x-model="editResidentForm.parent_phone" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Emergency Contact</label>
+                            <input type="text" name="emergency_contact" x-model="editResidentForm.emergency_contact" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Permanent Home Address</label>
+                        <textarea name="current_address" rows="2" x-model="editResidentForm.current_address" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100"></textarea>
+                    </div>
+                </div>
+
+                <!-- Section 4: Meter Baseline & Dues -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-receipt"></i> 4. Utility Baseline & Rent Balance
+                    </h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Starting Meter (Units)</label>
+                            <input type="number" step="0.01" name="initial_meter_reading" x-model="editResidentForm.initial_meter_reading" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Rent Status</label>
+                            <select name="rent_status" required x-model="editResidentForm.rent_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                                <option value="PENDING">PENDING</option>
+                                <option value="PARTIALLY_PAID">PARTIALLY PAID</option>
+                                <option value="PAID">PAID</option>
+                                <option value="OVERDUE">OVERDUE</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Rent Left / Due (₹)</label>
+                            <input type="number" step="0.01" name="rent_balance_due" x-model="editResidentForm.rent_balance_due" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Deposit Balance (₹)</label>
+                            <input type="number" step="0.01" name="deposit_balance_due" x-model="editResidentForm.deposit_balance_due" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button" @click="editResidentModalOpen = false" class="px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Resident Changes
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

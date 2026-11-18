@@ -963,11 +963,21 @@ class SuperAdminController extends Controller
                 'id' => $student->app_reference ?? ('RES-'.str_pad($student->id, 4, '0', STR_PAD_LEFT)),
                 'full_name' => $student->full_name,
                 'phone' => $student->phone,
+                'email' => $student->email ?? '',
+                'aadhaar_number' => $student->aadhaar_number ?? '',
+                'pan_number' => $student->pan_number ?? '',
+                'parent_name' => $student->parent_name ?? '',
+                'parent_phone' => $student->parent_phone ?? '',
+                'emergency_contact' => $student->emergency_contact ?? '',
+                'current_address' => $student->current_address ?? '',
+                'initial_meter_reading' => (float)($student->initial_meter_reading ?? 0),
                 'branch_name' => $student->branch ? $student->branch->name : 'N/A',
                 'room_bed' => ($student->room ? 'Room '.$student->room->room_number : 'Unassigned').($student->bed ? ' ('.$student->bed->bed_code.')' : ''),
                 'joining_date' => $student->joining_date ? $student->joining_date->format('d M Y') : 'N/A',
                 'kyc_status' => (isset($student->kyc_status) && $student->kyc_status === 'APPROVED') ? 'VERIFIED' : ($student->kyc_status ?? 'PENDING'),
                 'rent_status' => $student->rent_status ?? 'PENDING',
+                'rent_balance_due' => (float)$student->effective_rent_due,
+                'deposit_balance_due' => (float)($student->deposit_balance_due ?? 0),
                 'status' => $student->status ?? 'PENDING',
                 'profile_photo' => $formatUrl($profilePhotoDoc?->file_path, 'PROFILE_PHOTO'),
                 'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path, 'AADHAAR_FRONT'),
@@ -992,19 +1002,40 @@ class SuperAdminController extends Controller
         $student = Student::findOrFail($id);
 
         $validated = $request->validate([
-            'full_name' => ['required', 'string'],
-            'phone' => ['required', 'string'],
+            'full_name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:255'],
             'branch_id' => ['required', 'exists:branches,id'],
+            'joining_date' => ['nullable', 'date'],
+            'aadhaar_number' => ['nullable', 'string', 'max:30'],
+            'pan_number' => ['nullable', 'string', 'max:30'],
+            'parent_name' => ['nullable', 'string', 'max:255'],
+            'parent_phone' => ['nullable', 'string', 'max:20'],
+            'emergency_contact' => ['nullable', 'string', 'max:30'],
+            'current_address' => ['nullable', 'string'],
+            'initial_meter_reading' => ['nullable', 'numeric', 'min:0'],
             'kyc_status' => ['required', 'string'],
             'rent_status' => ['required', 'string'],
-            'joining_date' => ['nullable', 'date'],
+            'rent_balance_due' => ['nullable', 'numeric', 'min:0'],
+            'deposit_balance_due' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $student->update($validated);
 
+        if ($student->user) {
+            $userUpdate = ['name' => $validated['full_name']];
+            if (!empty($validated['email'])) {
+                $userUpdate['email'] = $validated['email'];
+            }
+            if (!empty($validated['phone'])) {
+                $userUpdate['phone'] = $validated['phone'];
+            }
+            $student->user->update($userUpdate);
+        }
+
         AuditLog::create([
             'user_id' => auth()->id(),
-            'action' => 'Updated Student: '.$student->full_name,
+            'action' => 'Updated Student: '.$student->full_name.' (ID: '.$student->id.')',
             'module' => 'STUDENT',
             'record_id' => $student->id,
             'ip_address' => $request->ip(),
@@ -1013,6 +1044,7 @@ class SuperAdminController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Student record updated successfully.',
+            'student' => $student,
         ]);
     }
 

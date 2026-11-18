@@ -11,7 +11,25 @@
          kycModalOpen: false,
          kycModalData: { name: '', profile_photo: '', aadhaar_front: '', aadhaar_back: '', pan_card: '' },
          editStudentModalOpen: false, 
-         editForm: { db_id: '', full_name: '', phone: '', branch_id: '', raw_joining_date: '', raw_kyc_status: '', raw_rent_status: '' } 
+         editForm: { 
+             db_id: '', 
+             full_name: '', 
+             phone: '', 
+             email: '', 
+             branch_id: '', 
+             raw_joining_date: '', 
+             aadhaar_number: '', 
+             pan_number: '', 
+             parent_name: '', 
+             parent_phone: '', 
+             emergency_contact: '', 
+             current_address: '', 
+             initial_meter_reading: 0, 
+             raw_kyc_status: 'PENDING', 
+             raw_rent_status: 'PENDING', 
+             rent_balance_due: 0, 
+             deposit_balance_due: 0 
+         } 
      }"
      @open-lightbox.window="lightboxSrc = $event.detail.src; lightboxTitle = $event.detail.title; lightboxOpen = true"
      @open-kyc-modal.window="kycModalData = { ...$event.detail }; kycModalOpen = true"
@@ -82,68 +100,147 @@
      style="display: none;">
     
     <div @click.away="editStudentModalOpen = false" 
-         class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-lg overflow-hidden transform transition-all">
-        <div class="bg-slate-900 text-white p-5 flex items-center justify-between">
+         class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
+        <div class="bg-slate-900 text-white p-5 flex items-center justify-between shrink-0">
             <h4 class="font-bold text-base flex items-center gap-2">
-                <i class="fa-solid fa-users text-amber-400"></i> Edit Student Record: <span x-text="editForm.full_name"></span>
+                <i class="fa-solid fa-user-pen text-amber-400"></i> Edit Resident Details: <span class="text-blue-400" x-text="editForm.full_name"></span>
             </h4>
-            <button @click="editStudentModalOpen = false" class="text-slate-400 hover:text-white">
+            <button @click="editStudentModalOpen = false" class="text-slate-400 hover:text-white p-1 rounded-lg">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
         </div>
         
-        <form id="edit-student-form" class="p-6 space-y-4">
+        <form id="edit-student-form" class="p-6 space-y-5 overflow-y-auto flex-1">
             @csrf
             <input type="hidden" name="db_id" x-model="editForm.db_id">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Full Name</label>
-                    <input type="text" name="full_name" required x-model="editForm.full_name" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Phone Number</label>
-                    <input type="text" name="phone" required x-model="editForm.phone" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+
+            <!-- Section 1: Basic & Admission -->
+            <div>
+                <h5 class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-address-card"></i> 1. Basic & Admission Details
+                </h5>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Full Name *</label>
+                        <input type="text" name="full_name" required x-model="editForm.full_name" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Phone Number *</label>
+                        <input type="text" name="phone" required x-model="editForm.phone" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Email Address</label>
+                        <input type="email" name="email" x-model="editForm.email" placeholder="student@example.com" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Assigned PG Branch *</label>
+                        <select name="branch_id" required x-model="editForm.branch_id" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            @foreach($allBranches as $branch)
+                                <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1 flex items-center justify-between">
+                            <span>Joining Date *</span>
+                            <span class="text-[10px] text-slate-400 font-normal">Date when resident moved in</span>
+                        </label>
+                        <input type="date" name="joining_date" x-model="editForm.raw_joining_date" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Assigned PG Branch</label>
-                    <select name="branch_id" required x-model="editForm.branch_id" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
-                        @foreach($allBranches as $branch)
-                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Joining Date</label>
-                    <input type="date" name="joining_date" x-model="editForm.raw_joining_date" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+
+            <!-- Section 2: Identity & Legal Verification -->
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+                <h5 class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-id-card"></i> 2. Identity & Legal Verification
+                </h5>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Aadhaar Card No.</label>
+                        <input type="text" name="aadhaar_number" x-model="editForm.aadhaar_number" placeholder="12-digit Aadhaar" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">PAN Card No.</label>
+                        <input type="text" name="pan_number" x-model="editForm.pan_number" placeholder="10-digit PAN" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 uppercase font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">KYC Status</label>
+                        <select name="kyc_status" required x-model="editForm.raw_kyc_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="PENDING">PENDING</option>
+                            <option value="APPROVED">APPROVED (VERIFIED)</option>
+                            <option value="REJECTED">REJECTED</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">KYC Status</label>
-                    <select name="kyc_status" required x-model="editForm.raw_kyc_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
-                        <option value="PENDING">PENDING</option>
-                        <option value="APPROVED">APPROVED</option>
-                        <option value="REJECTED">REJECTED</option>
-                    </select>
+
+            <!-- Section 3: Parent & Emergency Contacts -->
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+                <h5 class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-family"></i> 3. Parent / Guardian & Emergency Contact
+                </h5>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Parent / Guardian Name</label>
+                        <input type="text" name="parent_name" x-model="editForm.parent_name" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Parent Phone</label>
+                        <input type="text" name="parent_phone" x-model="editForm.parent_phone" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Emergency Contact</label>
+                        <input type="text" name="emergency_contact" x-model="editForm.emergency_contact" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Rent Status</label>
-                    <select name="rent_status" required x-model="editForm.raw_rent_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
-                        <option value="PENDING">PENDING</option>
-                        <option value="PARTIALLY_PAID">PARTIALLY PAID</option>
-                        <option value="PAID">PAID</option>
-                        <option value="OVERDUE">OVERDUE</option>
-                    </select>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Permanent Home Address</label>
+                    <textarea name="current_address" rows="2" x-model="editForm.current_address" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100"></textarea>
+                </div>
+            </div>
+
+            <!-- Section 4: Meter Baseline & Dues -->
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+                <h5 class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-receipt"></i> 4. Utility Baseline & Rent Balance
+                </h5>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Starting Meter Reading</label>
+                        <input type="number" step="0.01" name="initial_meter_reading" x-model="editForm.initial_meter_reading" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Rent Status</label>
+                        <select name="rent_status" required x-model="editForm.raw_rent_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
+                            <option value="PENDING">PENDING</option>
+                            <option value="PARTIALLY_PAID">PARTIALLY PAID</option>
+                            <option value="PAID">PAID</option>
+                            <option value="OVERDUE">OVERDUE</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Rent Left / Due (₹)</label>
+                        <input type="number" step="0.01" name="rent_balance_due" x-model="editForm.rent_balance_due" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Deposit Balance (₹)</label>
+                        <input type="number" step="0.01" name="deposit_balance_due" x-model="editForm.deposit_balance_due" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
+                    </div>
                 </div>
             </div>
 
             <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
-                <button type="button" @click="deleteStudent(editForm.db_id)" class="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md flex items-center gap-1.5"><i class="fa-solid fa-trash"></i> Delete Student</button>
+                <button type="button" @click="deleteStudent(editForm.db_id)" class="px-4 py-2.5 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md flex items-center gap-1.5 transition-colors cursor-pointer">
+                    <i class="fa-solid fa-trash"></i> Delete Student
+                </button>
                 <div class="flex items-center gap-3">
-                    <button type="button" @click="editStudentModalOpen = false" class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancel</button>
-                    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">Save Changes</button>
+                    <button type="button" @click="editStudentModalOpen = false" class="px-4 py-2.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                    </button>
                 </div>
             </div>
         </form>

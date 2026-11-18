@@ -52,6 +52,7 @@ class StudentService
                 'parent_name' => $data['parent_name'],
                 'parent_phone' => $data['parent_phone'],
                 'emergency_contact' => $data['parent_phone'],
+                'joining_date' => !empty($data['joining_date']) ? $data['joining_date'] : now()->toDateString(),
                 'current_address' => $data['current_address'],
                 'initial_meter_reading' => $startingMeterReading,
                 'initial_meter_photo' => $meterPhotoPath,

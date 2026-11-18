@@ -88,6 +88,21 @@ class StudentRepository {
     }
   }
 
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/student/profile/update', data: data);
+      if (response.statusCode != 200) {
+        throw Exception(response.data['message'] ?? 'Failed to update profile');
+      }
+    } catch (e) {
+      if (e is DioException && e.response?.data != null && e.response!.data is Map) {
+        final msg = e.response!.data['message'] ?? e.response!.data['error'];
+        if (msg != null) throw Exception(msg.toString());
+      }
+      throw Exception('Error updating profile: $e');
+    }
+  }
+
   Future<List<dynamic>> getElectricityReadings() async {
     try {
       final response = await _dio.get('/student/electricity-readings');

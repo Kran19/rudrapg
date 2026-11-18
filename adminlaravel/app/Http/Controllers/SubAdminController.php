@@ -658,6 +658,12 @@ class SubAdminController extends Controller
                     'student_rent_balance' => $student ? (float)$student->effective_rent_due : 0,
                     'student_amount_left' => $student ? (float)$student->effective_rent_due : 0,
                     'student_admission_date' => $joiningDateFormatted,
+                    'student_raw_joining_date' => $student && $student->joining_date ? (is_string($student->joining_date) ? date('Y-m-d', strtotime($student->joining_date)) : $student->joining_date->format('Y-m-d')) : '',
+                    'student_pan' => $student ? ($student->pan_number ?? '') : '',
+                    'student_parent_phone' => $student ? ($student->parent_phone ?? '') : '',
+                    'student_initial_meter_reading' => $student ? (float)($student->initial_meter_reading ?? 0) : 0,
+                    'student_deposit_balance' => $student ? (float)($student->deposit_balance_due ?? 0) : 0,
+                    'branch_id' => $room->branch_id,
                     'student_emergency_contact' => $student ? ($student->emergency_contact ?? $student->parent_phone ?? 'N/A') : null,
                     'student_parent_name' => $student ? ($student->parent_name ?? 'N/A') : null,
                     'student_aadhaar' => $student ? ($student->aadhaar_number ?? 'N/A') : null,
@@ -2436,5 +2442,60 @@ class SubAdminController extends Controller
         }
 
         return back()->with('success', "Password for {$user->name} ({$user->phone}) has been updated to: {$validated['new_password']}");
+    }
+
+    public function updateStudent(Request $request, $id)
+    {
+        $student = Student::findOrFail($id);
+        $branchIds = $this->getAuthorizedBranchIds();
+
+        if (!in_array($student->branch_id, $branchIds)) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized access: Resident belongs to another branch.'], 403);
+        }
+
+        $validated = $request->validate([
+            'full_name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'joining_date' => ['nullable', 'date'],
+            'aadhaar_number' => ['nullable', 'string', 'max:30'],
+            'pan_number' => ['nullable', 'string', 'max:30'],
+            'parent_name' => ['nullable', 'string', 'max:255'],
+            'parent_phone' => ['nullable', 'string', 'max:20'],
+            'emergency_contact' => ['nullable', 'string', 'max:30'],
+            'current_address' => ['nullable', 'string'],
+            'initial_meter_reading' => ['nullable', 'numeric', 'min:0'],
+            'kyc_status' => ['nullable', 'string'],
+            'rent_status' => ['nullable', 'string'],
+            'rent_balance_due' => ['nullable', 'numeric', 'min:0'],
+            'deposit_balance_due' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $student->update($validated);
+
+        if ($student->user) {
+            $userUpdate = ['name' => $validated['full_name']];
+            if (!empty($validated['email'])) {
+                $userUpdate['email'] = $validated['email'];
+            }
+            if (!empty($validated['phone'])) {
+                $userUpdate['phone'] = $validated['phone'];
+            }
+            $student->user->update($userUpdate);
+        }
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Sub Admin updated student: '.$student->full_name.' (ID: '.$student->id.')',
+            'module' => 'STUDENT',
+            'record_id' => $student->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Resident record updated successfully.',
+            'student' => $student,
+        ]);
     }
 }

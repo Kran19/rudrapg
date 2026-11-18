@@ -53,6 +53,7 @@ class RegisterStudentRequest extends FormRequest
             'pan_number' => ['nullable', 'string', 'min:8', 'max:20'],
             'parent_name' => ['required', 'string', 'min:3', 'max:255'],
             'parent_phone' => ['required', 'string', 'regex:/^[6-9]\d{9}$/'],
+            'joining_date' => ['nullable', 'date'],
             'current_address' => ['required', 'string', 'min:10'],
             'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'aadhaar_front' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],

@@ -33,6 +33,7 @@ class StudentResource extends JsonResource
             'emergency_contact' => $this->emergency_contact,
             'current_address' => $this->current_address,
             'joining_date' => $this->joining_date?->format('d M Y'),
+            'raw_joining_date' => $this->joining_date?->format('Y-m-d'),
             'kyc_status' => $this->kyc_status ?? 'PENDING',
             'rent_status' => $this->rent_status ?? 'NOT_APPLICABLE',
             'rent_status_display' => $rentStatusDisplay,

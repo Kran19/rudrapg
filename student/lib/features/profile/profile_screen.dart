@@ -123,11 +123,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: AppSpacing.xxl),
 
               // Personal Information Section
-              Text('Personal Information', style: AppTypography.titleLarge),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Personal Information', style: AppTypography.titleLarge),
+                  TextButton.icon(
+                    icon: const Icon(Icons.edit_note_rounded, size: 18),
+                    label: const Text('Edit Details'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () => _showEditProfileDialog(context, resident),
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.md),
               CustomCard(
                 child: Column(
                   children: [
+                    _buildInfoTile(icon: Icons.calendar_month_rounded, label: 'Joining Date', value: resident.joiningDate.isNotEmpty ? resident.joiningDate : 'N/A'),
+                    const Divider(height: 20),
                     _buildInfoTile(icon: Icons.phone_android_rounded, label: 'Mobile Number', value: resident.phone),
                     const Divider(height: 20),
                     _buildInfoTile(icon: Icons.email_outlined, label: 'Email Address', value: resident.email),
@@ -341,6 +357,224 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: const Text('Sign Out'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context, ResidentModel resident) {
+    final nameCtrl = TextEditingController(text: resident.fullName);
+    final emailCtrl = TextEditingController(text: resident.email);
+    final parentNameCtrl = TextEditingController(text: resident.parentName);
+    final parentPhoneCtrl = TextEditingController(text: resident.parentPhone);
+    final emergencyCtrl = TextEditingController(text: resident.emergencyContact);
+    final addressCtrl = TextEditingController(text: resident.currentAddress);
+    final panCtrl = TextEditingController(text: resident.panNumber);
+    final joiningCtrl = TextEditingController(text: resident.joiningDate != 'N/A' ? resident.joiningDate : '');
+
+    DateTime? selectedJoiningDate;
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            top: 20,
+            left: 20,
+            right: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 22),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Edit Profile Details',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Personal Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Full Legal Name',
+                      prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email Address',
+                      prefixIcon: Icon(Icons.email_outlined, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: joiningCtrl,
+                    readOnly: true,
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: ctx,
+                        initialDate: selectedJoiningDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2035),
+                      );
+                      if (picked != null) {
+                        setModalState(() {
+                          selectedJoiningDate = picked;
+                          joiningCtrl.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+                        });
+                      }
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Joining / Move-in Date',
+                      hintText: 'Tap to pick date',
+                      prefixIcon: Icon(Icons.calendar_month_rounded, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Parent & Emergency Contact', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: parentNameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Parent / Guardian Name',
+                      prefixIcon: Icon(Icons.family_restroom_rounded, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: parentPhoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Parent Phone Number',
+                      prefixIcon: Icon(Icons.phone_callback_rounded, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: emergencyCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Emergency Contact Number',
+                      prefixIcon: Icon(Icons.contact_phone_outlined, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: panCtrl,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      labelText: 'PAN Card Number',
+                      prefixIcon: Icon(Icons.credit_card_rounded, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: addressCtrl,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Permanent Address',
+                      prefixIcon: Icon(Icons.location_on_outlined, size: 20),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: isSaving ? null : () async {
+                        setModalState(() => isSaving = true);
+                        try {
+                          final payload = <String, dynamic>{
+                            'full_name': nameCtrl.text.trim(),
+                            'email': emailCtrl.text.trim(),
+                            'parent_name': parentNameCtrl.text.trim(),
+                            'parent_phone': parentPhoneCtrl.text.trim(),
+                            'emergency_contact': emergencyCtrl.text.trim(),
+                            'current_address': addressCtrl.text.trim(),
+                            'pan_number': panCtrl.text.trim().toUpperCase(),
+                          };
+                          if (selectedJoiningDate != null) {
+                            payload['joining_date'] =
+                                "${selectedJoiningDate!.year}-${selectedJoiningDate!.month.toString().padLeft(2, '0')}-${selectedJoiningDate!.day.toString().padLeft(2, '0')}";
+                          }
+                          await ref.read(studentRepositoryProvider).updateProfile(payload);
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx);
+                          }
+                          ref.invalidate(studentProfileProvider);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: AppColors.success,
+                                content: Text('✓ Profile details updated successfully!'),
+                              ),
+                            );
+                          }
+                        } catch (err) {
+                          setModalState(() => isSaving = false);
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                backgroundColor: AppColors.error,
+                                content: Text(err.toString().replaceAll('Exception: ', '')),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: isSaving
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Save Changes', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

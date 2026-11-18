@@ -39,6 +39,8 @@ class _StudentRegistrationScreenState
   final _parentPhoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _meterReadingController = TextEditingController();
+  final _joiningDateController = TextEditingController();
+  DateTime _joiningDate = DateTime.now();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -61,6 +63,13 @@ class _StudentRegistrationScreenState
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _joiningDateController.text =
+        "${_joiningDate.day.toString().padLeft(2, '0')}/${_joiningDate.month.toString().padLeft(2, '0')}/${_joiningDate.year}";
+  }
+
+  @override
   void dispose() {
     _fullNameController.dispose();
     _phoneController.dispose();
@@ -73,6 +82,7 @@ class _StudentRegistrationScreenState
     _parentPhoneController.dispose();
     _addressController.dispose();
     _meterReadingController.dispose();
+    _joiningDateController.dispose();
     super.dispose();
   }
 
@@ -346,6 +356,7 @@ class _StudentRegistrationScreenState
         'pan_number': panCode,
         'parent_name': _parentNameController.text.trim(),
         'parent_phone': parentPhoneDigits,
+        'joining_date': "${_joiningDate.year}-${_joiningDate.month.toString().padLeft(2, '0')}-${_joiningDate.day.toString().padLeft(2, '0')}",
         'current_address': _addressController.text.trim(),
         'starting_meter_reading': _meterReadingController.text.trim(),
       });
@@ -601,6 +612,29 @@ class _StudentRegistrationScreenState
                     });
                   },
                 ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              CustomTextField(
+                label: 'Joining Date',
+                hint: 'Select joining / admission date',
+                prefixIcon: Icons.calendar_month_rounded,
+                controller: _joiningDateController,
+                readOnly: true,
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _joiningDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2035),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _joiningDate = picked;
+                      _joiningDateController.text =
+                          "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+                    });
+                  }
+                },
               ),
               const SizedBox(height: AppSpacing.xxl),
 

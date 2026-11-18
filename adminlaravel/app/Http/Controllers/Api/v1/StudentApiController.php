@@ -60,6 +60,44 @@ class StudentApiController extends Controller
         return response()->json(['status' => 'success', 'data' => new StudentResource($student)]);
     }
 
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $student = $this->studentService->getProfile($request->user());
+        if (! $student) {
+            return response()->json(['status' => 'error', 'message' => 'Resident profile not found.'], 404);
+        }
+
+        $validated = $request->validate([
+            'full_name' => ['sometimes', 'required', 'string', 'min:3', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', 'max:255'],
+            'joining_date' => ['nullable', 'date'],
+            'parent_name' => ['nullable', 'string', 'max:255'],
+            'parent_phone' => ['nullable', 'string'],
+            'emergency_contact' => ['nullable', 'string'],
+            'current_address' => ['nullable', 'string'],
+            'pan_number' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $student->update($validated);
+
+        if ($student->user && (!empty($validated['full_name']) || !empty($validated['email']))) {
+            $userUpdate = [];
+            if (!empty($validated['full_name'])) {
+                $userUpdate['name'] = $validated['full_name'];
+            }
+            if (!empty($validated['email'])) {
+                $userUpdate['email'] = $validated['email'];
+            }
+            $student->user->update($userUpdate);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile updated successfully.',
+            'data' => new StudentResource($student->fresh(['branch', 'room', 'bed', 'documents'])),
+        ]);
+    }
+
     public function uploadPaymentProof(UploadPaymentProofRequest $request): JsonResponse
     {
         $data = $request->validated();

@@ -78,6 +78,8 @@ Route::prefix('v1')->group(function () {
         // Student Mobile App Routes
         Route::prefix('student')->middleware('role:STUDENT')->group(function () {
             Route::get('/profile', [StudentApiController::class, 'profile']);
+            Route::post('/profile/update', [StudentApiController::class, 'updateProfile']);
+            Route::put('/profile', [StudentApiController::class, 'updateProfile']);
             Route::post('/change-password', [AuthController::class, 'changePassword']);
             Route::post('/payment-proof', [StudentApiController::class, 'uploadPaymentProof']);
             Route::get('/payments', [StudentApiController::class, 'payments']);
