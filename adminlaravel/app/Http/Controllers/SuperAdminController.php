@@ -772,12 +772,16 @@ class SuperAdminController extends Controller
                             'room_number' => (string) $room->room_number,
                             'bed_code' => $bed->bed_code,
                             'branch_name' => $room->branch?->name ?? 'PG Branch',
+                            'branch_id' => $room->branch_id,
                             'joining_date' => $joiningDateFormatted,
+                            'raw_joining_date' => $student->joining_date ? (is_string($student->joining_date) ? date('Y-m-d', strtotime($student->joining_date)) : $student->joining_date->format('Y-m-d')) : '',
                             'monthly_rent' => (int) $bed->monthly_rent,
                             'security_deposit' => (int) $bed->security_deposit,
                             'kyc_status' => $student->kyc_status ?? 'VERIFIED',
                             'rent_status' => $student->rent_status ?? 'PAID',
                             'rent_balance_due' => (float)$student->effective_rent_due,
+                            'deposit_balance_due' => (float)($student->deposit_balance_due ?? 0),
+                            'initial_meter_reading' => (float)($student->initial_meter_reading ?? 0),
                             'amount_left' => (float)$student->effective_rent_due,
                             'status' => $student->status ?? 'ACTIVE',
                             'parent_name' => $student->parent_name ?? 'N/A',
@@ -978,6 +982,8 @@ class SuperAdminController extends Controller
                 'rent_status' => $student->rent_status ?? 'PENDING',
                 'rent_balance_due' => (float)$student->effective_rent_due,
                 'deposit_balance_due' => (float)($student->deposit_balance_due ?? 0),
+                'monthly_rent' => (float)($student->bed?->monthly_rent ?? 0),
+                'security_deposit' => (float)($student->bed?->security_deposit ?? 0),
                 'status' => $student->status ?? 'PENDING',
                 'profile_photo' => $formatUrl($profilePhotoDoc?->file_path, 'PROFILE_PHOTO'),
                 'aadhaar_front' => $formatUrl($aadhaarFrontDoc?->file_path, 'AADHAAR_FRONT'),
@@ -1005,7 +1011,7 @@ class SuperAdminController extends Controller
             'full_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
-            'branch_id' => ['required', 'exists:branches,id'],
+            'branch_id' => ['nullable', 'exists:branches,id'],
             'joining_date' => ['nullable', 'date'],
             'aadhaar_number' => ['nullable', 'string', 'max:30'],
             'pan_number' => ['nullable', 'string', 'max:30'],
@@ -1018,9 +1024,39 @@ class SuperAdminController extends Controller
             'rent_status' => ['required', 'string'],
             'rent_balance_due' => ['nullable', 'numeric', 'min:0'],
             'deposit_balance_due' => ['nullable', 'numeric', 'min:0'],
+            'monthly_rent' => ['nullable', 'numeric', 'min:0'],
+            'security_deposit' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $student->update($validated);
+        if (empty($validated['branch_id'])) {
+            $validated['branch_id'] = $student->branch_id;
+        }
+
+        $studentUpdateData = collect($validated)->except(['monthly_rent', 'security_deposit'])->toArray();
+        $student->update($studentUpdateData);
+
+        if ($request->filled('monthly_rent') || $request->filled('security_deposit')) {
+            if ($student->bed) {
+                $bedUpdate = [];
+                if ($request->filled('monthly_rent')) {
+                    $bedUpdate['monthly_rent'] = (float)$request->input('monthly_rent');
+                }
+                if ($request->filled('security_deposit')) {
+                    $bedUpdate['security_deposit'] = (float)$request->input('security_deposit');
+                }
+                $student->bed->update($bedUpdate);
+            }
+            if ($alloc = $student->roomAllocations()->where('status', 'ACTIVE')->first()) {
+                $allocUpdate = [];
+                if ($request->filled('monthly_rent')) {
+                    $allocUpdate['agreed_rent'] = (float)$request->input('monthly_rent');
+                }
+                if ($request->filled('security_deposit')) {
+                    $allocUpdate['security_deposit'] = (float)$request->input('security_deposit');
+                }
+                $alloc->update($allocUpdate);
+            }
+        }
 
         if ($student->user) {
             $userUpdate = ['name' => $validated['full_name']];

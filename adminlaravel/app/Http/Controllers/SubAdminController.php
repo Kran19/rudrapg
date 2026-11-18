@@ -2485,9 +2485,35 @@ class SubAdminController extends Controller
             'rent_status' => ['nullable', 'string'],
             'rent_balance_due' => ['nullable', 'numeric', 'min:0'],
             'deposit_balance_due' => ['nullable', 'numeric', 'min:0'],
+            'monthly_rent' => ['nullable', 'numeric', 'min:0'],
+            'security_deposit' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $student->update($validated);
+        $studentUpdateData = collect($validated)->except(['monthly_rent', 'security_deposit'])->toArray();
+        $student->update($studentUpdateData);
+
+        if ($request->filled('monthly_rent') || $request->filled('security_deposit')) {
+            if ($student->bed) {
+                $bedUpdate = [];
+                if ($request->filled('monthly_rent')) {
+                    $bedUpdate['monthly_rent'] = (float)$request->input('monthly_rent');
+                }
+                if ($request->filled('security_deposit')) {
+                    $bedUpdate['security_deposit'] = (float)$request->input('security_deposit');
+                }
+                $student->bed->update($bedUpdate);
+            }
+            if ($alloc = $student->roomAllocations()->where('status', 'ACTIVE')->first()) {
+                $allocUpdate = [];
+                if ($request->filled('monthly_rent')) {
+                    $allocUpdate['agreed_rent'] = (float)$request->input('monthly_rent');
+                }
+                if ($request->filled('security_deposit')) {
+                    $allocUpdate['security_deposit'] = (float)$request->input('security_deposit');
+                }
+                $alloc->update($allocUpdate);
+            }
+        }
 
         if ($student->user) {
             $userUpdate = ['name' => $validated['full_name']];

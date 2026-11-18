@@ -28,7 +28,9 @@
              raw_kyc_status: 'PENDING', 
              raw_rent_status: 'PENDING', 
              rent_balance_due: 0, 
-             deposit_balance_due: 0 
+             deposit_balance_due: 0,
+             monthly_rent: 0,
+             security_deposit: 0
          } 
      }"
      @open-lightbox.window="lightboxSrc = $event.detail.src; lightboxTitle = $event.detail.title; lightboxOpen = true"
@@ -200,16 +202,26 @@
                 </div>
             </div>
 
-            <!-- Section 4: Meter Baseline & Dues -->
+            <!-- Section 4: Rent, Deposit & Utility Baseline -->
             <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
                 <h5 class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-1.5">
-                    <i class="fa-solid fa-receipt"></i> 4. Utility Baseline & Rent Balance
+                    <i class="fa-solid fa-receipt"></i> 4. Rent, Deposit & Utility Baseline
                 </h5>
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Monthly Rent (₹)</label>
+                        <input type="number" step="0.01" name="monthly_rent" x-model="editForm.monthly_rent" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Security Deposit (₹)</label>
+                        <input type="number" step="0.01" name="security_deposit" x-model="editForm.security_deposit" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-blue-600 dark:text-blue-400 font-mono font-bold">
+                    </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Starting Meter Reading</label>
                         <input type="number" step="0.01" name="initial_meter_reading" x-model="editForm.initial_meter_reading" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100 font-mono">
                     </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Rent Status</label>
                         <select name="rent_status" required x-model="editForm.raw_rent_status" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-slate-100">
