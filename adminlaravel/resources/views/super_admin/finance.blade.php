@@ -362,13 +362,13 @@
                 }
             }},
             {title: "Verified At", field: "verified_at", minWidth: 140},
-            {title: "Actions", field: "id", minWidth: 160, formatter: function(cell){
+            {title: "Actions", field: "id", minWidth: 160, hozAlign: "center", formatter: function(cell){
                 var row = cell.getRow().getData();
-                var html = '<div class="flex items-center gap-1.5">';
+                var html = '<div class="inline-flex items-center gap-2 whitespace-nowrap py-1">';
                 if (row.proof_image) {
-                    html += '<button type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1 view-proof-btn" title="View Payment Proof"><i class="fa-solid fa-eye text-blue-600 dark:text-blue-400"></i> Proof</button>';
+                    html += '<button type="button" class="w-8 h-8 inline-flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/70 rounded-xl shadow-xs transition-all cursor-pointer view-proof-btn shrink-0" title="View Uploaded Payment Proof Receipt"><i class="fa-solid fa-eye text-xs"></i></button>';
                 }
-                html += '<button type="button" class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1 edit-tx-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
+                html += '<button type="button" class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1.5 rounded-xl shadow-xs inline-flex items-center gap-1 transition-all cursor-pointer edit-tx-btn shrink-0"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
                 html += '</div>';
                 return html;
             }, cellClick: function(e, cell){

@@ -364,20 +364,20 @@
                 }
                 return '<span class="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 text-xs font-bold px-2.5 py-1 rounded-full">PENDING</span>';
             }},
-            {title: "Action", field: "id", minWidth: 200, formatter: function(cell){
+            {title: "Action", field: "id", minWidth: 200, hozAlign: "center", formatter: function(cell){
                 var row = cell.getRow().getData();
                 var raw = (row.raw_status || '').toUpperCase();
                 var studentId = row.student_id;
 
-                var html = '<div class="flex items-center gap-1.5 flex-wrap">';
+                var html = '<div class="inline-flex items-center gap-2 whitespace-nowrap py-1">';
                 if (row.proof_url) {
-                    html += '<button type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 text-[11px] font-bold px-2 py-1 rounded-lg shadow-xs flex items-center gap-1 view-proof-btn" title="View Payment Proof"><i class="fa-solid fa-eye text-blue-600 dark:text-blue-400"></i> Proof</button>';
+                    html += '<button type="button" class="w-8 h-8 inline-flex items-center justify-center bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/70 rounded-xl shadow-xs transition-all cursor-pointer view-proof-btn shrink-0" title="View Uploaded Payment Proof Receipt"><i class="fa-solid fa-eye text-xs"></i></button>';
                 }
                 if (raw === "PENDING") {
-                    html += '<button class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1 approve-btn"><i class="fa-solid fa-check"></i> Approve</button>';
-                    html += '<button class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1 reject-btn"><i class="fa-solid fa-xmark"></i> Reject</button>';
+                    html += '<button type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer approve-btn shrink-0"><i class="fa-solid fa-check"></i> Approve</button>';
+                    html += '<button type="button" class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer reject-btn shrink-0"><i class="fa-solid fa-xmark"></i> Reject</button>';
                 } else {
-                    html += '<button class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1 add-partial-btn" title="Record another partial payment"><i class="fa-solid fa-plus"></i> Add Payment</button>';
+                    html += '<button type="button" class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs inline-flex items-center gap-1.5 transition-all cursor-pointer add-partial-btn shrink-0" title="Record another partial payment"><i class="fa-solid fa-plus"></i> Add Payment</button>';
                 }
                 html += '</div>';
                 return html;
