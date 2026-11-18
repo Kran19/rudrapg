@@ -4,7 +4,11 @@
 @section('page_title', 'Monthly Rent Dues & Collection Ledger')
 
 @section('content')
-<div x-data="rentLedgerApp()" x-init="init()" @close-payment-modal.window="paymentModalOpen = false">
+<div x-data="rentLedgerApp()" x-init="init()" 
+     @close-payment-modal.window="paymentModalOpen = false"
+     @open-lightbox.window="lightboxSrc = $event.detail.src; lightboxTitle = $event.detail.title; lightboxOpen = true"
+     @close-lightbox.window="lightboxOpen = false"
+     @keydown.escape.window="lightboxOpen = false; paymentModalOpen = false">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">Rent Dues, Partial Deposits & Offline Payments</h3>
@@ -159,6 +163,28 @@
             </form>
         </div>
     </div>
+
+    <!-- Fullscreen Payment Proof Lightbox Modal -->
+    <div x-show="lightboxOpen" style="display: none;"
+         x-transition
+         class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[70] flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl flex justify-between items-center text-white mb-3">
+            <h3 class="text-sm font-bold flex items-center gap-2">
+                <i class="fa-solid fa-receipt text-blue-400"></i> <span x-text="lightboxTitle"></span>
+            </h3>
+            <div class="flex items-center gap-2">
+                <a :href="lightboxSrc" target="_blank" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Original
+                </a>
+                <button @click="lightboxOpen = false" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-700 text-white">
+                    <i class="fa-solid fa-xmark mr-1"></i> Close Lightbox (Esc)
+                </button>
+            </div>
+        </div>
+        <div class="relative max-w-4xl max-h-[85vh] flex items-center justify-center overflow-auto rounded-2xl border border-slate-800 bg-slate-900/50 p-2">
+            <img :src="lightboxSrc" class="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl transition-transform hover:scale-125 cursor-zoom-in" title="Hover to zoom, click 'Open Original' for full resolution">
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -170,6 +196,9 @@
     function rentLedgerApp() {
         return {
             paymentModalOpen: false,
+            lightboxOpen: false,
+            lightboxSrc: '',
+            lightboxTitle: '',
             students: rawStudents,
             selectedStudentId: '',
             paymentType: 'RENT',
@@ -284,7 +313,41 @@
             }},
             {title: "Due Date", field: "due_date", minWidth: 100},
             {title: "Mode", field: "payment_mode", minWidth: 95},
-            {title: "Ref / UTR", field: "utr", minWidth: 130},
+            {title: "Ref / UTR", field: "utr", minWidth: 140, formatter: function(cell){
+                var row = cell.getRow().getData();
+                var utr = row.utr || 'N/A';
+                if (row.proof_url) {
+                    return '<div class="flex items-center gap-1.5 font-mono text-xs"><span class="truncate">' + utr + '</span><button type="button" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 p-0.5 view-proof-btn" title="View Uploaded Payment Proof"><i class="fa-solid fa-eye text-xs"></i></button></div>';
+                }
+                return '<span class="font-mono text-xs text-slate-800 dark:text-slate-200">' + utr + '</span>';
+            }, cellClick: function(e, cell){
+                var data = cell.getRow().getData();
+                if (data.proof_url && (e.target.classList.contains('view-proof-btn') || e.target.closest('.view-proof-btn'))) {
+                    window.dispatchEvent(new CustomEvent('open-lightbox', {
+                        detail: {
+                            src: data.proof_url,
+                            title: 'Payment Proof: ' + (data.student_name || 'Resident') + ' (UTR: ' + (data.utr || 'N/A') + ' - ' + (data.rent || '') + ')'
+                        }
+                    }));
+                }
+            }},
+            {title: "Proof Receipt", field: "proof_url", minWidth: 130, formatter: function(cell){
+                var row = cell.getRow().getData();
+                if (row.proof_url) {
+                    return '<button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 rounded-lg transition-colors view-proof-btn" title="View Uploaded Payment Proof"><i class="fa-solid fa-eye"></i> View Proof</button>';
+                }
+                return '<span class="text-slate-400 dark:text-slate-500 text-xs italic">No Proof</span>';
+            }, cellClick: function(e, cell){
+                var data = cell.getRow().getData();
+                if (data.proof_url && (e.target.classList.contains('view-proof-btn') || e.target.closest('.view-proof-btn'))) {
+                    window.dispatchEvent(new CustomEvent('open-lightbox', {
+                        detail: {
+                            src: data.proof_url,
+                            title: 'Payment Proof: ' + (data.student_name || 'Resident') + ' (UTR: ' + (data.utr || 'N/A') + ' - ' + (data.rent || '') + ')'
+                        }
+                    }));
+                }
+            }},
             {title: "Status", field: "status", minWidth: 140, formatter: function(cell){
                 var row = cell.getRow().getData();
                 var raw = (row.raw_status || '').toUpperCase();
@@ -301,12 +364,15 @@
                 }
                 return '<span class="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 text-xs font-bold px-2.5 py-1 rounded-full">PENDING</span>';
             }},
-            {title: "Action", field: "id", minWidth: 190, formatter: function(cell){
+            {title: "Action", field: "id", minWidth: 200, formatter: function(cell){
                 var row = cell.getRow().getData();
                 var raw = (row.raw_status || '').toUpperCase();
                 var studentId = row.student_id;
 
                 var html = '<div class="flex items-center gap-1.5 flex-wrap">';
+                if (row.proof_url) {
+                    html += '<button type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 text-[11px] font-bold px-2 py-1 rounded-lg shadow-xs flex items-center gap-1 view-proof-btn" title="View Payment Proof"><i class="fa-solid fa-eye text-blue-600 dark:text-blue-400"></i> Proof</button>';
+                }
                 if (raw === "PENDING") {
                     html += '<button class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1 approve-btn"><i class="fa-solid fa-check"></i> Approve</button>';
                     html += '<button class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1 reject-btn"><i class="fa-solid fa-xmark"></i> Reject</button>';
@@ -317,7 +383,16 @@
                 return html;
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                if (e.target.classList.contains('approve-btn') || e.target.closest('.approve-btn')) {
+                if (e.target.classList.contains('view-proof-btn') || e.target.closest('.view-proof-btn')) {
+                    if (data.proof_url) {
+                        window.dispatchEvent(new CustomEvent('open-lightbox', {
+                            detail: {
+                                src: data.proof_url,
+                                title: 'Payment Proof: ' + (data.student_name || 'Resident') + ' (UTR: ' + (data.utr || 'N/A') + ' - ' + (data.rent || '') + ')'
+                            }
+                        }));
+                    }
+                } else if (e.target.classList.contains('approve-btn') || e.target.closest('.approve-btn')) {
                     verifyPayment(data.id);
                 } else if (e.target.classList.contains('reject-btn') || e.target.closest('.reject-btn')) {
                     rejectPayment(data.id);

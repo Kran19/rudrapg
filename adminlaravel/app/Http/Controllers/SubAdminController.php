@@ -797,6 +797,14 @@ class SubAdminController extends Controller
         $branch = $this->getActiveBranch();
         $branchIds = $this->getAuthorizedBranchIds();
 
+        $formatUrl = function (?string $path) {
+            if (!$path) return null;
+            if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
+            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+            $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
+            return asset('storage/' . $cleanPath);
+        };
+
         $duesData = Payment::with(['student.room', 'student.bed', 'branch', 'proof'])
             ->where(function($q) use ($branch, $branchIds) {
                 if ($branch) {
@@ -807,7 +815,7 @@ class SubAdminController extends Controller
             })
             ->latest()
             ->get()
-            ->map(function ($payment) {
+            ->map(function ($payment) use ($formatUrl) {
                 $totalDue = $payment->total_due !== null ? (float)$payment->total_due : (float)$payment->amount;
                 $amountPaid = (float)$payment->amount;
                 $remainingAmount = (float)($payment->remaining_amount ?? 0);
@@ -842,6 +850,8 @@ class SubAdminController extends Controller
                     'raw_status' => $payment->status,
                     'payment_mode' => $payment->payment_mode ?? 'UPI Transfer',
                     'utr' => $payment->proof ? $payment->proof->utr_number : 'N/A',
+                    'proof_id' => $payment->proof?->id,
+                    'proof_url' => $payment->proof ? $formatUrl($payment->proof->screenshot_path) : null,
                 ];
             });
 
@@ -2253,6 +2263,12 @@ class SubAdminController extends Controller
         }
         if (\Illuminate\Support\Facades\Storage::disk('local')->exists($cleanPath)) {
             return \Illuminate\Support\Facades\Storage::disk('local')->response($cleanPath);
+        }
+        if (file_exists(public_path('storage/' . $cleanPath))) {
+            return response()->file(public_path('storage/' . $cleanPath));
+        }
+        if (file_exists(storage_path('app/public/' . $cleanPath))) {
+            return response()->file(storage_path('app/public/' . $cleanPath));
         }
 
         abort(404, 'Payment proof file not found.');

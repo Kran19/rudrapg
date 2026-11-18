@@ -1125,10 +1125,7 @@ class SuperAdminController extends Controller
             if (str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) return null;
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
             $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
-            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
-                return asset('storage/' . $cleanPath);
-            }
-            return null;
+            return asset('storage/' . $cleanPath);
         };
 
         $transactionsData = Payment::with(['student', 'branch', 'proof'])->latest()->get()->map(function ($payment) use ($formatUrl) {
@@ -1142,6 +1139,7 @@ class SuperAdminController extends Controller
                 'amount' => '₹'.number_format($payment->amount),
                 'payment_mode' => $payment->payment_mode ?? 'UPI',
                 'utr' => $payment->payment_mode === 'CASH' ? 'N/A' : ($payment->proof ? $payment->proof->utr_number : 'N/A'),
+                'proof_id' => $payment->proof?->id,
                 'proof_image' => $payment->proof ? $formatUrl($payment->proof->screenshot_path) : null,
                 'date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : 'N/A',
                 'raw_date' => $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d') : '',

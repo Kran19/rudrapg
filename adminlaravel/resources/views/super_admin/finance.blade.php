@@ -197,15 +197,22 @@
          style="display: none;">
         
         <div @click.away="proofModalOpen = false" 
-             class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-md overflow-hidden transform transition-all">
+             class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 w-full max-w-lg overflow-hidden transform transition-all">
             
             <div class="bg-slate-900 text-white p-5 flex items-center justify-between border-b border-slate-800">
                 <h4 class="font-bold text-base flex items-center gap-2">
                     <i class="fa-solid fa-receipt text-blue-400"></i> Payment Proof Details
                 </h4>
-                <button @click="proofModalOpen = false" class="text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <template x-if="proofData.image">
+                        <a :href="proofData.image" target="_blank" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Open Original
+                        </a>
+                    </template>
+                    <button @click="proofModalOpen = false" class="text-slate-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
             </div>
 
             <div class="p-6 space-y-4">
@@ -299,15 +306,32 @@
             {title: "Payment Mode", field: "payment_mode", minWidth: 110, formatter: function(cell){
                 return "<span class='font-semibold text-xs text-slate-700 dark:text-slate-300'>" + cell.getValue() + "</span>";
             }},
-            {title: "Ref / UTR No.", field: "utr", minWidth: 130, formatter: function(cell){
-                return "<span class='font-mono text-xs text-slate-800 dark:text-slate-200'>" + cell.getValue() + "</span>";
+            {title: "Ref / UTR No.", field: "utr", minWidth: 140, formatter: function(cell){
+                var row = cell.getRow().getData();
+                var utr = row.utr || 'N/A';
+                if (row.proof_image) {
+                    return '<div class="flex items-center gap-1.5 font-mono text-xs"><span class="truncate">' + utr + '</span><button type="button" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 p-0.5 view-proof-btn" title="View Uploaded Payment Proof"><i class="fa-solid fa-eye text-xs"></i></button></div>';
+                }
+                return "<span class='font-mono text-xs text-slate-800 dark:text-slate-200'>" + utr + "</span>";
+            }, cellClick: function(e, cell){
+                var data = cell.getRow().getData();
+                if (data.proof_image && (e.target.classList.contains('view-proof-btn') || e.target.closest('.view-proof-btn'))) {
+                    window.dispatchEvent(new CustomEvent('open-proof-modal', { detail: {
+                        image: data.proof_image,
+                        utr: data.utr,
+                        amount: data.amount,
+                        date: data.date,
+                        status: data.status,
+                        verified_at: data.verified_at
+                    }}));
+                }
             }},
-            {title: "Proof Image", field: "proof_image", minWidth: 110, formatter: function(cell){
+            {title: "Proof Receipt", field: "proof_image", minWidth: 130, formatter: function(cell){
                 var url = cell.getValue();
                 if(url) {
-                    return '<button class="text-blue-600 dark:text-blue-400 hover:text-blue-800 font-bold text-xs flex items-center gap-1 view-proof-btn"><i class="fa-solid fa-image"></i> View Proof</button>';
+                    return '<button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 rounded-lg transition-colors view-proof-btn" title="View Uploaded Payment Proof"><i class="fa-solid fa-eye"></i> View Proof</button>';
                 }
-                return '<span class="text-slate-400 text-xs italic">No Image</span>';
+                return '<span class="text-slate-400 text-xs italic">No Proof</span>';
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
                 if (e.target.classList.contains('view-proof-btn') || e.target.closest('.view-proof-btn')) {
@@ -338,13 +362,29 @@
                 }
             }},
             {title: "Verified At", field: "verified_at", minWidth: 140},
-            {title: "Actions", field: "id", minWidth: 100, formatter: function(cell){
-                return '<div class="flex gap-1.5">' +
-                       '  <button class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1 edit-tx-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' +
-                       '</div>';
+            {title: "Actions", field: "id", minWidth: 160, formatter: function(cell){
+                var row = cell.getRow().getData();
+                var html = '<div class="flex items-center gap-1.5">';
+                if (row.proof_image) {
+                    html += '<button type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-xs flex items-center gap-1 view-proof-btn" title="View Payment Proof"><i class="fa-solid fa-eye text-blue-600 dark:text-blue-400"></i> Proof</button>';
+                }
+                html += '<button type="button" class="bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1 edit-tx-btn"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
+                html += '</div>';
+                return html;
             }, cellClick: function(e, cell){
                 var data = cell.getRow().getData();
-                if (e.target.classList.contains('edit-tx-btn') || e.target.closest('.edit-tx-btn')) {
+                if (e.target.classList.contains('view-proof-btn') || e.target.closest('.view-proof-btn')) {
+                    if (data.proof_image) {
+                        window.dispatchEvent(new CustomEvent('open-proof-modal', { detail: {
+                            image: data.proof_image,
+                            utr: data.utr,
+                            amount: data.amount,
+                            date: data.date,
+                            status: data.status,
+                            verified_at: data.verified_at
+                        }}));
+                    }
+                } else if (e.target.classList.contains('edit-tx-btn') || e.target.closest('.edit-tx-btn')) {
                     var editData = {
                         id: data.id,
                         tx_reference: data.tx_reference,
