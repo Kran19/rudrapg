@@ -4,9 +4,31 @@
 @section('page_title', 'Student Verification Desk' . (isset($activeBranch) && $activeBranch ? ' (' . $activeBranch->name . ')' : ''))
 
 @section('content')
-<div x-data="{ verifyModalOpen: false, activeStudent: {}, selectedBedId: '', availableBeds: (window.availableBedsData || []), lightboxOpen: false, lightboxSrc: '', lightboxTitle: '', isEditingRoom: false }"
-     @open-verify-modal.window="activeStudent = $event.detail; selectedBedId = ''; isEditingRoom = false; verifyModalOpen = true"
+<div x-data="{ 
+        verifyModalOpen: false, 
+        activeStudent: {}, 
+        selectedBedId: '', 
+        availableBeds: (window.availableBedsData || []), 
+        lightboxOpen: false, 
+        lightboxSrc: '', 
+        lightboxTitle: '', 
+        isEditingRoom: false,
+        isEditingAmounts: false,
+        editRent: 0,
+        editDeposit: 0,
+        isSavingAmounts: false
+     }"
+     @open-verify-modal.window="
+        activeStudent = $event.detail; 
+        selectedBedId = ''; 
+        isEditingRoom = false; 
+        isEditingAmounts = false;
+        editRent = activeStudent.numeric_rent || 0;
+        editDeposit = activeStudent.numeric_deposit || 0;
+        verifyModalOpen = true;
+     "
      @close-verify-modal.window="verifyModalOpen = false"
+     @amounts-updated.window="isEditingAmounts = false; isSavingAmounts = false"
      @open-lightbox.window="lightboxSrc = $event.detail.src; lightboxTitle = $event.detail.title; lightboxOpen = true">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -137,13 +159,26 @@
                     <template x-if="activeStudent.is_kyc_approved">
                         <div class="bg-blue-50/60 dark:bg-blue-900/30 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900 space-y-2 text-xs">
                             <div class="flex justify-between items-center mb-1">
-                                <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">Select Available Bed:</label>
-                                <button type="button" @click="isEditingRoom = !isEditingRoom" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold hover:bg-blue-200 transition-colors">
-                                    <i class="fa-solid fa-pen mr-1"></i> <span x-text="activeStudent.is_bed_assigned ? 'Change Bed' : 'Choose Bed'"></span>
-                                </button>
+                                <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">Room & Pricing Allocation:</label>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" @click="isEditingRoom = !isEditingRoom" class="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-0.5 rounded font-bold hover:bg-blue-200 transition-colors">
+                                        <i class="fa-solid fa-bed mr-1"></i> <span x-text="activeStudent.is_bed_assigned ? 'Change Bed' : 'Choose Bed'"></span>
+                                    </button>
+                                    <button type="button" @click="isEditingAmounts = !isEditingAmounts; if(isEditingAmounts){ editRent = activeStudent.numeric_rent || 0; editDeposit = activeStudent.numeric_deposit || 0; }" class="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 px-2 py-0.5 rounded font-bold hover:bg-amber-200 transition-colors flex items-center gap-1">
+                                        <i class="fa-solid fa-pen-to-square"></i> <span x-text="isEditingAmounts ? 'Cancel' : 'Edit Rent & Deposit'"></span>
+                                    </button>
+                                </div>
                             </div>
-                            <div x-show="isEditingRoom || !activeStudent.is_bed_assigned">
-                                <select x-model="selectedBedId" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-slate-100">
+                            <div x-show="isEditingRoom || !activeStudent.is_bed_assigned" class="space-y-1">
+                                <select x-model="selectedBedId" 
+                                        @change="
+                                            const b = availableBeds.find(x => x.id == selectedBedId);
+                                            if (b) {
+                                                editRent = b.monthly_rent;
+                                                editDeposit = b.security_deposit;
+                                            }
+                                        "
+                                        class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-slate-100">
                                     <option value="">Select Bed from Available List</option>
                                     <template x-for="bed in availableBeds" :key="bed.id">
                                         <option :value="bed.id" x-text="bed.label"></option>
@@ -154,13 +189,66 @@
                                 <span class="text-slate-600 dark:text-slate-400">Allocated Spot:</span>
                                 <span class="font-bold text-slate-900 dark:text-slate-100" x-text="(!activeStudent.room_number || activeStudent.room_number === 'Pending' || activeStudent.room_number === 'Unassigned') ? 'Room Not Assigned Yet' : 'Room ' + activeStudent.room_number + ' (' + activeStudent.bed_code + ')'"></span>
                             </div>
-                            <div class="flex justify-between">
+                            
+                            <!-- Monthly Rent Display with Quick Edit Trigger -->
+                            <div class="flex justify-between items-center py-0.5">
                                 <span class="text-slate-600 dark:text-slate-400">Monthly Rent:</span>
-                                <span class="font-bold text-blue-600 dark:text-blue-400" x-text="activeStudent.rent"></span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-blue-600 dark:text-blue-400" x-text="activeStudent.rent"></span>
+                                    <button type="button" @click="isEditingAmounts = true; editRent = activeStudent.numeric_rent || 0; editDeposit = activeStudent.numeric_deposit || 0;" class="text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors text-xs p-0.5" title="Edit Monthly Rent & Deposit">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex justify-between">
+
+                            <!-- Security Deposit Display with Quick Edit Trigger -->
+                            <div class="flex justify-between items-center py-0.5">
                                 <span class="text-slate-600 dark:text-slate-400">Security Deposit:</span>
-                                <span class="font-bold text-slate-900 dark:text-slate-100" x-text="activeStudent.deposit"></span>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-slate-900 dark:text-slate-100" x-text="activeStudent.deposit"></span>
+                                    <button type="button" @click="isEditingAmounts = true; editRent = activeStudent.numeric_rent || 0; editDeposit = activeStudent.numeric_deposit || 0;" class="text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors text-xs p-0.5" title="Edit Monthly Rent & Deposit">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Inline Edit Rent & Security Deposit Box -->
+                            <div x-show="isEditingAmounts" 
+                                 x-transition
+                                 class="p-3 bg-white dark:bg-slate-800 rounded-xl border border-amber-300 dark:border-amber-700/80 shadow-xs space-y-2.5 mt-2">
+                                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-1.5">
+                                    <span class="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit Rent & Deposit Amounts
+                                    </span>
+                                    <button type="button" @click="isEditingAmounts = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-0.5">Monthly Rent (₹)</label>
+                                        <input type="number" x-model.number="editRent" min="0" step="100" class="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-0.5">Security Deposit (₹)</label>
+                                        <input type="number" x-model.number="editDeposit" min="0" step="100" class="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-emerald-600 dark:text-emerald-400 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between pt-1">
+                                    <span class="text-[10px] text-slate-500 dark:text-slate-400">
+                                        Total: <strong class="text-slate-800 dark:text-slate-200 font-bold" x-text="'₹' + (Number(editRent || 0) + Number(editDeposit || 0)).toLocaleString('en-IN')"></strong>
+                                    </span>
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button" @click="isEditingAmounts = false" class="px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                                            Cancel
+                                        </button>
+                                        <button type="button" @click="isSavingAmounts = true; saveVerificationAmounts(activeStudent, editRent, editDeposit)" :disabled="isSavingAmounts" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-lg transition-colors shadow-xs flex items-center gap-1 disabled:opacity-50">
+                                            <i class="fa-solid fa-check" x-show="!isSavingAmounts"></i>
+                                            <i class="fa-solid fa-spinner fa-spin" x-show="isSavingAmounts"></i>
+                                            <span x-text="isSavingAmounts ? 'Saving...' : 'Save Amounts'"></span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </template>
@@ -352,7 +440,7 @@
                     </button>
 
                     <!-- Step 2 Trigger -->
-                    <button type="button" @click="assignBedOnly(activeStudent, selectedBedId)" 
+                    <button type="button" @click="assignBedOnly(activeStudent, selectedBedId, editRent, editDeposit)" 
                             :disabled="!activeStudent.is_kyc_approved || (!selectedBedId && !activeStudent.is_bed_assigned)"
                             :class="(!activeStudent.is_kyc_approved) ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700' : (activeStudent.is_bed_assigned ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-200 cursor-pointer' : (selectedBedId ? 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-sm' : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'))"
                             class="px-4 py-2 text-xs font-bold rounded-xl transition-all">
@@ -506,7 +594,7 @@
         });
     }
 
-    function assignBedOnly(student, selectedBedId) {
+    function assignBedOnly(student, selectedBedId, customRent, customDeposit) {
         if (!selectedBedId) {
             toastr.warning("Please select a Room & Bed from the dropdown.");
             return;
@@ -521,6 +609,13 @@
         }).then((result) => {
             if (result.isConfirmed) {
                 var targetId = student.db_id || student.id;
+                var payload = { bed_id: selectedBedId };
+                if (customRent !== undefined && customRent !== null && customRent !== '') {
+                    payload.monthly_rent = parseFloat(customRent);
+                }
+                if (customDeposit !== undefined && customDeposit !== null && customDeposit !== '') {
+                    payload.security_deposit = parseFloat(customDeposit);
+                }
                 fetch(appUrl("sub-admin/verifications/" + targetId + "/assign-bed"), {
                     method: "POST",
                     headers: {
@@ -528,9 +623,7 @@
                         "Content-Type": "application/json",
                         "Accept": "application/json"
                     },
-                    body: JSON.stringify({ 
-                        bed_id: selectedBedId
-                    })
+                    body: JSON.stringify(payload)
                 })
                 .then(res => res.json())
                 .then(data => {
@@ -546,6 +639,63 @@
                     toastr.error("Failed to assign bed.");
                 });
             }
+        });
+    }
+
+    function saveVerificationAmounts(student, rent, deposit) {
+        if (rent === undefined || rent === null || rent === '' || isNaN(rent) || rent < 0) {
+            toastr.warning("Please enter a valid monthly rent amount.");
+            window.dispatchEvent(new CustomEvent('amounts-updated'));
+            return;
+        }
+        if (deposit === undefined || deposit === null || deposit === '' || isNaN(deposit) || deposit < 0) {
+            toastr.warning("Please enter a valid security deposit amount.");
+            window.dispatchEvent(new CustomEvent('amounts-updated'));
+            return;
+        }
+
+        var targetId = student.db_id || student.id;
+        var postData = {
+            monthly_rent: parseFloat(rent),
+            security_deposit: parseFloat(deposit)
+        };
+
+        fetch(appUrl("sub-admin/verifications/" + targetId + "/update-amounts"), {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify(postData)
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.dispatchEvent(new CustomEvent('amounts-updated'));
+            if (data.status === "success") {
+                toastr.success(data.message);
+                // Live update modal object
+                student.rent = data.formatted_rent;
+                student.deposit = data.formatted_deposit;
+                student.numeric_rent = data.monthly_rent;
+                student.numeric_deposit = data.security_deposit;
+                // Live update Tabulator row
+                if (typeof table !== "undefined") {
+                    table.updateData([{
+                        id: student.id,
+                        rent: data.formatted_rent,
+                        deposit: data.formatted_deposit,
+                        numeric_rent: data.monthly_rent,
+                        numeric_deposit: data.security_deposit
+                    }]);
+                }
+            } else {
+                toastr.error(data.message || "Failed to update rent and deposit.");
+            }
+        })
+        .catch(err => {
+            window.dispatchEvent(new CustomEvent('amounts-updated'));
+            toastr.error("Failed to update amounts.");
         });
     }
 

@@ -300,6 +300,8 @@ class SubAdminController extends Controller
                     'sharing_type' => $student && $student->room ? $student->room->sharing_type : 'Standard',
                     'rent' => $student && $student->bed ? '₹'.number_format($student->bed->monthly_rent) : 'Pending Room Allocation',
                     'deposit' => $student && $student->bed ? '₹'.number_format($student->bed->security_deposit) : 'Pending Room Allocation',
+                    'numeric_rent' => $student && $student->bed ? (float)($student->bed->monthly_rent ?? 0) : 0,
+                    'numeric_deposit' => $student && $student->bed ? (float)($student->bed->security_deposit ?? 0) : 0,
                     'date' => $req->created_at ? $req->created_at->format('d M Y') : 'N/A',
                     'status' => $req->status == 'PENDING' ? 'Pending Verification' : $req->status,
                     'kyc_status' => $student ? $student->kyc_status : 'PENDING',
@@ -336,6 +338,8 @@ class SubAdminController extends Controller
                 return [
                     'id' => $b->id,
                     'label' => 'Room ' . ($b->room ? $b->room->room_number : 'N/A') . ' (' . $b->bed_code . ') - ₹' . number_format($b->monthly_rent) . '/mo',
+                    'monthly_rent' => (float)$b->monthly_rent,
+                    'security_deposit' => (float)$b->security_deposit,
                 ];
             });
 
@@ -397,7 +401,10 @@ class SubAdminController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Selected bed is no longer available.'], 422);
         }
 
-        DB::transaction(function () use ($requestRecord, $bed, $student) {
+        $monthlyRent = $request->filled('monthly_rent') ? (float)$request->input('monthly_rent') : (float)$bed->monthly_rent;
+        $securityDeposit = $request->filled('security_deposit') ? (float)$request->input('security_deposit') : (float)$bed->security_deposit;
+
+        DB::transaction(function () use ($requestRecord, $bed, $student, $monthlyRent, $securityDeposit) {
             $requestRecord->update(['status' => 'BED_ALLOCATED', 'processed_by' => Auth::id()]);
             
             $student->update([
@@ -406,25 +413,41 @@ class SubAdminController extends Controller
                 'rent_status' => 'DUE',
                 'deposit_status' => 'DUE',
                 'status' => 'BED_ALLOCATED',
+                'rent_balance_due' => $monthlyRent,
+                'deposit_balance_due' => $securityDeposit,
             ]);
-            $bed->update(['status' => 'RESERVED']);
+            $bed->update([
+                'status' => 'RESERVED',
+                'monthly_rent' => $monthlyRent,
+                'security_deposit' => $securityDeposit,
+            ]);
 
-            RoomAllocation::create([
-                'branch_id' => $student->branch_id,
-                'student_id' => $student->id,
-                'room_id' => $bed->room_id,
-                'bed_id' => $bed->id,
-                'start_date' => now()->toDateString(),
-                'monthly_rent' => $bed->monthly_rent,
-                'security_deposit' => $bed->security_deposit,
-                'status' => 'ACTIVE',
-                'allocated_by' => Auth::id(),
-            ]);
+            $alloc = RoomAllocation::where('student_id', $student->id)->where('status', 'ACTIVE')->first();
+            if ($alloc) {
+                $alloc->update([
+                    'room_id' => $bed->room_id,
+                    'bed_id' => $bed->id,
+                    'monthly_rent' => $monthlyRent,
+                    'security_deposit' => $securityDeposit,
+                ]);
+            } else {
+                RoomAllocation::create([
+                    'branch_id' => $student->branch_id,
+                    'student_id' => $student->id,
+                    'room_id' => $bed->room_id,
+                    'bed_id' => $bed->id,
+                    'start_date' => now()->toDateString(),
+                    'monthly_rent' => $monthlyRent,
+                    'security_deposit' => $securityDeposit,
+                    'status' => 'ACTIVE',
+                    'allocated_by' => Auth::id(),
+                ]);
+            }
         });
 
         AuditLog::create([
             'user_id' => Auth::id(),
-            'action' => 'Allocated Room & Bed for: '.$id,
+            'action' => 'Allocated Room & Bed for: '.$id.' (Rent: ₹'.$monthlyRent.', Deposit: ₹'.$securityDeposit.')',
             'module' => 'VERIFICATION',
             'record_id' => $requestRecord->id,
             'ip_address' => request()->ip(),
@@ -433,6 +456,81 @@ class SubAdminController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Step 2 Complete: Bed '.$bed->bed_code.' allocated! Rent & Deposit payment unlocked in resident app.',
+            'monthly_rent' => $monthlyRent,
+            'security_deposit' => $securityDeposit,
+            'formatted_rent' => '₹'.number_format($monthlyRent),
+            'formatted_deposit' => '₹'.number_format($securityDeposit),
+            'room_number' => $bed->room ? $bed->room->room_number : 'N/A',
+            'bed_code' => $bed->bed_code,
+        ]);
+    }
+
+    public function updateVerificationAmounts(Request $request, $id)
+    {
+        $requestRecord = RegistrationRequest::where('app_reference', $id)->orWhere('id', $id)->firstOrFail();
+        if (!in_array($requestRecord->branch_id, $this->getAuthorizedBranchIds())) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized action: You do not have permission to manage records for this branch.'], 403);
+        }
+
+        $student = $requestRecord->student;
+        if (!$student) {
+            return response()->json(['status' => 'error', 'message' => 'Student record not found for this request.'], 404);
+        }
+
+        $validated = $request->validate([
+            'monthly_rent' => ['required', 'numeric', 'min:0'],
+            'security_deposit' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $monthlyRent = (float)$validated['monthly_rent'];
+        $securityDeposit = (float)$validated['security_deposit'];
+
+        DB::transaction(function () use ($student, $requestRecord, $monthlyRent, $securityDeposit) {
+            // Update Bed if assigned
+            if ($student->bed) {
+                $student->bed->update([
+                    'monthly_rent' => $monthlyRent,
+                    'security_deposit' => $securityDeposit,
+                ]);
+            }
+
+            // Update student dues if unpaid/due
+            $studentUpdate = [];
+            if ($student->rent_status !== 'PAID') {
+                $studentUpdate['rent_balance_due'] = $monthlyRent;
+            }
+            if ($student->deposit_status !== 'PAID') {
+                $studentUpdate['deposit_balance_due'] = $securityDeposit;
+            }
+            if (!empty($studentUpdate)) {
+                $student->update($studentUpdate);
+            }
+
+            // Update active room allocations
+            $allocations = RoomAllocation::where('student_id', $student->id)->where('status', 'ACTIVE')->get();
+            foreach ($allocations as $alloc) {
+                $alloc->update([
+                    'monthly_rent' => $monthlyRent,
+                    'security_deposit' => $securityDeposit,
+                ]);
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Updated rent (₹'.$monthlyRent.') and deposit (₹'.$securityDeposit.') for applicant '.$requestRecord->app_reference,
+            'module' => 'VERIFICATION',
+            'record_id' => $requestRecord->id,
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Rent and Security Deposit amounts updated successfully.',
+            'monthly_rent' => $monthlyRent,
+            'security_deposit' => $securityDeposit,
+            'formatted_rent' => '₹'.number_format($monthlyRent),
+            'formatted_deposit' => '₹'.number_format($securityDeposit),
         ]);
     }
 
