@@ -27,6 +27,8 @@ class ResidentModel {
   final String rentStatusDisplay;
   final String depositStatus;
   final String status;
+  final String branchManagerName;
+  final String branchManagerPhone;
   final String emergencyContactName;
   final String emergencyContactPhone;
 
@@ -59,6 +61,8 @@ class ResidentModel {
     this.rentStatusDisplay = '',
     this.depositStatus = 'Pending',
     this.status = 'PENDING_APPROVAL',
+    this.branchManagerName = 'Branch Manager',
+    this.branchManagerPhone = '',
     this.emergencyContactName = '',
     this.emergencyContactPhone = '',
   });

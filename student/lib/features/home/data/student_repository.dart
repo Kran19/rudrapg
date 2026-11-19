@@ -50,6 +50,17 @@ class StudentRepository {
         final amountPaid = double.tryParse(studentData['amount_paid']?.toString() ?? '') ?? (monthlyRent > amountLeft ? (monthlyRent - amountLeft) : 0);
         final rentStatusDisplay = studentData['rent_status_display']?.toString() ?? '';
 
+        final branchMap = studentData['branch'] is Map ? (studentData['branch'] as Map) : null;
+        final rawManagerName = studentData['branch_manager_name'] ?? branchMap?['manager_name'] ?? studentData['manager_name'];
+        final rawManagerPhone = studentData['branch_manager_phone'] ?? branchMap?['manager_phone'] ?? studentData['manager_phone'] ?? branchMap?['phone'];
+
+        final branchManagerName = (rawManagerName != null && rawManagerName.toString().trim().isNotEmpty)
+            ? rawManagerName.toString().trim()
+            : 'Branch Manager';
+        final branchManagerPhone = (rawManagerPhone != null && rawManagerPhone.toString().trim().isNotEmpty)
+            ? rawManagerPhone.toString().trim()
+            : '';
+
         return ResidentModel(
           id: studentData['id']?.toString() ?? '',
           fullName: studentData['full_name'] ?? studentData['name'] ?? '',
@@ -78,6 +89,8 @@ class StudentRepository {
           depositStatus: studentData['deposit_status'] ?? 'N/A',
           kycStatus: studentData['kyc_status'] ?? 'N/A',
           status: studentData['status'] ?? 'PENDING_APPROVAL',
+          branchManagerName: branchManagerName,
+          branchManagerPhone: branchManagerPhone,
           emergencyContactName: studentData['parent_name'] ?? '',
           emergencyContactPhone: studentData['emergency_contact'] ?? studentData['parent_phone'] ?? '',
         );

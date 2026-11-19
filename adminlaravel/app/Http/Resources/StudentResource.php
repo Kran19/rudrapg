@@ -20,6 +20,10 @@ class StudentResource extends JsonResource
                 ? 'Paid'
                 : (strtoupper($this->rent_status ?? '') === 'UNDER_VERIFICATION' ? 'Under Verification' : 'Due'));
 
+        $branch = $this->branch;
+        $managerName = ($branch && !empty($branch->manager_name)) ? $branch->manager_name : ($branch?->subAdmins()->first()?->name ?? 'Branch Manager');
+        $managerPhone = ($branch && !empty($branch->manager_phone)) ? $branch->manager_phone : ($branch?->subAdmins()->first()?->phone ?? ($branch?->phone ?? 'N/A'));
+
         return [
             'id' => $this->id,
             'app_reference' => $this->app_reference,
@@ -31,6 +35,10 @@ class StudentResource extends JsonResource
             'parent_name' => $this->parent_name,
             'parent_phone' => $this->parent_phone,
             'emergency_contact' => $this->emergency_contact,
+            'branch_manager_name' => $managerName,
+            'branch_manager_phone' => $managerPhone,
+            'manager_name' => $managerName,
+            'manager_phone' => $managerPhone,
             'current_address' => $this->current_address,
             'joining_date' => $this->joining_date?->format('d M Y'),
             'raw_joining_date' => $this->joining_date?->format('Y-m-d'),

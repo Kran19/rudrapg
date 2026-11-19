@@ -188,9 +188,9 @@ class _MyRoomScreenState extends ConsumerState<MyRoomScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Manager', style: AppTypography.titleSmall),
+                                Text(profile.branchManagerName.isNotEmpty ? profile.branchManagerName : 'Branch Manager', style: AppTypography.titleSmall),
                                 const SizedBox(height: 2),
-                                Text('Branch Manager', style: AppTypography.bodySmall),
+                                Text(profile.branchManagerPhone.isNotEmpty ? '${profile.branchName} • ${profile.branchManagerPhone}' : profile.branchName, style: AppTypography.bodySmall),
                               ],
                             ),
                           ),

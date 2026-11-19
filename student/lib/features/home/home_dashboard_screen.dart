@@ -353,7 +353,9 @@ class HomeDashboardScreen extends ConsumerWidget {
                         _buildOverviewRow(
                           icon: Icons.support_agent_rounded,
                           label: 'Branch Manager Desk',
-                          value: '${resident.emergencyContactName} • ${resident.emergencyContactPhone}',
+                          value: resident.branchManagerPhone.isNotEmpty
+                              ? '${resident.branchManagerName} • ${resident.branchManagerPhone}'
+                              : resident.branchManagerName,
                         ),
                       ],
                     ),

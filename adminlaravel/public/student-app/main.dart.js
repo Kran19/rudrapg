@@ -99517,11 +99517,15 @@ b2=J.aC(k,"kyc_status")
 if(b2==null)b2="N/A"
 b3=J.aC(k,"status")
 if(b3==null)b3="PENDING_APPROVAL"
-b4=J.aC(k,"parent_name")
-if(b4==null)b4=""
-b5=J.aC(k,"emergency_contact")
-if(b5==null)b5=J.aC(k,"parent_phone")
-if(b5==null)b5=""
+b4=J.aC(k,"branch_manager_name")
+if(!b4&&J.aC(k,"branch"))b4=J.aC(J.aC(k,"branch"),"manager_name")
+if(!b4)b4=J.aC(k,"manager_name")
+if(!b4)b4="Branch Manager"
+b5=J.aC(k,"branch_manager_phone")
+if(!b5&&J.aC(k,"branch"))b5=J.aC(J.aC(k,"branch"),"manager_phone")
+if(!b5)b5=J.aC(k,"manager_phone")
+if(!b5&&J.aC(k,"branch"))b5=J.aC(J.aC(k,"branch"),"phone")
+if(!b5)b5=""
 q=new A.fH(i,g,f,e,d,c,b,a,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,b2,b0,b1,b3,b4,b5)
 s=1
 break}i=A.bQ("Failed to load profile")
