@@ -22,6 +22,7 @@ class PaymentsScreen extends ConsumerStatefulWidget {
 
 class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   final _utrController = TextEditingController();
+  final _amountController = TextEditingController();
   XFile? _proofImage;
   Uint8List? _proofImageBytes;
   bool _isSubmitting = false;
@@ -47,6 +48,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   void dispose() {
     _realtimeTimer?.cancel();
     _utrController.dispose();
+    _amountController.dispose();
     super.dispose();
   }
 
@@ -83,10 +85,15 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
     });
 
     try {
-      final formData = FormData.fromMap({
+      final amountVal = double.tryParse(_amountController.text.trim());
+      final mapData = <String, dynamic>{
         'utr_number': utr,
         'screenshot_path': MultipartFile.fromBytes(_proofImageBytes!, filename: 'payment_proof.jpg', contentType: MediaType('image', 'jpeg')),
-      });
+      };
+      if (amountVal != null && amountVal > 0) {
+        mapData['amount'] = amountVal;
+      }
+      final formData = FormData.fromMap(mapData);
 
       await ref.read(studentRepositoryProvider).submitPaymentProof(formData);
 
@@ -99,6 +106,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           ),
         );
         _utrController.clear();
+        _amountController.clear();
         setState(() {
           _proofImage = null;
         });
@@ -144,12 +152,15 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                   profileAsync.when(
                     data: (resident) {
                       final bool isRoomSet = resident.isRoomAssigned;
-                      final bool isPaid = resident.isPaid;
+                      final bool isDepositPaid = resident.depositStatus.toUpperCase() == 'PAID' || resident.depositStatus.toUpperCase() == 'VERIFIED';
+                      final bool isRentPaid = resident.rentStatus.toUpperCase() == 'PAID' || (resident.isPaid && resident.amountLeft <= 0);
                       final bool isPartial = resident.isPartiallyPaid && resident.amountLeft > 0;
                       final bool isSubmitted = resident.isPaymentSubmitted;
-                      final double totalDue = (isRoomSet && !isPaid)
-                          ? (isPartial ? resident.amountLeft : (resident.monthlyRent + resident.securityDeposit))
-                          : 0.0;
+
+                      final double pendingRent = isRentPaid ? 0.0 : (resident.amountLeft > 0 ? resident.amountLeft : resident.monthlyRent);
+                      final double pendingDeposit = isDepositPaid ? 0.0 : resident.securityDeposit;
+                      final double totalDue = isRoomSet ? (pendingRent + pendingDeposit) : 0.0;
+                      final bool isPaid = isRoomSet && totalDue <= 0 && isRentPaid && (isDepositPaid || resident.securityDeposit == 0);
 
                       final String badgeText = !isRoomSet
                           ? 'AWAITING BED ALLOCATION'
@@ -179,7 +190,9 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                                   ? 'Deposit/Partial payment: ₹${resident.amountPaid.toInt()} paid. Remaining amount left: ₹${resident.amountLeft.toInt()}.'
                                   : (isSubmitted
                                       ? 'Your payment proof has been submitted and is currently being audited by the branch manager.'
-                                      : 'Initial admission payment: Rent ₹${resident.monthlyRent.toInt()} + Deposit ₹${resident.securityDeposit.toInt()}.')));
+                                      : (isDepositPaid
+                                          ? 'Monthly Rent Due: ₹${pendingRent.toInt()} (Deposit Cleared).'
+                                          : 'Initial admission payment: Rent ₹${pendingRent.toInt()} + Deposit ₹${pendingDeposit.toInt()}.'))));
 
                       return Column(
                         children: [
@@ -249,16 +262,18 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                             child: _buildBreakdownCard(
                               title: 'Monthly Rent',
                               amount: isRoomSet
-                                  ? (isPartial
-                                      ? '₹${resident.amountLeft.toInt()} Left'
-                                      : '₹${resident.monthlyRent.toInt()}')
+                                  ? (isRentPaid
+                                      ? '₹${resident.monthlyRent.toInt()} (Paid)'
+                                      : (isPartial
+                                          ? '₹${resident.amountLeft.toInt()} Left'
+                                          : '₹${resident.monthlyRent.toInt()}'))
                                   : 'Pending',
-                              status: isPaid
+                              status: isRentPaid
                                   ? 'Paid'
                                   : (isPartial
                                       ? 'Partially Paid'
                                       : (isSubmitted ? 'Verifying' : (isRoomSet ? 'Due' : 'Not Set'))),
-                              color: isPaid
+                              color: isRentPaid
                                   ? AppColors.success
                                   : (isPartial
                                       ? AppColors.warning
@@ -270,9 +285,17 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                           Expanded(
                             child: _buildBreakdownCard(
                               title: 'Security Deposit',
-                              amount: isRoomSet ? '₹${resident.securityDeposit.toInt()}' : 'Pending',
-                              status: isPaid ? 'Paid' : (isSubmitted ? 'Verifying' : (isRoomSet ? 'Due' : 'Not Set')),
-                              color: isPaid ? AppColors.success : (isSubmitted ? AppColors.accent : (isRoomSet ? AppColors.warning : Colors.grey)),
+                              amount: isRoomSet
+                                  ? (isDepositPaid
+                                      ? '₹${resident.securityDeposit.toInt()} (Paid)'
+                                      : '₹${resident.securityDeposit.toInt()}')
+                                  : 'Pending',
+                              status: isDepositPaid
+                                  ? 'Paid'
+                                  : (isSubmitted ? 'Verifying' : (isRoomSet ? 'Due' : 'Not Set')),
+                              color: isDepositPaid
+                                  ? AppColors.success
+                                  : (isSubmitted ? AppColors.accent : (isRoomSet ? AppColors.warning : Colors.grey)),
                               icon: Icons.security_rounded,
                             ),
                           ),
@@ -526,6 +549,15 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                         style: AppTypography.bodySmall,
                       ),
                       const SizedBox(height: AppSpacing.lg),
+
+                      CustomTextField(
+                        label: 'Paid Amount (₹)',
+                        hint: 'Enter exact amount paid (e.g. 8500 or 17000)',
+                        prefixIcon: Icons.currency_rupee_rounded,
+                        keyboardType: TextInputType.number,
+                        controller: _amountController,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
 
                       CustomTextField(
                         label: 'UPI Transaction Ref / UTR Number',

@@ -120,9 +120,19 @@ class StudentService
         return DB::transaction(function () use ($student, $data) {
             $txRef = 'PAY-'.date('Y').'-'.rand(1000, 9999);
 
-            $expectedTotal = $student->bed ? ($student->bed->monthly_rent + $student->bed->security_deposit) : 6500.00;
-            $amount = isset($data['amount']) ? (float)$data['amount'] : (float)$expectedTotal;
-            $totalDue = isset($data['total_due']) ? (float)$data['total_due'] : (float)$expectedTotal;
+            $rentDue = (float)$student->effective_rent_due;
+            $depositDue = (float)$student->effective_deposit_due;
+            $expectedTotal = (float)($rentDue + $depositDue);
+            if ($expectedTotal <= 0 && $student->bed) {
+                $expectedTotal = (float)$student->bed->monthly_rent;
+            }
+
+            $amount = (isset($data['amount']) && is_numeric($data['amount']) && (float)$data['amount'] > 0)
+                ? (float)$data['amount']
+                : $expectedTotal;
+            $totalDue = (isset($data['total_due']) && is_numeric($data['total_due']) && (float)$data['total_due'] > 0)
+                ? (float)$data['total_due']
+                : $expectedTotal;
             $remainingAmount = max(0, $totalDue - $amount);
 
             $payment = Payment::create([

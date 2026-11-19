@@ -45,16 +45,30 @@ class Student extends Model
 
     public function getEffectiveRentDueAttribute(): float
     {
+        if (strtoupper($this->rent_status ?? '') === 'PAID') {
+            return 0.0;
+        }
         if ((float)($this->rent_balance_due ?? 0) > 0) {
             return (float) $this->rent_balance_due;
         }
         if (strtoupper($this->rent_status ?? '') === 'DUE' && $this->bed) {
             return (float) ($this->bed->monthly_rent ?? 0);
         }
-        if (strtoupper($this->rent_status ?? '') === 'PAID') {
+        return (float) ($this->rent_balance_due ?? 0);
+    }
+
+    public function getEffectiveDepositDueAttribute(): float
+    {
+        if (in_array(strtoupper($this->deposit_status ?? ''), ['PAID', 'VERIFIED'])) {
             return 0.0;
         }
-        return (float) ($this->rent_balance_due ?? 0);
+        if ((float)($this->deposit_balance_due ?? 0) > 0) {
+            return (float) $this->deposit_balance_due;
+        }
+        if ($this->bed) {
+            return (float) ($this->bed->security_deposit ?? 0);
+        }
+        return 0.0;
     }
 
     public function user()

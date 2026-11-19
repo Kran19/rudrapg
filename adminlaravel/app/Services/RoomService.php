@@ -25,8 +25,8 @@ class RoomService
 
             // Automatically create beds for this room
             $maxBeds = $room->max_beds;
-            $rent = $data['monthly_rent'] ?? 6500.00;
-            $deposit = $data['security_deposit'] ?? 10000.00;
+            $rent = (isset($data['monthly_rent']) && is_numeric($data['monthly_rent'])) ? (float)$data['monthly_rent'] : 0.00;
+            $deposit = (isset($data['security_deposit']) && is_numeric($data['security_deposit'])) ? (float)$data['security_deposit'] : 0.00;
 
             for ($b = 1; $b <= $maxBeds; $b++) {
                 $bedLetter = chr(64 + $b);

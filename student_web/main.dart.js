@@ -100334,7 +100334,11 @@ A.aAw.prototype={
 $0(){this.a.z=!1},
 $S:0}
 A.aAz.prototype={
-$1(a1){var s,r,q,p,o,n,m,l,k,j,i,h=null,g="\u20b90.00",f="Pending",e="Verifying",d=a1.geS(),c=a1.gh1(),b=a1.gqc(),a=d&&!c?a1.CW+a1.cx:0,a0=!d
+$1(a1){var s,r,q,p,o,n,m,l,k,j,i,h=null,g="\u20b90.00",f="Pending",e="Verifying",d=a1.geS(),c=a1.gh1(),b=a1.gqc();
+var _dp=a1.dy.toUpperCase()==="PAID"||a1.dy.toUpperCase()==="VERIFIED",_rp=a1.dx.toUpperCase()==="PAID"||c,
+_pr=_rp?0:a1.CW,_pd=_dp?0:a1.cx,a=d?(_pr+_pd):0;
+if(d&&a<=0&&_rp&&(_dp||a1.cx===0))c=!0;
+var a0=!d
 if(a0)s="AWAITING BED ALLOCATION"
 else if(c)s="\u2713 ALL DUES CLEARED"
 else{r=b?"UNDER AUDIT \u23f3":"! DUES PENDING"
@@ -100343,7 +100347,7 @@ else if(c)q=B.D
 else{r=b?B.a8:B.af
 q=r}if(a0)p="Your room & bed have not been assigned yet. Dues will be calculated once sub-admin allocates your bed."
 else if(c)p="All rent and security deposit dues are completely cleared."
-else{a0=b?"Your payment proof has been submitted and is currently being audited by the branch manager.":"Initial admission payment: Rent \u20b9"+B.d.d0(a1.CW)+" + Deposit \u20b9"+B.d.d0(a1.cx)+"."
+else{a0=b?"Your payment proof has been submitted and is currently being audited by the branch manager.":(_dp?("Monthly Rent Due: \u20b9"+B.d.d0(_pr)+" (Deposit Cleared)."):("Initial admission payment: Rent \u20b9"+B.d.d0(_pr)+" + Deposit \u20b9"+B.d.d0(_pd)+"."))
 p=a0}a0=A.jM(this.b)
 r=A.bW(A.W("TOTAL OUTSTANDING DUES",1,B.t,h,$.de().Lb(B.Q,1),h,h),3)
 o=q.aX(0.2)
@@ -100355,19 +100359,19 @@ else r=d?"\u20b9"+B.d.d0(a):g
 a0=A.cH(B.S,h,A.aU(A.b([n,B.c3,A.W(r,1,B.t,h,$.aVn().aP(B.i),h,h),B.B,A.W(p,h,h,h,$.dC().aP(B.Q),h,h)],m),B.x,B.m,B.l),h,a0)
 r=A.W("Dues Breakdown",h,h,h,$.dL(),h,h)
 n=this.a
-o=d?"\u20b9"+B.d.d0(a1.CW):f
-if(c)l="Paid"
+o=d?(_rp?"\u20b9"+B.d.d0(a1.CW)+" (Paid)":"\u20b9"+B.d.d0(a1.CW)):f
+if(c||_rp)l="Paid"
 else if(b)l=e
 else l=d?"Due":"Not Set"
-if(c)k=B.D
+if(c||_rp)k=B.D
 else if(b)k=B.a8
 else k=d?B.af:B.n_
 l=A.bW(n.zC(o,k,B.qV,l,"Monthly Rent"),1)
-o=d?"\u20b9"+B.d.d0(a1.cx):f
-if(c)k="Paid"
+o=d?(_dp?"\u20b9"+B.d.d0(a1.cx)+" (Paid)":"\u20b9"+B.d.d0(a1.cx)):f
+if(c||_dp)k="Paid"
 else if(b)k=e
 else k=d?"Due":"Not Set"
-if(c)j=B.D
+if(c||_dp)j=B.D
 else if(b)j=B.a8
 else j=d?B.af:B.n_
 k=A.bj(A.b([l,B.am,A.bW(n.zC(o,j,B.Lp,k,"Security Deposit"),1)],m),B.o,B.m,B.l,0)
