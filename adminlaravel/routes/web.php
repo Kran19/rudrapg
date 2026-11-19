@@ -58,6 +58,10 @@ Route::middleware(['auth', 'role:SUPER_ADMIN'])->prefix('super-admin')->name('su
     Route::get('/students', [SuperAdminController::class, 'students'])->name('students');
     Route::post('/students/{id}/update', [SuperAdminController::class, 'updateStudent'])->name('students.update');
     Route::delete('/students/{id}', [SuperAdminController::class, 'destroyStudent'])->name('students.destroy');
+    Route::post('/students/{id}/vacate', [SuperAdminController::class, 'vacateStudent'])->name('students.vacate');
+    Route::get('/left-residents', [SuperAdminController::class, 'leftResidents'])->name('left_residents');
+    Route::post('/left-residents/{id}/settlement', [SuperAdminController::class, 'updateExitSettlement'])->name('left_residents.settlement');
+    Route::post('/left-residents/{id}/reinstate', [SuperAdminController::class, 'reinstateStudent'])->name('left_residents.reinstate');
     
     Route::get('/finance', [SuperAdminController::class, 'finance'])->name('finance');
     Route::post('/finance/{id}/update', [SuperAdminController::class, 'updateTransaction'])->name('finance.update');
@@ -112,6 +116,10 @@ Route::middleware(['auth', 'role:SUPER_ADMIN,SUB_ADMIN'])->prefix('sub-admin')->
     Route::get('/password-requests', [SubAdminController::class, 'passwordRequests'])->name('password_requests');
     Route::post('/password-requests/{id}/reset', [SubAdminController::class, 'resetPasswordRequest'])->name('password_requests.reset');
     Route::post('/students/{id}/update', [SubAdminController::class, 'updateStudent'])->name('students.update');
+    Route::post('/students/{id}/vacate', [SubAdminController::class, 'vacateStudent'])->name('students.vacate');
+    Route::get('/left-residents', [SubAdminController::class, 'leftResidents'])->name('left_residents');
+    Route::post('/left-residents/{id}/settlement', [SubAdminController::class, 'updateExitSettlement'])->name('left_residents.settlement');
+    Route::post('/left-residents/{id}/reinstate', [SubAdminController::class, 'reinstateStudent'])->name('left_residents.reinstate');
     Route::post('/students/{id}/reset-password', [SubAdminController::class, 'directResetPassword'])->name('students.reset_password');
     Route::post('/change-password', [WebAuthController::class, 'changePassword'])->name('change_password');
 });

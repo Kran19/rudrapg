@@ -1498,4 +1498,268 @@ class SuperAdminController extends Controller
 
         return back()->with('success', "Password for {$user->name} ({$user->phone}) has been updated to: {$validated['new_password']}");
     }
+
+    protected function formatStorageUrl(?string $path, string $docType = ''): ?string
+    {
+        if (!$path || str_contains($path, 'Exception') || str_contains($path, 'Error') || str_contains($path, 'Failed') || str_contains($path, 'DioException')) {
+            if ($docType === 'PROFILE_PHOTO') return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400';
+            return null;
+        }
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+        $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+            return asset('storage/' . $cleanPath);
+        }
+        if (str_starts_with($path, 'uploads/')) {
+            return asset('storage/' . $cleanPath);
+        }
+        return null;
+    }
+
+    public function leftResidents(Request $request)
+    {
+        $query = Student::withTrashed()
+            ->with(['branch', 'room', 'bed', 'documents', 'vacatedByUser', 'roomAllocations' => function ($q) {
+                $q->latest();
+            }])
+            ->where(function ($q) {
+                $q->where('status', 'EXITED')
+                  ->orWhereNotNull('exit_date')
+                  ->orWhereNotNull('deleted_at');
+            });
+
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->input('branch_id'));
+        }
+
+        if ($request->filled('reason')) {
+            $query->where('exit_reason', $request->input('reason'));
+        }
+
+        if ($request->filled('deposit_status')) {
+            $query->where('deposit_refund_status', $request->input('deposit_status'));
+        }
+
+        $exitedStudents = $query->latest('exit_date')->latest('updated_at')->get();
+
+        $leftResidentsData = $exitedStudents->map(function ($student) {
+            $profilePhotoDoc = $student->documents->firstWhere('doc_type', 'PROFILE_PHOTO');
+            $aadhaarFrontDoc = $student->documents->firstWhere('doc_type', 'AADHAAR_FRONT');
+            $aadhaarBackDoc = $student->documents->firstWhere('doc_type', 'AADHAAR_BACK');
+            $panCardDoc = $student->documents->firstWhere('doc_type', 'PAN_CARD');
+
+            $exitDate = $student->exit_date ?? ($student->deleted_at ? Carbon::parse($student->deleted_at)->toDateString() : null);
+            $joiningDate = $student->joining_date;
+
+            $stayDuration = 'N/A';
+            if ($joiningDate && $exitDate) {
+                $jDate = Carbon::parse($joiningDate);
+                $eDate = Carbon::parse($exitDate);
+                $diffDays = $jDate->diffInDays($eDate);
+                $diffMonths = $jDate->diffInMonths($eDate);
+                if ($diffMonths >= 1) {
+                    $remDays = $diffDays % 30;
+                    $stayDuration = $diffMonths . ' mo' . ($remDays > 0 ? " {$remDays} d" : '');
+                } else {
+                    $stayDuration = $diffDays . ' days';
+                }
+            }
+
+            return [
+                'db_id' => $student->id,
+                'app_reference' => $student->app_reference ?? ('REG-'.str_pad($student->id, 4, '0', STR_PAD_LEFT)),
+                'full_name' => $student->full_name,
+                'phone' => $student->phone,
+                'email' => $student->email ?? 'N/A',
+                'branch_id' => $student->branch_id,
+                'branch_name' => $student->branch?->name ?? 'N/A',
+                'room_number' => $student->last_room_number ?? ($student->room?->room_number ?? 'N/A'),
+                'bed_code' => $student->last_bed_code ?? ($student->bed?->bed_code ?? 'N/A'),
+                'joining_date' => $student->joining_date ? $student->joining_date->format('d M Y') : 'N/A',
+                'raw_joining_date' => $student->joining_date ? $student->joining_date->format('Y-m-d') : '',
+                'exit_date' => $exitDate ? Carbon::parse($exitDate)->format('d M Y') : 'N/A',
+                'raw_exit_date' => $exitDate ? Carbon::parse($exitDate)->format('Y-m-d') : '',
+                'stay_duration' => $stayDuration,
+                'exit_reason' => $student->exit_reason ?? 'Relocated / Left PG',
+                'exit_remarks' => $student->exit_remarks ?? 'No remarks recorded',
+                'deposit_refund_status' => $student->deposit_refund_status ?? ($student->deposit_status === 'REFUNDED' ? 'REFUNDED' : 'PENDING'),
+                'deposit_refund_amount' => (float)($student->deposit_refund_amount ?? 0),
+                'formatted_refund_amount' => '₹' . number_format((float)($student->deposit_refund_amount ?? 0)),
+                'deposit_refund_date' => $student->deposit_refund_date ? $student->deposit_refund_date->format('d M Y') : 'N/A',
+                'deposit_refund_reference' => $student->deposit_refund_reference ?? 'N/A',
+                'vacated_by_name' => $student->vacatedByUser?->name ?? 'Admin / Staff',
+                'parent_name' => $student->parent_name ?? 'N/A',
+                'parent_phone' => $student->parent_phone ?? 'N/A',
+                'emergency_contact' => $student->emergency_contact ?? 'N/A',
+                'current_address' => $student->current_address ?? 'N/A',
+                'aadhaar_number' => $student->aadhaar_number ?? 'N/A',
+                'pan_number' => $student->pan_number ?? 'N/A',
+                'rent_balance_due' => (float)($student->rent_balance_due ?? 0),
+                'deposit_balance_due' => (float)($student->deposit_balance_due ?? 0),
+                'profile_photo' => $this->formatStorageUrl($profilePhotoDoc?->file_path, 'PROFILE_PHOTO') ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+                'aadhaar_front' => $this->formatStorageUrl($aadhaarFrontDoc?->file_path, 'AADHAAR_FRONT'),
+                'aadhaar_back' => $this->formatStorageUrl($aadhaarBackDoc?->file_path, 'AADHAAR_BACK'),
+                'pan_card' => $this->formatStorageUrl($panCardDoc?->file_path, 'PAN_CARD'),
+                'is_deleted' => $student->trashed(),
+            ];
+        });
+
+        $totalLeft = $exitedStudents->count();
+        $totalRefunded = $exitedStudents->where('deposit_refund_status', 'REFUNDED')->sum('deposit_refund_amount');
+        $pendingRefunds = $exitedStudents->where('deposit_refund_status', 'PENDING')->count();
+
+        $activeStudents = Student::where('status', 'APPROVED')->with(['branch', 'room', 'bed'])->orderBy('full_name')->get();
+        $allBranches = Branch::all();
+
+        return view('super_admin.left_residents', [
+            'leftResidents' => $leftResidentsData,
+            'totalLeft' => $totalLeft,
+            'totalRefunded' => $totalRefunded,
+            'pendingRefunds' => $pendingRefunds,
+            'activeStudents' => $activeStudents,
+            'allBranches' => $allBranches,
+        ]);
+    }
+
+    public function vacateStudent(Request $request, $id)
+    {
+        $student = Student::withTrashed()->findOrFail($id);
+
+        $validated = $request->validate([
+            'exit_date' => ['required', 'date'],
+            'exit_reason' => ['required', 'string', 'max:255'],
+            'exit_remarks' => ['nullable', 'string', 'max:1000'],
+            'deposit_refund_status' => ['required', 'string', 'in:REFUNDED,PENDING,ADJUSTED,FORFEITED,PARTIAL'],
+            'deposit_refund_amount' => ['nullable', 'numeric', 'min:0'],
+            'deposit_refund_reference' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        DB::transaction(function () use ($student, $validated) {
+            $lastRoom = $student->room?->room_number ?? $student->last_room_number;
+            $lastBed = $student->bed?->bed_code ?? $student->last_bed_code;
+
+            if ($student->bed_id) {
+                $bed = Bed::find($student->bed_id);
+                if ($bed) {
+                    $bed->update(['status' => 'AVAILABLE']);
+                }
+            }
+
+            $activeAlloc = RoomAllocation::where('student_id', $student->id)->where('status', 'ACTIVE')->first();
+            if ($activeAlloc) {
+                $activeAlloc->update([
+                    'status' => 'COMPLETED',
+                    'end_date' => $validated['exit_date'],
+                ]);
+            }
+
+            $refundDate = ($validated['deposit_refund_status'] === 'REFUNDED') ? $validated['exit_date'] : null;
+
+            $student->update([
+                'status' => 'EXITED',
+                'room_id' => null,
+                'bed_id' => null,
+                'last_room_number' => $lastRoom,
+                'last_bed_code' => $lastBed,
+                'exit_date' => $validated['exit_date'],
+                'exit_reason' => $validated['exit_reason'],
+                'exit_remarks' => $validated['exit_remarks'] ?? null,
+                'deposit_refund_status' => $validated['deposit_refund_status'],
+                'deposit_refund_amount' => $validated['deposit_refund_amount'] ?? 0.00,
+                'deposit_refund_date' => $refundDate,
+                'deposit_refund_reference' => $validated['deposit_refund_reference'] ?? null,
+                'vacated_by' => Auth::id(),
+            ]);
+
+            if ($student->user) {
+                $student->user->tokens()->delete();
+            }
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Super Admin Vacated / Left PG: '.$student->full_name.' (Room '.$student->last_room_number.' Bed '.$student->last_bed_code.'). Reason: '.$validated['exit_reason'],
+            'module' => 'RESIDENT_EXIT',
+            'record_id' => $student->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Resident successfully marked as Left PG and bed freed up.',
+            ]);
+        }
+
+        return back()->with('success', 'Resident successfully marked as Left PG and bed freed up.');
+    }
+
+    public function updateExitSettlement(Request $request, $id)
+    {
+        $student = Student::withTrashed()->findOrFail($id);
+
+        $validated = $request->validate([
+            'deposit_refund_status' => ['required', 'string', 'in:REFUNDED,PENDING,ADJUSTED,FORFEITED,PARTIAL'],
+            'deposit_refund_amount' => ['nullable', 'numeric', 'min:0'],
+            'deposit_refund_reference' => ['nullable', 'string', 'max:255'],
+            'deposit_refund_date' => ['nullable', 'date'],
+            'exit_remarks' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $student->update([
+            'deposit_refund_status' => $validated['deposit_refund_status'],
+            'deposit_refund_amount' => $validated['deposit_refund_amount'] ?? $student->deposit_refund_amount,
+            'deposit_refund_reference' => $validated['deposit_refund_reference'] ?? $student->deposit_refund_reference,
+            'deposit_refund_date' => $validated['deposit_refund_date'] ?? ($validated['deposit_refund_status'] === 'REFUNDED' ? now()->toDateString() : null),
+            'exit_remarks' => $validated['exit_remarks'] ?? $student->exit_remarks,
+        ]);
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Super Admin Updated Exit Settlement for '.$student->full_name.' (Status: '.$validated['deposit_refund_status'].', Amount: ₹'.$student->deposit_refund_amount.')',
+            'module' => 'RESIDENT_EXIT',
+            'record_id' => $student->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Deposit refund and exit settlement updated successfully.',
+        ]);
+    }
+
+    public function reinstateStudent(Request $request, $id)
+    {
+        $student = Student::withTrashed()->findOrFail($id);
+
+        DB::transaction(function () use ($student) {
+            if ($student->trashed()) {
+                $student->restore();
+            }
+            if ($student->user && $student->user->trashed()) {
+                $student->user->restore();
+            }
+            $student->update([
+                'status' => 'APPROVED',
+                'exit_date' => null,
+                'exit_reason' => null,
+                'exit_remarks' => null,
+                'deposit_refund_status' => 'PENDING',
+                'vacated_by' => null,
+            ]);
+        });
+
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Super Admin Reinstated Exited Resident back to Active: '.$student->full_name,
+            'module' => 'RESIDENT_EXIT',
+            'record_id' => $student->id,
+            'ip_address' => request()->ip(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Resident successfully reinstated back to Active status.',
+        ]);
+    }
 }

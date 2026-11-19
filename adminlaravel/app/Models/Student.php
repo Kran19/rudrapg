@@ -31,6 +31,16 @@ class Student extends Model
         'rent_balance_due',
         'deposit_status',
         'deposit_balance_due',
+        'deposit_refund_status',
+        'deposit_refund_amount',
+        'deposit_refund_date',
+        'deposit_refund_reference',
+        'exit_date',
+        'exit_reason',
+        'exit_remarks',
+        'last_room_number',
+        'last_bed_code',
+        'vacated_by',
         'initial_meter_reading',
         'initial_meter_photo',
         'status',
@@ -38,6 +48,9 @@ class Student extends Model
 
     protected $casts = [
         'joining_date' => 'date',
+        'exit_date' => 'date',
+        'deposit_refund_date' => 'date',
+        'deposit_refund_amount' => 'float',
         'rent_balance_due' => 'float',
         'deposit_balance_due' => 'float',
         'initial_meter_reading' => 'float',
@@ -62,6 +75,7 @@ class Student extends Model
         if (in_array(strtoupper($this->deposit_status ?? ''), ['PAID', 'VERIFIED'])) {
             return 0.0;
         }
+        return (float) ($this->rent_balance_due ?? 0);
         if ((float)($this->deposit_balance_due ?? 0) > 0) {
             return (float) $this->deposit_balance_due;
         }
@@ -119,5 +133,15 @@ class Student extends Model
     public function passwordResetRequests()
     {
         return $this->hasMany(PasswordResetRequest::class);
+    }
+
+    public function roomAllocations()
+    {
+        return $this->hasMany(RoomAllocation::class, 'student_id');
+    }
+
+    public function vacatedByUser()
+    {
+        return $this->belongsTo(User::class, 'vacated_by');
     }
 }

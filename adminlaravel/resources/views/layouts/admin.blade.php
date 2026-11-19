@@ -313,6 +313,10 @@
                     </span>
                     <span id="badge-sub-password-resets" class="hidden bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
                 </a>
+                <a href="{{ route('sub_admin.left_residents') }}" 
+                   class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('sub_admin.left_residents*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <i class="fa-solid fa-user-xmark w-5 text-center text-rose-400"></i> Left / Exited Residents
+                </a>
                 <button type="button" @click="changePasswordModalOpen = true" 
                         class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all duration-200">
                     <i class="fa-solid fa-key w-5 text-center text-amber-400"></i> Change Password
@@ -347,6 +351,10 @@
                         <i class="fa-solid fa-users w-5 text-center"></i> Student Directory
                     </span>
                     <span id="badge-verifications-super" class="{{ isset($pendingRegistrationCount) && $pendingRegistrationCount > 0 ? '' : 'hidden' }} bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ $pendingRegistrationCount ?? 0 }}</span>
+                </a>
+                <a href="{{ route('super_admin.left_residents') }}" 
+                   class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.left_residents*') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <i class="fa-solid fa-user-xmark w-5 text-center text-rose-400"></i> Left / Exited Residents
                 </a>
                 <a href="{{ route('super_admin.finance') }}" 
                    class="flex items-center justify-between px-3.5 py-3 rounded-xl font-medium text-sm transition-all duration-200 {{ request()->routeIs('super_admin.finance') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">

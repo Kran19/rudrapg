@@ -393,15 +393,19 @@
                             </div>
                         </div>
 
-                        <!-- Direct Record Payment Button -->
-                        <div class="flex items-center justify-between gap-2 pt-1">
+                        <!-- Direct Record Payment & Vacate Actions -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
                             <button type="button" @click="openEditResidentModal(selectedBed)" 
-                                    class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer">
-                                <i class="fa-solid fa-user-pen"></i> Edit Resident Details
+                                    class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer">
+                                <i class="fa-solid fa-user-pen"></i> Edit Details
                             </button>
                             <a :href="'{{ route('sub_admin.rent_ledger') }}?student_id=' + selectedBed.student_id" 
-                               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors">
-                                <i class="fa-solid fa-money-bill-wave"></i> Record Payment
+                               class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors">
+                                <i class="fa-solid fa-money-bill-wave"></i> Payment
+                            </a>
+                            <a href="{{ route('sub_admin.left_residents') }}" 
+                               class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-colors" title="Manage check out and former residents">
+                                <i class="fa-solid fa-person-walking-arrow-right"></i> Vacate Bed
                             </a>
                         </div>
                     </div>
